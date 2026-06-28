@@ -15,14 +15,14 @@
 }
 
 .report-modal-content {
-  background-color: var(--card-bg);
+  background-color: var(--clr-card);
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--clr-border);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -31,10 +31,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--clr-border);
   position: sticky;
   top: 0;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(17, 17, 24, 0.95);
   backdrop-filter: blur(8px);
   z-index: 10;
 }
@@ -50,7 +50,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--clr-text);
 }
 
 .report-modal-body {
@@ -82,7 +82,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--clr-text);
   font-size: 0.95rem;
 }
 
@@ -91,10 +91,10 @@
 .form-group select {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--clr-border);
   border-radius: 8px;
   background-color: transparent;
-  color: var(--text-primary);
+  color: var(--clr-text);
   font-family: inherit;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -118,16 +118,16 @@
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--clr-border);
 }
 
 .btn-cancel {
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-weight: 600;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--clr-border);
   background: transparent;
-  color: var(--text-primary);
+  color: var(--clr-text);
   cursor: pointer;
 }
 
@@ -160,10 +160,10 @@
 
 .success-state h3 {
   margin-top: 1rem;
-  color: var(--text-primary);
+  color: var(--clr-text);
 }
 
 .success-state p {
-  color: var(--text-secondary);
+  color: var(--clr-text-muted);
   margin-bottom: 2rem;
 }
