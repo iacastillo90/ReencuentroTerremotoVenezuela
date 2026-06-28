@@ -293,13 +293,30 @@
 
 /* ─── Responsive tweaks ─── */
 @media (min-width: 768px) {
+  .feed-page { align-items: center; }
+  
+  .feed-filter-bar,
+  .feed-list,
+  .feed-empty,
+  .feed-loading,
+  .feed-end,
+  .feed-loading-more {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .feed-filter-bar { 
+    padding: 1rem 1.5rem; 
+    border-left: 1px solid var(--clr-border);
+    border-right: 1px solid var(--clr-border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+
   .feed-list { padding-bottom: 2rem; }
-  .feed-filter-bar { padding: 0.875rem 1.5rem; }
 }
 
 @media (min-width: 1024px) {
   .feed-card-photo { aspect-ratio: 16/9; }
-  .feed-list { padding-bottom: 2rem; }
 }
 
 .feed-loading-more {
