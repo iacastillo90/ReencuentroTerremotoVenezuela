@@ -43,19 +43,19 @@ function SectionResumen({ counts }: { counts: any }) {
     <div className="admin-stats-row">
       <div className="admin-stat-card">
         <div className="admin-stat-icon red"><Users size={22} /></div>
-        <div><h4>{counts.missing.toLocaleString()}</h4><p>Personas Desaparecidas</p></div>
+        <div><h4>{(counts.missing || 0).toLocaleString()}</h4><p>Personas Desaparecidas</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon green"><CheckCircle size={22} /></div>
-        <div><h4>{counts.found.toLocaleString()}</h4><p>Personas Encontradas</p></div>
+        <div><h4>{(counts.found || 0).toLocaleString()}</h4><p>Personas Encontradas</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon amber"><AlertTriangle size={22} /></div>
-        <div><h4>{counts.pending.toLocaleString()}</h4><p>Pendientes de Revisión</p></div>
+        <div><h4>{(counts.pending || 0).toLocaleString()}</h4><p>Pendientes de Revisión</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon blue"><GitMerge size={22} /></div>
-        <div><h4>{counts.manual.toLocaleString()}</h4><p>Reportes Manuales (IA)</p></div>
+        <div><h4>{(counts.manual || 0).toLocaleString()}</h4><p>Reportes Manuales (IA)</p></div>
       </div>
     </div>
   );
@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     setPersons(prev => prev.map(p => p.idHash === idHash ? { ...p, status: newStatus } : p));
   };
 
-  const pendingCount = counts ? counts.pending : 0;
+  const pendingCount = counts ? (counts.pending || 0) : 0;
 
   return (
     <div className="admin-layout">
@@ -351,7 +351,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
           </button>
         </div>
           <div className="admin-topbar-meta">
-            <span>{counts ? counts.total.toLocaleString() : persons.length} registros totales</span>
+            <span>{counts ? (counts.total || 0).toLocaleString() : persons.length} registros totales</span>
           </div>
         </header>
 
