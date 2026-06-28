@@ -5,7 +5,9 @@ import { FeedPage, FeedSidebar } from './pages/Feed/Feed';
 import { MapPage } from './pages/Map/MapPage';
 import { PersonDetailModal } from './components/modals/PersonDetailModal';
 import { ReportModal } from './components/modals/ReportModal';
+import { AuthModal } from './components/modals/AuthModal';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
+import { useAuth } from './store/AuthContext';
 import type { Person, Disaster } from './types';
 
 type View = 'feed' | 'map' | 'report' | 'admin';
@@ -26,7 +28,9 @@ function App() {
   const [activeView, setActiveView]   = useState<View>('feed');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const isFetchingRef = useRef(false);
+  const { user } = useAuth();
 
   // Carga inicial
   useEffect(() => {
@@ -91,7 +95,13 @@ function App() {
       <AppLayout
         activeView={activeView}
         onViewChange={v => setActiveView(v)}
-        onReport={() => setIsReporting(true)}
+        onReport={() => {
+          if (!user || !user.isProfileComplete) {
+            setIsAuthenticating(true);
+          } else {
+            setIsReporting(true);
+          }
+        }}
         onAdmin={() => setActiveView('admin')}
         sidebar={
           activeView === 'feed'
@@ -126,6 +136,16 @@ function App() {
         <PersonDetailModal
           person={selectedPerson}
           onClose={() => setSelectedPerson(null)}
+        />
+      )}
+
+      {isAuthenticating && (
+        <AuthModal
+          onClose={() => setIsAuthenticating(false)}
+          onSuccess={() => {
+            setIsAuthenticating(false);
+            setIsReporting(true);
+          }}
         />
       )}
 
