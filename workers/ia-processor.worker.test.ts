@@ -11,6 +11,15 @@ jest.mock('../services/person.service', () => ({
 jest.mock('../config/redis.config', () => ({
   connection: {} // mock redis connection
 }));
+jest.mock('../services/ai/ai.factory', () => ({
+  getAIProvider: jest.fn().mockReturnValue({
+    processRecord: jest.fn().mockResolvedValue({
+      safeDescription: 'Mocked safe description',
+      medicalStatus: 'estable',
+      urgencyScore: 75
+    })
+  })
+}));
 
 describe('ia-processor.worker', () => {
   beforeEach(() => {
