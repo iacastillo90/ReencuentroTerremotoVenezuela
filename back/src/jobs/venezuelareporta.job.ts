@@ -91,10 +91,8 @@ export async function fetchVenezuelaReporta() {
 
       offset += items.length;
       
-      // Stop after 500 items to avoid taking too long in development/demo
-      if (totalProcessed >= 500) {
-        hasMore = false;
-      }
+      // Delay to respect rate limits (120 req/min)
+      await new Promise(r => setTimeout(r, 500));
     }
 
     console.log(`[VenezuelaReporta] Sincronización completada: ${totalProcessed} personas procesadas.`);
