@@ -110,6 +110,7 @@ router.get('/', async (req: Request, res: Response) => {
       'data.cedula': 1,
       'data.origen': 1,
       'data.ficha_url': 1,
+      'data.verificado_por': 1,
       'metadata.createdAt': 1,
       'metadata.urgencyScore': 1,
       'metadata.reportedBy': 1

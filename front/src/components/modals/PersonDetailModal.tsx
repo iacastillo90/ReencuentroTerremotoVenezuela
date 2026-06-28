@@ -122,6 +122,14 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   </span>
                 )}
 
+                {person.data?.ficha_url && (
+                  <span style={{ color: 'var(--blue)', fontWeight: 600 }}>
+                    <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <AlertCircle size={14} /> Ver ficha original
+                    </a>
+                  </span>
+                )}
+
                 {person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {person.metadata.reportedBy.name}</span>}
               </div>
             </div>
