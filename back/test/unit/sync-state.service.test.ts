@@ -1,7 +1,7 @@
-import { checkSyncState, markSyncSuccess, markSyncError, generateChecksum } from './sync-state.service';
-import { SyncStateModel } from '../models/sync-state.model';
+import { checkSyncState, markSyncSuccess, markSyncError, generateChecksum } from '../../src/services/sync-state.service';
+import { SyncStateModel } from '../../src/models/sync-state.model';
 
-jest.mock('../models/sync-state.model', () => ({
+jest.mock('../../src/models/sync-state.model', () => ({
   SyncStateModel: {
     findOne: jest.fn(),
     findOneAndUpdate: jest.fn()

@@ -1,5 +1,5 @@
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
-import { generateIdHash } from '../util/hash.util';
+import { generateIdHash } from '../utils/hash.util';
 import { findNearbyDisasters, calculateDisasterUrgencyBonus } from './disaster.service';
 
 export async function upsertPerson(

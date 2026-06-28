@@ -1,20 +1,20 @@
-import { calculateSimilarity } from '../util/fuzzy-match.util';
-import { processAndReconcilePerson, findSimilarPersons } from './reconciliation.service';
-import { PersonModel } from '../models/unified-person.model';
-import { upsertPerson } from './person.service';
-import { addJobToManualAudit } from '../queues/manual-audit.queue';
+import { calculateSimilarity } from '../../src/utils/fuzzy-match.util';
+import { processAndReconcilePerson, findSimilarPersons } from '../../src/services/reconciliation.service';
+import { PersonModel } from '../../src/models/unified-person.model';
+import { upsertPerson } from '../../src/services/person.service';
+import { addJobToManualAudit } from '../../src/queues/manual-audit.queue';
 
-jest.mock('../models/unified-person.model', () => ({
+jest.mock('../../src/models/unified-person.model', () => ({
   PersonModel: {
     find: jest.fn()
   }
 }));
 
-jest.mock('./person.service', () => ({
+jest.mock('../../src/services/person.service', () => ({
   upsertPerson: jest.fn()
 }));
 
-jest.mock('../queues/manual-audit.queue', () => ({
+jest.mock('../../src/queues/manual-audit.queue', () => ({
   addJobToManualAudit: jest.fn()
 }));
 

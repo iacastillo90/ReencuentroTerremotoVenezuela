@@ -1,7 +1,7 @@
-import { upsertPerson } from './person.service';
-import { PersonModel } from '../models/unified-person.model';
+import { upsertPerson } from '../../src/services/person.service';
+import { PersonModel } from '../../src/models/unified-person.model';
 
-jest.mock('../models/unified-person.model', () => ({
+jest.mock('../../src/models/unified-person.model', () => ({
   PersonModel: {
     findOneAndUpdate: jest.fn()
   }
