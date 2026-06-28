@@ -51,7 +51,7 @@ export async function fetchAyudaVEPersons() {
                   coordinates: [-66.9, 10.48]
                 }
               },
-              photoUrl: item.foto || null,
+              photoUrl: item.foto ? (item.foto.startsWith('/') ? `https://ayudahumanitariavenezuela.com${item.foto}` : item.foto) : null,
               sourceRecords: [{ source: SOURCE_ID, externalId: String(externalId), rawData: item }],
               metadata: {
                 urgencyScore: item.urgencyScore || 80,
