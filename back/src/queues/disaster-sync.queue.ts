@@ -38,6 +38,12 @@ export async function setupDisasterSyncJobs() {
   await disasterSyncQueue.add('sync-gdacs', {}, {
     repeat: { pattern: '0 * * * *' }
   });
+
+  // AyudaVE API cada 10 minutos
+  await disasterSyncQueue.add('sync-ayudave', {}, {
+    repeat: { pattern: '*/10 * * * *' }
+  });
+  
   
   console.log('[DisasterSync] Cron jobs registered.');
 }
