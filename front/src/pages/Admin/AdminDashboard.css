@@ -56,7 +56,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: #f43f5e;
+  background: var(--clr-danger);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -159,7 +159,7 @@
 }
 
 .admin-stat-icon.red    { background: rgba(244, 63, 94, 0.15);  color: #fb7185; }
-.admin-stat-icon.amber  { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.admin-stat-icon.amber  { background: rgba(251, 191, 36, 0.15); color: var(--clr-amber); }
 .admin-stat-icon.green  { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 .admin-stat-icon.blue   { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
 
@@ -270,7 +270,7 @@
 
 .admin-badge.missing  { background: rgba(244, 63, 94, 0.15);  color: #fb7185; }
 .admin-badge.found    { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-.admin-badge.pending  { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.admin-badge.pending  { background: rgba(251, 191, 36, 0.15); color: var(--clr-amber); }
 .admin-badge.manual   { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
 .admin-badge.api      { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
 
@@ -408,7 +408,7 @@
   }
 
   .admin-sidebar-logo span {
-    color: #f43f5e;
+    color: var(--clr-danger);
   }
 
   .admin-sidebar-logo small {
@@ -430,7 +430,7 @@
   
   .admin-nav-item.active {
     background: rgba(244, 63, 94, 0.08);
-    border-left-color: #f43f5e;
+    border-left-color: var(--clr-danger);
   }
   
   .admin-nav-badge {

@@ -101,7 +101,7 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
           const [lng, lat] = disaster.coordinates.coordinates;
           const color = disaster.severity === 'critical' ? '#ef4444' :
                         disaster.severity === 'high' ? '#f97316' :
-                        disaster.severity === 'medium' ? '#eab308' : '#3b82f6';
+                        disaster.severity === 'medium' ? '#eab308' : 'var(--clr-primary)';
           
           return (
             <React.Fragment key={disaster._id}>

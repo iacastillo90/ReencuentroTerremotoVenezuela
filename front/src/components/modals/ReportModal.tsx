@@ -89,7 +89,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         <div className="report-modal-body">
           {isSuccess ? (
             <div className="success-state">
-              <CheckCircle size={64} color="#10b981" style={{ margin: '0 auto' }} />
+              <CheckCircle size={64} color="var(--clr-success)" style={{ margin: '0 auto' }} />
               <h3>¡Reporte enviado exitosamente!</h3>
               <p>Nuestra Inteligencia Artificial está analizando y organizando la información. En unos minutos aparecerá en el mapa.</p>
               <button className="btn-submit" style={{ margin: '0 auto' }} onClick={onClose}>

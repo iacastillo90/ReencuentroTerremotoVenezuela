@@ -194,7 +194,7 @@
 }
 
 .btn-contact {
-  background-color: #3b82f6;
+  background-color: var(--clr-primary);
   color: white;
 }
 .btn-contact:hover {
@@ -202,7 +202,7 @@
 }
 
 .btn-confirm-safe {
-  background-color: #10b981;
+  background-color: var(--clr-success);
   color: white;
 }
 .btn-confirm-safe:hover {

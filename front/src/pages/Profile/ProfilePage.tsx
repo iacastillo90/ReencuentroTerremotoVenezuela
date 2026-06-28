@@ -108,7 +108,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
 
       {user.role === 'verifier' && (
         <div className="profile-content" style={{ marginTop: '20px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-          <h3 style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+          <h3 style={{ color: 'var(--clr-success)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
             <CheckCircle size={20} /> Cuenta Verificada (Periodista / ONG)
           </h3>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

@@ -95,7 +95,7 @@
 }
 
 .btn-report {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, var(--clr-primary), #2563eb);
   color: white;
   border: none;
   padding: 8px 14px;
