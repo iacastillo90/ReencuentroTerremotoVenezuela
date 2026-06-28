@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import type { Person, Disaster } from '../types';
@@ -33,44 +34,60 @@ const disasterIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+const getSeverityName = (sev: string) => {
+  const map: Record<string, string> = { low: 'Baja', medium: 'Media', high: 'Alta', critical: 'Crítica' };
+  return map[sev] || sev;
+};
+
+const getDisasterName = (type: string) => {
+  const map: Record<string, string> = { earthquake: 'Sismo', fire: 'Incendio', flood: 'Inundación' };
+  return map[type] || type;
+};
+
 interface MapProps {
   persons: Person[];
   disasters: Disaster[];
+  activeFilter: 'all' | 'disasters' | 'persons';
 }
 
-export function InteractiveMap({ persons, disasters }: MapProps) {
+export function InteractiveMap({ persons, disasters, activeFilter }: MapProps) {
   const [center, setCenter] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
 
   return (
     <div className="map-container">
       <MapContainer center={center} zoom={6} scrollWheelZoom={true} className="leaflet-map">
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         
-        {/* Marcadores de Personas */}
-        {persons.map((person) => {
-          if (!person.lastSeen.coordinates) return null;
-          const [lng, lat] = person.lastSeen.coordinates.coordinates;
-          return (
-            <Marker key={person.idHash} position={[lat, lng]} icon={personIcon}>
-              <Popup>
-                <div className="popup-card">
-                  <h3>{person.name}</h3>
-                  <p className="status-badge" data-status={person.status}>
-                    {person.status === 'missing' ? 'Desaparecido' : person.status === 'found' ? 'Encontrado' : person.status}
-                  </p>
-                  <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
-                  <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Marcadores de Personas agrupados */}
+        {(activeFilter === 'all' || activeFilter === 'persons') && (
+          <MarkerClusterGroup chunkedLoading>
+            {persons.map((person) => {
+              if (!person.lastSeen?.coordinates) return null;
+              const [lng, lat] = person.lastSeen.coordinates.coordinates;
+              return (
+                <Marker key={person.idHash} position={[lat, lng]} icon={personIcon}>
+                  <Popup>
+                    <div className="popup-card">
+                      {person.photoUrl && <img src={person.photoUrl} alt={person.name} className="popup-photo" />}
+                      <h3>{person.name}</h3>
+                      <p className="status-badge" data-status={person.status}>
+                        {person.status === 'missing' ? 'Desaparecido' : person.status === 'found' ? 'Encontrado' : person.status}
+                      </p>
+                      <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
+                      <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MarkerClusterGroup>
+        )}
 
         {/* Marcadores de Desastres */}
-        {disasters.map((disaster) => {
+        {(activeFilter === 'all' || activeFilter === 'disasters') && disasters.map((disaster) => {
           const [lng, lat] = disaster.coordinates.coordinates;
           const color = disaster.severity === 'critical' ? '#ef4444' :
                         disaster.severity === 'high' ? '#f97316' :
@@ -82,8 +99,8 @@ export function InteractiveMap({ persons, disasters }: MapProps) {
                 <Popup>
                   <div className="popup-card disaster-popup">
                     <h3 style={{ color }}>{disaster.title}</h3>
-                    <p><strong>Tipo:</strong> {disaster.type}</p>
-                    <p><strong>Severidad:</strong> {disaster.severity.toUpperCase()}</p>
+                    <p><strong>Tipo:</strong> {getDisasterName(disaster.type)}</p>
+                    <p><strong>Severidad:</strong> {getSeverityName(disaster.severity).toUpperCase()}</p>
                   </div>
                 </Popup>
               </Marker>

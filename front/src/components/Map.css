@@ -15,6 +15,19 @@
 
 .popup-card {
   font-family: 'Inter', system-ui, sans-serif;
+  text-align: center;
+  min-width: 180px;
+}
+
+.popup-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: -30px auto 10px auto;
+  border: 3px solid white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: block;
 }
 
 .popup-card h3 {
@@ -28,6 +41,7 @@
   margin: 4px 0;
   font-size: 13px;
   color: #4b5563;
+  text-align: left;
 }
 
 .status-badge {
@@ -37,6 +51,8 @@
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  margin-bottom: 8px !important;
+  text-align: center !important;
 }
 
 .status-badge[data-status="missing"] {
@@ -52,4 +68,21 @@
 .disaster-popup h3 {
   border-bottom: 1px solid #f3f4f6;
   padding-bottom: 6px;
+  text-align: left;
+}
+
+/* Clúster Customization */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background-color: rgba(59, 130, 246, 0.6);
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
 }
