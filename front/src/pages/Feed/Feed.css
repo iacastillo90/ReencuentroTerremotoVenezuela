@@ -1,0 +1,304 @@
+/* ═══════════════════════════
+   Feed Page — Instagram-style
+   Mobile-first
+   ═══════════════════════════ */
+
+/* ─── Page container ─────── */
+.feed-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--clr-bg);
+}
+
+/* ─── Filter bar (sticky) ─── */
+.feed-filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10,10,15,0.90);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--clr-border);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.feed-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  padding: 0 1rem;
+}
+
+.feed-search-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--clr-text);
+  font-size: 0.95rem;
+  padding: 0.65rem 0;
+}
+
+.feed-search-row input::placeholder { color: var(--clr-text-dim); }
+
+.feed-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.feed-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.chip.active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #fff;
+}
+
+.chip-count {
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  padding: 1px 6px;
+}
+
+/* ─── Feed cards list ─────── */
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: calc(var(--bottom-nav-h) + 1rem);
+}
+
+/* ─── Person Card (feed) ─── */
+.feed-card {
+  background: var(--clr-card);
+  border-bottom: 1px solid var(--clr-border);
+  cursor: pointer;
+  transition: background 0.15s;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.feed-card:hover { background: rgba(22,22,31,0.9); }
+.feed-card:active { background: rgba(255,255,255,0.02); }
+
+/* Card header (avatar + meta) */
+.feed-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem 0.5rem;
+}
+
+.feed-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(59,130,246,0.15);
+  border: 2px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-primary);
+}
+
+.feed-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-card-meta { flex: 1; min-width: 0; }
+
+.feed-card-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feed-card-sub {
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 2px;
+}
+
+/* Card photo */
+.feed-card-photo {
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  position: relative;
+  background: var(--clr-surface);
+}
+
+.feed-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.feed-card:hover .feed-card-photo img { transform: scale(1.02); }
+
+.feed-card-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--clr-text-dim);
+  font-size: 0.8rem;
+}
+
+/* Card footer */
+.feed-card-footer {
+  padding: 0.75rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.feed-card-footer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-card-location {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+}
+
+.urgency-bar {
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--clr-border);
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.urgency-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s;
+}
+
+.urgency-fill.high   { background: var(--clr-danger); }
+.urgency-fill.medium { background: var(--clr-amber); }
+.urgency-fill.low    { background: var(--clr-success); }
+
+.feed-card-desc {
+  font-size: 0.82rem;
+  color: var(--clr-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 0.1rem;
+}
+
+/* ─── Empty / loading ─────── */
+.feed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  gap: 0.75rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+}
+
+.feed-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 1rem;
+  color: var(--clr-text-muted);
+}
+
+/* ─── Desktop sidebar panel ─ */
+.sidebar-panel {
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sidebar-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.sidebar-stat {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-stat:hover { background: var(--clr-hover); }
+.sidebar-stat.active { border-color: currentColor; background: rgba(255,255,255,0.05); }
+.sidebar-stat.danger  { color: var(--clr-danger); }
+.sidebar-stat.primary { color: var(--clr-primary); }
+.sidebar-stat.success { color: var(--clr-success); }
+
+.sidebar-stat h4 { font-size: 1.3rem; color: var(--clr-text); }
+.sidebar-stat p  { font-size: 0.72rem; color: var(--clr-text-muted); }
+
+/* ─── Responsive tweaks ─── */
+@media (min-width: 768px) {
+  .feed-list { padding-bottom: 2rem; }
+  .feed-filter-bar { padding: 0.875rem 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .feed-card-photo { aspect-ratio: 16/9; }
+  .feed-list { padding-bottom: 2rem; }
+}
