@@ -1,29 +1,30 @@
 import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { AuthModal } from '../components/modals/AuthModal';
 import { useAuth } from '../store/AuthContext';
 
 // Mock de GoogleOAuthProvider y GoogleLogin
-jest.mock('@react-oauth/google', () => ({
+vi.mock('@react-oauth/google', () => ({
   GoogleLogin: () => <button data-testid="google-login-btn">Log in with Google</button>,
 }));
 
 // Mock del contexto de Autenticación
-jest.mock('../store/AuthContext', () => ({
-  useAuth: jest.fn(),
+vi.mock('../store/AuthContext', () => ({
+  useAuth: vi.fn(),
 }));
 
 describe('AuthModal Component', () => {
-  const mockOnClose = jest.fn();
-  const mockOnSuccess = jest.fn();
+  const mockOnClose = vi.fn();
+  const mockOnSuccess = vi.fn();
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('debería mostrar el botón de Google Login si el usuario no está autenticado', () => {
-    (useAuth as jest.Mock).mockReturnValue({
+    (useAuth as any).mockReturnValue({
       user: null,
-      login: jest.fn(),
+      login: vi.fn(),
       token: null,
     });
 
@@ -34,14 +35,14 @@ describe('AuthModal Component', () => {
   });
 
   it('debería mostrar el formulario de perfil si el usuario está autenticado pero el perfil está incompleto', () => {
-    (useAuth as jest.Mock).mockReturnValue({
+    (useAuth as any).mockReturnValue({
       user: {
         _id: '123',
         name: 'John Doe',
         email: 'john@example.com',
         isProfileComplete: false,
       },
-      login: jest.fn(),
+      login: vi.fn(),
       token: 'fake-token',
     });
 
