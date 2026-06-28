@@ -106,4 +106,31 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
   }
 });
 
+// Cambiar estado de una persona (missing <-> found)
+router.patch('/persons/:idHash/status', async (req: Request, res: Response) => {
+  try {
+    const { idHash } = req.params;
+    const { status } = req.body;
+
+    if (!['missing', 'found', 'deceased', 'unknown'].includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+
+    const updated = await PersonModel.findOneAndUpdate(
+      { idHash },
+      { status, 'metadata.updatedAt': new Date() },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Persona no encontrada' });
+    }
+
+    return res.status(200).json({ status: updated.status, idHash: updated.idHash });
+  } catch (error) {
+    console.error('[AdminRoute] PATCH /persons/:idHash/status Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 export const adminRouter = router;
