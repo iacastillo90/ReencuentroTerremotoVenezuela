@@ -78,13 +78,15 @@ router.get('/', async (req: Request, res: Response) => {
       'data.origen': 1,
       'data.ficha_url': 1,
       'metadata.createdAt': 1,
-      'metadata.urgencyScore': 1
+      'metadata.urgencyScore': 1,
+      'metadata.reportedBy': 1
     };
 
     // Prioridad: con foto primero, luego por urgencia
     const [persons, total] = await Promise.all([
       PersonModel.find(filter)
         .select(safeProjection)
+        .populate('metadata.reportedBy', 'name')
         .sort({ photoUrl: -1, 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
         .skip(offset)
         .limit(limit)

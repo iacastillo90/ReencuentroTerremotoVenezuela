@@ -18,6 +18,7 @@ export interface Person {
   metadata: {
     urgencyScore: number;
     createdAt?: string;
+    reportedBy?: { name: string };
   };
   data?: {
     cedula?: string;
