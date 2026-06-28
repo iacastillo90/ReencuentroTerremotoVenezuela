@@ -1,17 +1,18 @@
 import { z } from 'zod';
+import { sanitizedString, sanitizedStringOptional } from '../utils/sanitize.util';
 
 export const personPayloadSchema = z.object({
-  source: z.string().min(1),
-  externalId: z.string().min(1),
+  source: sanitizedString,
+  externalId: sanitizedString,
   type: z.enum(['person', 'animal']).default('person'),
-  name: z.string().min(2),
-  estado: z.string().min(2),
-  text: z.string().optional(),
+  name: sanitizedString.pipe(z.string().min(2)),
+  estado: sanitizedString.pipe(z.string().min(2)),
+  text: sanitizedStringOptional,
   photoUrl: z.string().url().optional(),
   date: z.string().datetime().optional(), // ISO string
   confidence_score: z.number().optional(),
-  confidence_label: z.string().optional(),
-  reportedBy: z.string().optional(),
+  confidence_label: sanitizedStringOptional,
+  reportedBy: sanitizedStringOptional,
   data: z.object({
     age: z.union([z.string(), z.number()]).optional(),
     cedula_hash: z.string().optional()
