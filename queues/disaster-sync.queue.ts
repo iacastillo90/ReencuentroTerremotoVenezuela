@@ -1,0 +1,35 @@
+import { Queue } from 'bullmq';
+import { connection } from '../config/redis.config';
+
+export const DISASTER_SYNC_QUEUE_NAME = 'disaster-sync';
+
+export const disasterSyncQueue = new Queue(DISASTER_SYNC_QUEUE_NAME, {
+  connection: connection as any,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: true,
+    removeOnFail: false,
+  }
+});
+
+// Registrar los jobs repetitivos (Cron)
+export async function setupDisasterSyncJobs() {
+  // Remover jobs anteriores para evitar duplicados en desarrollo
+  const repeatableJobs = await disasterSyncQueue.getRepeatableJobs();
+  for (const job of repeatableJobs) {
+    await disasterSyncQueue.removeRepeatableByKey(job.key);
+  }
+
+  // USGS cada 5 minutos
+  await disasterSyncQueue.add('sync-usgs', {}, {
+    repeat: {
+      pattern: '*/5 * * * *'
+    }
+  });
+  
+  console.log('[DisasterSync] Cron jobs registered.');
+}
