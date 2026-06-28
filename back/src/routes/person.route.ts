@@ -4,6 +4,7 @@ import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { PersonModel } from '../models/unified-person.model';
 import { connection as redis } from '../config/redis.config';
+import { requireProfileComplete } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireProfileComplete, async (req: Request, res: Response) => {
   try {
     // 1. Validate payload
     const validationResult = personPayloadSchema.safeParse(req.body);
@@ -118,6 +119,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const payload = validationResult.data;
+    payload.reportedBy = (req as any).user.userId;
     const updatedAt = payload.date ? new Date(payload.date) : new Date();
 
     // 2. Check Deduplication / SyncState
