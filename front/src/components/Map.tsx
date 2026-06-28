@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Person, Disaster } from '../types';
+import type { Person, Disaster } from '../types';
 import './Map.css';
 
 // Fix para los iconos de leaflet en react
