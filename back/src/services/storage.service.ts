@@ -52,5 +52,7 @@ export async function uploadMedia(fileBuffer: Buffer, originalName: string, mime
   const endPoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
   const port = process.env.MINIO_PORT || '9000';
   
-  return `${protocol}://${endPoint}:${port}/${BUCKET_NAME}/${fileName}`;
+  const baseUrl = process.env.PUBLIC_STORAGE_URL || `${protocol}://${endPoint}:${port}/${BUCKET_NAME}`;
+  
+  return `${baseUrl}/${fileName}`;
 }
