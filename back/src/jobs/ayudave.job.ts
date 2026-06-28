@@ -36,22 +36,22 @@ export async function fetchAyudaVEPersons() {
           update: {
             $set: {
               type: 'person',
-              normalizedName: (item.name || item.nombre || '').toLowerCase(),
-              name: item.name || item.nombre,
-              status: item.status || 'missing',
-              age: item.age || item.edad || null,
-              gender: item.gender || item.genero || 'U',
+              normalizedName: `${item.nombre || ''} ${item.apellido || ''}`.trim().toLowerCase(),
+              name: `${item.nombre || ''} ${item.apellido || ''}`.trim(),
+              status: item.status === 'encontrado' ? 'found' : 'missing',
+              age: parseInt(item.edad) || null,
+              gender: item.sexo === 'Masculino' ? 'M' : item.sexo === 'Femenino' ? 'F' : 'U',
               lastSeen: {
                 date: item.lastSeen?.date ? new Date(item.lastSeen.date) : new Date(),
                 state: item.estado || item.lastSeen?.state || 'Desconocido',
                 municipality: item.municipio || item.lastSeen?.municipality || 'Desconocido',
-                description: item.descripcion || item.lastSeen?.description || '',
+                description: item.descripcion || '',
                 coordinates: {
                   type: 'Point',
-                  coordinates: item.lastSeen?.coordinates?.coordinates || [-66.9, 10.48]
+                  coordinates: [-66.9, 10.48]
                 }
               },
-              photoUrl: item.foto_url || item.photoUrl || `https://i.pravatar.cc/150?u=${externalId}`,
+              photoUrl: item.foto || null,
               sourceRecords: [{ source: SOURCE_ID, externalId: String(externalId), rawData: item }],
               metadata: {
                 urgencyScore: item.urgencyScore || 80,
@@ -73,7 +73,7 @@ export async function fetchAyudaVEPersons() {
       // Chunk the bulkWrite to prevent memory issues
       const chunkSize = 200;
       for (let i = 0; i < operations.length; i += chunkSize) {
-        await PersonModel.bulkWrite(operations.slice(i, i + chunkSize));
+        await PersonModel.bulkWrite(operations.slice(i, i + chunkSize) as any[]);
       }
     }
 
