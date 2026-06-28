@@ -68,8 +68,8 @@ export const LibraryPage: React.FC = () => {
                       <ExternalLink size={16} />
                     </div>
                     <p>{item.description}</p>
-                    {item.notes && <div className="card-notes">{item.notes}</div>}
-                    {item.verified && (
+                    {(item as any).notes && <div className="card-notes">{(item as any).notes}</div>}
+                    {(item as any).verified && (
                       <div className="card-verified">
                         <CheckCircle size={12} /> Verificado
                       </div>

@@ -40,24 +40,53 @@ function App() {
   const fetchPersons = async (query: string, newOffset: number, append: boolean = false) => {
     try {
       const endpoint = `/persons?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`;
-      const [pRes, dRes, cRes] = await Promise.all([
+      const [pRes, dRes, cRes, locRes] = await Promise.all([
         api.get<{ total: number; persons: Person[] }>(endpoint),
         // Only fetch these if it's initial load to save requests, but doing it parallel is fine
-        api.get<Disaster[]>('/disasters/active'),
-        api.get<Counts>('/persons/counts')
+        api.get<Disaster[]>('/disasters/active').catch(() => ({ data: [] })),
+        api.get<Counts>('/persons/counts').catch(() => ({ data: { missing: 0, found: 0, total: 0 } })),
+        api.get<{ data: any[], total: number }>(`/localizados?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`).catch(() => ({ data: { data: [], total: 0 } }))
       ]);
       const { total: t, persons: p } = pRes.data;
       
-      setTotal(t);
-      setHasMore(newOffset + p.length < t);
+      // Map localizados to Person interface
+      const localizadosAsPersons: Person[] = (locRes.data?.data || []).map((loc: any) => ({
+        idHash: `loc-${loc._id}`,
+        name: loc.name,
+        status: 'found',
+        lastSeen: {
+          state: loc.origin || 'Desconocido',
+          description: `Visto en: ${loc.location}`
+        },
+        metadata: {
+          urgencyScore: 1,
+          createdAt: loc.createdAt
+        },
+        data: {
+          cedula: loc.cedula,
+          origen: 'Reporte Hospital/Refugio',
+          ficha_url: loc.sourceUrl,
+          verificado_por: loc.isVerified ? 'Personal de Salud' : undefined
+        }
+      }));
+
+      // Combine both sources
+      const combined = [...p, ...localizadosAsPersons];
+      
+      setTotal(t + (locRes.data?.total || 0));
+      setHasMore(newOffset + p.length < t || newOffset + localizadosAsPersons.length < (locRes.data?.total || 0));
       setDisasters(dRes.data);
-      setCounts(cRes.data);
+      setCounts({
+        missing: cRes.data.missing,
+        found: cRes.data.found + (locRes.data?.total || 0),
+        total: cRes.data.total + (locRes.data?.total || 0)
+      });
 
       if (append) {
-        setPersons(prev => [...prev, ...p]);
+        setPersons(prev => [...prev, ...combined]);
       } else {
         // If no query and it's offset 0, shuffle a bit
-        const data = (!query && newOffset === 0) ? [...p].sort(() => Math.random() - 0.5) : p;
+        const data = (!query && newOffset === 0) ? combined.sort(() => Math.random() - 0.5) : combined;
         setPersons(data);
       }
     } catch (e) {
