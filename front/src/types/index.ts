@@ -14,6 +14,12 @@ export interface Person {
   metadata: {
     urgencyScore: number;
   };
+  data?: {
+    cedula?: string;
+    ficha_url?: string;
+    origen?: string;
+    verificado_por?: string;
+  };
 }
 
 export interface Disaster {
