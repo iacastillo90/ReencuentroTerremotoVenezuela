@@ -8,6 +8,7 @@ import { webhooksRouter } from './routes/webhooks.route';
 import { adminRouter } from './routes/admin.route';
 import { disastersRouter } from './routes/disasters.route';
 import { mediaRouter } from './routes/media.route';
+import { authRouter } from './routes/auth.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
 app.use('/api/media', mediaRouter);
+app.use('/api/auth', authRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
