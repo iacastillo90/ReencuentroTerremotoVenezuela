@@ -1,16 +1,66 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { UserModel } from '../models/user.model';
+import { auditLog } from './audit.middleware';
 
-export function requireAdminOrVerifier(req: Request, res: Response, next: NextFunction) {
-  const apiKey = req.headers['x-api-key'];
-  const validKey = process.env.ADMIN_API_KEY;
+// JWT_SECRET startup validation — fail-fast in production
+const JWT_SECRET = (() => {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[FATAL] JWT_SECRET is required in production');
+    process.exit(1);
+  }
+  const generated = crypto.randomBytes(64).toString('hex');
+  console.warn('[WARN] JWT_SECRET not set. Generated temporary development secret.');
+  return generated;
+})();
 
-  // 1. Check API Key
-  if (apiKey && validKey && apiKey === validKey) {
-    return next();
+export function getJwtSecret(): string {
+  return JWT_SECRET;
+}
+
+export async function requireUser(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
   }
 
-  // 2. Check JWT Role
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+    // tokenVersion check — fetch user from DB
+    const user = await UserModel.findById(decoded.userId).select('tokenVersion');
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    if (user.tokenVersion !== decoded.tokenVersion) {
+      return res.status(401).json({ error: 'Token revoked. Please login again.' });
+    }
+
+    (req as any).user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+export async function requireProfileComplete(req: Request, res: Response, next: NextFunction) {
+  try {
+    await requireUser(req, res, () => {
+      if (!(req as any).user.isProfileComplete) {
+        return res.status(403).json({ error: 'Forbidden: Profile incomplete' });
+      }
+      next();
+    });
+  } catch (error) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
+export function requireAdminOrVerifier(req: Request, res: Response, next: NextFunction) {
+  // Primary: JWT with admin/verifier role
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
@@ -18,11 +68,29 @@ export function requireAdminOrVerifier(req: Request, res: Response, next: NextFu
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       if (decoded.role === 'admin' || decoded.role === 'verifier') {
         (req as any).user = decoded;
-        return next();
+        next();
+        return;
       }
-    } catch (e) {
-      // invalid token, fall through to 401
+      return res.status(403).json({ error: 'Forbidden: Admin or verifier access required' });
+    } catch {
+      // JWT invalid — fall through to legacy API key check
     }
+  }
+
+  // Fallback: legacy API key (for migration)
+  const apiKey = req.headers['x-api-key'];
+  const validKey = process.env.ADMIN_API_KEY;
+
+  if (apiKey && validKey && apiKey === validKey) {
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'warning',
+      actor: 'api-key',
+      action: `${req.method} ${req.path} — Legacy admin API key used`,
+      detail: { migration: 'Migrate to JWT admin auth' },
+      req,
+    });
+    return next();
   }
 
   return res.status(401).json({ error: 'Unauthorized: Invalid Admin Credentials' });
@@ -44,42 +112,3 @@ export function requirePartnerApiKey(req: Request, res: Response, next: NextFunc
   next();
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-reencuentro-2024';
-
-export function requireUser(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    (req as any).user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-}
-
-export function requireProfileComplete(req: Request, res: Response, next: NextFunction) {
-  requireUser(req, res, () => {
-    if (!(req as any).user.isProfileComplete) {
-      return res.status(403).json({ error: 'Forbidden: Profile incomplete' });
-    }
-    next();
-  });
-}
-
-// RBAC Middleware
-export function requireRoles(allowedRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    requireUser(req, res, () => {
-      const userRole = (req as any).user.role;
-      if (!userRole || !allowedRoles.includes(userRole)) {
-        return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-      }
-      next();
-    });
-  };
-}
