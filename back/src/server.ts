@@ -1,17 +1,20 @@
 import mongoose from 'mongoose';
 import app from './app';
+import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';
+import './workers/disaster-sync.worker';
+import './workers/ia-processor.worker';
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ayudave';
 
 async function bootstrap() {
   try {
-    // 1. Conectar a la Base de Datos
     console.log(`[Server] Conectando a MongoDB en ${MONGO_URI}...`);
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
 
-    // 2. Levantar el servidor Express
+    await setupDisasterSyncJobs();
+
     app.listen(PORT, () => {
       console.log(`[Server] Backend de AyudaVE corriendo en http://localhost:${PORT}`);
     });
