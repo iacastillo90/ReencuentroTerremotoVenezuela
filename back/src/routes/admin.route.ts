@@ -3,6 +3,7 @@ import { manualAuditQueue } from '../queues/manual-audit.queue';
 import { upsertPerson } from '../services/person.service';
 import { PersonModel } from '../models/unified-person.model';
 import { UserModel } from '../models/user.model';
+import { VerificationRequestModel } from '../models/verification-request.model';
 import { requireRoles } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -34,6 +35,47 @@ router.patch('/users/:id/role', requireRoles(['admin']), async (req: Request, re
     return res.status(200).json({ status: 'updated', user: updated });
   } catch (error) {
     console.error('[AdminRoute] PATCH /users/:id/role Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Endpoint para listar solicitudes de verificación
+router.get('/verifications', requireRoles(['admin']), async (req: Request, res: Response) => {
+  try {
+    const requests = await VerificationRequestModel.find()
+      .populate('user', 'name email picture')
+      .sort({ createdAt: -1 })
+      .lean();
+    return res.status(200).json(requests);
+  } catch (error) {
+    console.error('[AdminRoute] GET /verifications Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Endpoint para aprobar/rechazar solicitudes
+router.patch('/verifications/:id/status', requireRoles(['admin']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+
+    const request = await VerificationRequestModel.findById(id);
+    if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+    request.status = status;
+    await request.save();
+
+    if (status === 'approved') {
+      await UserModel.findByIdAndUpdate(request.user, { role: 'verifier' });
+    }
+
+    return res.status(200).json({ status: 'updated', request });
+  } catch (error) {
+    console.error('[AdminRoute] PATCH /verifications/:id/status Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });

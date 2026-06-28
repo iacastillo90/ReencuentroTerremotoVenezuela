@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
-import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText, ShieldAlert, CheckCircle } from 'lucide-react';
 import './Profile.css';
 
 interface ProfilePageProps {
@@ -13,6 +13,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const { user, logout } = useAuth();
   const [myReports, setMyReports] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestNotes, setRequestNotes] = useState('');
+  const [showRequestForm, setShowRequestForm] = useState(false);
+
+  const handleRequestVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/auth/verification-request', { notes: requestNotes });
+      alert('Solicitud enviada correctamente. Un moderador la revisará pronto.');
+      setShowRequestForm(false);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Error al enviar la solicitud');
+    }
+  };
 
   useEffect(() => {
     const fetchMyReports = async () => {
@@ -55,6 +68,51 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
           <LogOut size={16} /> Cerrar sesión
         </button>
       </div>
+
+      {user.role === 'user' && (
+        <div className="profile-content" style={{ marginTop: '20px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+          <h3 style={{ color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <ShieldAlert size={20} /> Solicitar Acceso de Verificador
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            Si eres periodista, miembro de ONG o personal en terreno, puedes solicitar acceso a datos de refugios e información de contacto directo de los desaparecidos encontrados.
+          </p>
+          {!showRequestForm ? (
+            <button onClick={() => setShowRequestForm(true)} style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+              Solicitar Rol
+            </button>
+          ) : (
+            <form onSubmit={handleRequestVerification} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <textarea 
+                placeholder="Explica brevemente tu rol y organización para validar tu acceso..."
+                value={requestNotes}
+                onChange={e => setRequestNotes(e.target.value)}
+                required
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0e1838', border: '1px solid #1e293b', color: '#fff', minHeight: '80px' }}
+              />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                  Enviar Solicitud
+                </button>
+                <button type="button" onClick={() => setShowRequestForm(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {user.role === 'verifier' && (
+        <div className="profile-content" style={{ marginTop: '20px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1.5rem', borderRadius: '12px' }}>
+          <h3 style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <CheckCircle size={20} /> Cuenta Verificada (Periodista / ONG)
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Tienes acceso completo a la información de contacto y ubicaciones exactas para facilitar reencuentros seguros.
+          </p>
+        </div>
+      )}
 
       <div className="profile-content">
         <h3><FileText size={18} /> Mis reportes ({myReports.length})</h3>

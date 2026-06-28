@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Person } from '../../types';
 import { 
   X, MapPin, User, CheckCircle, Heart, 
-  MessageCircle, AlertCircle, Share2, Info
+  MessageCircle, AlertCircle, Share2, Info, Lock
 } from 'lucide-react';
+import { useAuth } from '../../store/AuthContext';
 import './PersonDetailModal.css';
 
 interface PersonDetailModalProps {
@@ -14,6 +15,22 @@ interface PersonDetailModalProps {
 
 export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport }) => {
   const isMissing = person.status === 'missing';
+  
+  // Security
+  const { user } = useAuth();
+  const [cedulaInput, setCedulaInput] = useState('');
+  const [cedulaMatched, setCedulaMatched] = useState(false);
+
+  const canViewSensitive = isMissing || cedulaMatched || user?.role === 'admin' || user?.role === 'verifier';
+
+  const handleCedulaMatch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (person.data?.cedula && cedulaInput.trim() === person.data.cedula) {
+      setCedulaMatched(true);
+    } else {
+      alert("Cédula incorrecta. Si eres familiar, verifica el documento. De lo contrario, solicita acceso a un moderador.");
+    }
+  };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -65,11 +82,18 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <span><MapPin size={14} style={{ display: 'inline', marginRight: 4 }} /> {person.lastSeen?.state || 'Ubicación desconocida'}</span>
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
-                {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
-                
-                {person.data?.verificado_por && (
-                  <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircle size={14} /> Verificado por {person.data.verificado_por}
+                {canViewSensitive ? (
+                  <>
+                    {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
+                    {person.data?.verificado_por && (
+                      <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle size={14} /> Verificado por {person.data.verificado_por}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Lock size={14} /> Datos de refugio ocultos
                   </span>
                 )}
 
@@ -110,7 +134,28 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
               </div>
               <div className="info-item full-width">
                 <label>Descripción / Detalles</label>
-                <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
+                {canViewSensitive ? (
+                  <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
+                ) : (
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px dashed #334155' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      <Lock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+                      Esta persona fue localizada. Por su seguridad, la ubicación exacta y el detalle del refugio están protegidos. Si eres familiar, introduce su cédula para ver los datos:
+                    </p>
+                    <form onSubmit={handleCedulaMatch} style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Cédula de Identidad" 
+                        value={cedulaInput}
+                        onChange={e => setCedulaInput(e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #475569', background: '#1e293b', color: '#fff', flex: 1 }}
+                      />
+                      <button type="submit" style={{ padding: '6px 14px', borderRadius: '4px', background: 'var(--blue)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                        Verificar
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             </div>
           </div>

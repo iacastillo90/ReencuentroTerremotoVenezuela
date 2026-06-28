@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/user.model';
+import { VerificationRequestModel } from '../models/verification-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -95,6 +96,29 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
 
     return res.status(200).json({ token: authToken, user });
   } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.post('/verification-request', requireUser, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { notes, evidenceUrl } = req.body;
+
+    const existing = await VerificationRequestModel.findOne({ user: userId, status: 'pending' });
+    if (existing) {
+      return res.status(400).json({ error: 'Ya tienes una solicitud pendiente' });
+    }
+
+    const request = await VerificationRequestModel.create({
+      user: userId,
+      notes,
+      evidenceUrl
+    });
+
+    return res.status(201).json(request);
+  } catch (error) {
+    console.error('[AuthRoute] POST /verification-request Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
