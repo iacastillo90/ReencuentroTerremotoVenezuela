@@ -20,16 +20,23 @@
   "homepage": "https://github.com/iacastillo90/ReencuentroTerremotoVenezuela#readme",
   "dependencies": {
     "bullmq": "^5.79.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "fastest-levenshtein": "^1.0.16",
     "ioredis": "^5.11.1",
-    "mongoose": "^9.7.3"
+    "mongoose": "^9.7.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.1",
+    "@types/supertest": "^7.2.0",
     "ioredis-mock": "^8.13.1",
     "jest": "^30.4.2",
     "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2",
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
