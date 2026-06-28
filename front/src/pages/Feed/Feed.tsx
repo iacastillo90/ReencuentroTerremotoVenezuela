@@ -4,6 +4,8 @@ import { FeedCard } from './components/FeedCard';
 import type { Person, Disaster } from '../../types';
 import './Feed.css';
 
+interface Counts { missing: number; found: number; total: number; }
+
 interface FeedPageProps {
   persons: Person[];
   disasters: Disaster[];
@@ -11,6 +13,7 @@ interface FeedPageProps {
   loadingMore: boolean;
   hasMore: boolean;
   total: number;
+  counts: Counts;
   onSelectPerson: (p: Person) => void;
   onLoadMore: () => void;
 }
@@ -18,7 +21,7 @@ interface FeedPageProps {
 type Filter = 'all' | 'missing' | 'found' | 'disasters';
 
 export const FeedPage: React.FC<FeedPageProps> = ({
-  persons, disasters, loading, loadingMore, hasMore, total, onSelectPerson, onLoadMore
+  persons, disasters, loading, loadingMore, hasMore, total, counts, onSelectPerson, onLoadMore
 }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('missing');
@@ -56,9 +59,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
     );
 
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
-    { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: persons.filter(p => p.status === 'missing').length },
-    { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: persons.filter(p => p.status === 'found').length },
-    { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: total },
+    { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: counts.missing },
+    { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: counts.found },
+    { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: counts.total },
     { key: 'disasters', icon: <AlertTriangle size={13} />, label: 'Desastres',     count: disasters.length },
   ];
 
@@ -165,20 +168,21 @@ export const FeedSidebar: React.FC<{
   persons: Person[];
   disasters: Disaster[];
   total: number;
-}> = ({ persons, disasters, total }) => (
+  counts: Counts;
+}> = ({ disasters, total, counts }) => (
   <div className="sidebar-panel">
     <div className="sidebar-stats">
       <div className="sidebar-stat danger">
         <AlertTriangle size={20} />
         <div>
-          <h4>{persons.filter(p => p.status === 'missing').length.toLocaleString()}</h4>
+          <h4>{counts.missing.toLocaleString()}</h4>
           <p>Desaparecidos</p>
         </div>
       </div>
       <div className="sidebar-stat success">
         <Users size={20} />
         <div>
-          <h4>{persons.filter(p => p.status === 'found').length.toLocaleString()}</h4>
+          <h4>{counts.found.toLocaleString()}</h4>
           <p>Encontrados</p>
         </div>
       </div>

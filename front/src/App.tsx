@@ -10,11 +10,14 @@ import type { Person, Disaster } from './types';
 
 type View = 'feed' | 'map' | 'report' | 'admin';
 
+interface Counts { missing: number; found: number; total: number; }
+
 const PAGE_SIZE = 50;
 
 function App() {
   const [persons, setPersons]         = useState<Person[]>([]);
   const [disasters, setDisasters]     = useState<Disaster[]>([]);
+  const [counts, setCounts]           = useState<Counts>({ missing: 0, found: 0, total: 0 });
   const [total, setTotal]             = useState(0);
   const [offset, setOffset]           = useState(0);
   const [loading, setLoading]         = useState(true);
@@ -30,9 +33,10 @@ function App() {
     const fetchInitial = async () => {
       setLoading(true);
       try {
-        const [pRes, dRes] = await Promise.all([
+        const [pRes, dRes, cRes] = await Promise.all([
           api.get<{ total: number; persons: Person[] }>(`/persons?limit=${PAGE_SIZE}&offset=0`),
-          api.get<Disaster[]>('/disasters/active')
+          api.get<Disaster[]>('/disasters/active'),
+          api.get<Counts>('/persons/counts')
         ]);
         const { total: t, persons: p } = pRes.data;
         setPersons(p);
@@ -40,6 +44,7 @@ function App() {
         setOffset(PAGE_SIZE);
         setHasMore(PAGE_SIZE < t);
         setDisasters(dRes.data);
+        setCounts(cRes.data);
       } catch (e) {
         console.error('Error fetching data:', e);
       } finally {
@@ -86,7 +91,7 @@ function App() {
         onAdmin={() => setActiveView('admin')}
         sidebar={
           activeView === 'feed'
-            ? <FeedSidebar persons={persons} disasters={disasters} total={total} />
+            ? <FeedSidebar persons={persons} disasters={disasters} total={counts.total} counts={counts} />
             : undefined
         }
       >
@@ -98,6 +103,7 @@ function App() {
             loadingMore={loadingMore}
             hasMore={hasMore}
             total={total}
+            counts={counts}
             onSelectPerson={setSelectedPerson}
             onLoadMore={loadMore}
           />

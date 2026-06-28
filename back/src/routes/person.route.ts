@@ -7,6 +7,29 @@ import { connection as redis } from '../config/redis.config';
 
 const router = Router();
 
+// ── GET /counts — Totales por estado (cacheado 5 min) ──────────────────────
+router.get('/counts', async (_req: Request, res: Response) => {
+  try {
+    const CACHE_KEY = 'persons:counts';
+    const cached = await redis.get(CACHE_KEY);
+    if (cached) return res.status(200).json(JSON.parse(cached));
+
+    const [missing, found, total] = await Promise.all([
+      PersonModel.countDocuments({ status: 'missing' }),
+      PersonModel.countDocuments({ status: 'found' }),
+      PersonModel.countDocuments({})
+    ]);
+
+    const counts = { missing, found, total };
+    await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
+
+    return res.status(200).json(counts);
+  } catch (error: any) {
+    console.error('[PersonRoute] GET /counts Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { q, status } = req.query;
