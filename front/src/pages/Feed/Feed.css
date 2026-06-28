@@ -11,6 +11,26 @@
   background: var(--clr-bg);
 }
 
+/* ─── Hero Banner UX ─────── */
+.feed-hero-banner {
+  background: linear-gradient(135deg, rgba(29,78,216,0.3) 0%, rgba(30,58,138,0.1) 100%);
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.hero-content h2 {
+  font-size: 1.5rem;
+  color: var(--clr-text);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.hero-content p {
+  font-size: 0.95rem;
+  color: var(--clr-text-muted);
+  line-height: 1.4;
+}
+
 /* ─── Filter bar (sticky) ─── */
 .feed-filter-bar {
   position: sticky;

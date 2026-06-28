@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut } from 'lucide-react';
+import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
@@ -25,11 +25,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const navItems: { view: View; icon: React.ReactNode; label: string }[] = [
-    { view: 'feed',   icon: <Users size={22} />,    label: 'Personas' },
-    { view: 'map',    icon: <Map size={22} />,       label: 'Mapa' },
-    { view: 'library',icon: <BookOpen size={22} />,  label: 'Biblioteca' },
-    { view: 'report', icon: <PlusCircle size={22} />, label: 'Reportar' },
+  const navItems: { view: View; icon: React.ReactNode; label: string; center?: boolean }[] = [
+    { view: 'feed',   icon: <Home size={22} />,     label: 'Inicio' },
+    { view: 'map',    icon: <Map size={22} />,      label: 'Mapa' },
+    { view: 'report', icon: <PlusCircle size={32} color="var(--clr-primary)" fill="rgba(59,130,246,0.2)" />, label: '', center: true },
+    { view: 'library',icon: <BookOpen size={22} />, label: 'Guías' },
   ];
 
   const handleBottomNav = (view: View) => {
@@ -51,10 +51,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <Menu size={20} />
           </button>
 
-          <div className="nav-logo-icon">
-            <MapPin size={18} color="#fff" />
+          <div className="nav-logo-icon" style={{ background: 'transparent', display: 'flex', alignItems: 'center' }}>
+            <Heart size={20} color="#f59e0b" fill="#f43f5e" style={{ marginRight: '-8px', zIndex: 1 }} />
+            <Heart size={20} color="#3b82f6" fill="#3b82f6" />
           </div>
-          <h1>Reencuentro<span>VE</span></h1>
+          <div className="nav-brand-text">
+            <h1>Reencuentros<span>Venezuela</span></h1>
+          </div>
         </div>
 
         {/* View toggle pills — desktop only */}
@@ -117,17 +120,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         {navItems.map(item => (
           <button
             key={item.view}
-            className={`bottom-nav-item ${activeView === item.view || (item.view === 'report' && false) ? 'active' : ''}`}
+            className={`bottom-nav-item ${activeView === item.view ? 'active' : ''} ${item.center ? 'nav-item-center' : ''}`}
             onClick={() => handleBottomNav(item.view)}
           >
             {item.icon}
-            <span>{item.label}</span>
+            {item.label && <span>{item.label}</span>}
           </button>
         ))}
-        <button className="bottom-nav-item" onClick={onAdmin}>
-          <BookOpen size={22} />
-          <span>Admin</span>
-        </button>
+        {user ? (
+          <button className="bottom-nav-item" onClick={logout}>
+            <LogOut size={22} />
+            <span>Salir</span>
+          </button>
+        ) : (
+          <button className="bottom-nav-item" onClick={() => handleBottomNav('feed' as any)}>
+            <UserIcon size={22} />
+            <span>Perfil</span>
+          </button>
+        )}
       </nav>
 
       {/* ─ Drawer — tablet ─ */}
