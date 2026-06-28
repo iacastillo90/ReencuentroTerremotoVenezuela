@@ -111,11 +111,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
               <div className="info-item full-width">
                 <label>Descripción / Detalles</label>
                 <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
-                {person.data?.ficha_url && (
-                  <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '8px', color: 'var(--clr-primary)', fontWeight: 500, fontSize: '0.85rem' }}>
-                    Ver ficha original ↗
-                  </a>
-                )}
               </div>
             </div>
           </div>
