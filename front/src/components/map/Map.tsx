@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
@@ -104,7 +104,7 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
                         disaster.severity === 'medium' ? '#eab308' : '#3b82f6';
           
           return (
-            <div key={disaster._id}>
+            <React.Fragment key={disaster._id}>
               <Marker position={[lat, lng]} icon={disasterIcon}>
                 <Popup>
                   <div className="popup-card disaster-popup">
@@ -119,7 +119,7 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
                 radius={disaster.type === 'earthquake' ? 30000 : 5000} 
                 pathOptions={{ color, fillColor: color, fillOpacity: 0.2, weight: 1 }}
               />
-            </div>
+            </React.Fragment>
           );
         })}
       </MapContainer>
