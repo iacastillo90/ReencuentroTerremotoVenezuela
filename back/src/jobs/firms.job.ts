@@ -76,7 +76,7 @@ export async function fetchFIRMSFires() {
     });
 
     if (operations.length > 0) {
-      await DisasterEventModel.bulkWrite(operations);
+      await DisasterEventModel.bulkWrite(operations as any[]);
       console.log(`[FIRMS Sync] Processed ${operations.length} fire alerts.`);
     }
 

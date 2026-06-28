@@ -67,7 +67,7 @@ export async function fetchGDACS() {
               },
               radius_km: 50, // GDACS warnings son grandes, ~50km
               title: (item as any).gdacsEventName || item.title || 'Alerta GDACS',
-              description: item.contentSnippet || item.description || '',
+              description: item.contentSnippet || (item as any).description || '',
               source: 'gdacs',
               occurredAt: item.pubDate ? new Date(item.pubDate) : new Date(),
               metadata: {
@@ -81,7 +81,7 @@ export async function fetchGDACS() {
     }
 
     if (operations.length > 0) {
-      await DisasterEventModel.bulkWrite(operations);
+      await DisasterEventModel.bulkWrite(operations as any[]);
       console.log(`[GDACS Sync] Processed ${operations.length} global alerts for target region.`);
     } else {
        console.log(`[GDACS Sync] No active alerts for target region.`);
