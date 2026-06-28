@@ -60,7 +60,7 @@ export async function fetchVenezuelaReporta() {
                   date: item.created_at ? new Date(item.created_at) : new Date(),
                   state: item.ciudad || 'Desconocido',
                   municipality: item.zona || 'Desconocido',
-                  description: `${item.ultima_vez || ''} - ${item.descripcion || ''}`.trim(),
+                  description: [item.ultima_vez, item.descripcion].filter(Boolean).join(' - '),
                   coordinates: {
                     type: 'Point',
                     coordinates: [-66.9, 10.48] // Cerca de La Guaira
