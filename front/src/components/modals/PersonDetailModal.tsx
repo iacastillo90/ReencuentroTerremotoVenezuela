@@ -111,13 +111,13 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   <>
                     {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
                     {person.data?.verificado_por && (
-                      <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--clr-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <CheckCircle size={14} /> Verificado por {person.data.verificado_por}
                       </span>
                     )}
                   </>
                 ) : (
-                  <span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: 'var(--clr-amber)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Lock size={14} /> Datos de refugio ocultos
                   </span>
                 )}
@@ -150,7 +150,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
 
           {showContactForm && (
             <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid #1e293b' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}><Lock size={16} color="#fbbf24" /> Comunicación Segura</h4>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}><Lock size={16} color="var(--clr-amber)" /> Comunicación Segura</h4>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
                 Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de AyudaVE intermediará si es necesario.
               </p>

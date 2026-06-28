@@ -3,29 +3,57 @@
    Mobile-first · Dark · Instagram-like
    ════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ─── Tokens ─────────────────────────────────────────────── */
 :root {
-  /* Paleta */
-  --clr-bg:         #0a0a0f;
-  --clr-surface:    #111118;
-  --clr-card:       #16161f;
-  --clr-border:     rgba(255,255,255,0.07);
-  --clr-hover:      rgba(255,255,255,0.04);
+  /* Figma - Primary Blue */
+  --blue-50:  #E8F0FC;
+  --blue-100: #D2E0F9;
+  --blue-200: #A5C2F3;
+  --blue-300: #78A3ED;
+  --blue-400: #4A84E8;
+  --blue-500: #1D65E2;
+  --blue-600: #1751B5;
+  --blue-700: #123D87;
+  --blue-800: #0C295A;
+  --blue-900: #06142D;
+  --blue-950: #040E20;
 
-  --clr-text:       #e2e8f0;
-  --clr-text-muted: #94a3b8;
-  --clr-text-dim:   #64748b;
+  /* Figma - Gray */
+  --gray-50:  #F0F0F0;
+  --gray-100: #E2E2E2;
+  --gray-200: #C5C5C5;
+  --gray-300: #AAAAAA;
+  --gray-400: #8E8E8E;
+  --gray-500: #5B5B5B;
+  --gray-600: #4D4D4D;
+  --gray-700: #444444;
+  --gray-800: #2D2D2D;
+  --gray-900: #191919;
+  --gray-950: #131313;
 
-  --clr-primary:    #3b82f6;
-  --clr-primary-glow: rgba(59,130,246,0.25);
-  --clr-danger:     #f43f5e;
-  --clr-danger-bg:  rgba(244,63,94,0.12);
-  --clr-success:    #10b981;
-  --clr-success-bg: rgba(16,185,129,0.12);
-  --clr-amber:      #f59e0b;
-  --clr-amber-bg:   rgba(245,158,11,0.12);
+  /* App Mapping */
+  --clr-bg:         var(--gray-950);
+  --clr-surface:    var(--gray-900);
+  --clr-card:       var(--gray-800);
+  --clr-border:     var(--gray-700);
+  --clr-hover:      var(--gray-700);
+
+  --clr-text:       var(--gray-50);
+  --clr-text-muted: var(--gray-300);
+  --clr-text-dim:   var(--gray-400);
+
+  --clr-primary:    var(--blue-500);
+  --clr-primary-glow: rgba(29, 101, 226, 0.25);
+  
+  /* Figma - Secondary Palettes */
+  --clr-danger:     #EF4444;
+  --clr-danger-bg:  #B91C1C;
+  --clr-success:    var(--clr-success);
+  --clr-success-bg: #047857;
+  --clr-amber:      #F59E0B;
+  --clr-amber-bg:   #B45309;
 
   /* Spacing */
   --nav-h: 60px;
@@ -44,9 +72,9 @@
   --shadow-modal: 0 24px 48px rgba(0,0,0,0.6);
 
   /* Typography */
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Work Sans', system-ui, sans-serif;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.4;
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
 }
@@ -102,3 +130,72 @@ a { text-decoration: none; color: inherit; }
 }
 .badge.missing { background: var(--clr-danger-bg); color: #fb7185; }
 .badge.found   { background: var(--clr-success-bg); color: #34d399; }
+
+/* ─── Typography (Figma) ─────────────────────────────────── */
+h1, .text-h1 {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: clamp(32px, 5vw, 64px);
+  letter-spacing: -0.02em;
+}
+
+h2, .text-h2 {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: clamp(24px, 4vw, 40px);
+  letter-spacing: -0.02em;
+}
+
+h3, .text-h3 {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: clamp(20px, 3vw, 24px);
+  letter-spacing: -0.02em;
+}
+
+.text-subtitle {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+}
+
+body, p, .text-body {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+strong, b, .text-body-bold {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+small, .text-small {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.text-pre-title {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+button, .text-button {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+
+a.text-link {
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: underline;
+}

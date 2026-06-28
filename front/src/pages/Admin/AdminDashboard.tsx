@@ -244,7 +244,7 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
                       </span>
                     </td>
                     <td>
-                      <span style={{ color: urgency > 70 ? '#fb7185' : urgency > 40 ? '#fbbf24' : '#34d399', fontWeight: 600 }}>
+                      <span style={{ color: urgency > 70 ? '#fb7185' : urgency > 40 ? 'var(--clr-amber)' : '#34d399', fontWeight: 600 }}>
                         {urgency}/100
                       </span>
                     </td>
@@ -345,7 +345,7 @@ function SectionMatches() {
                   ) : <span style={{ color: 'var(--clr-danger)' }}>Reporte eliminado</span>}
                 </td>
                 <td>
-                  <span style={{ fontWeight: 'bold', color: m.score > 0.7 ? '#10b981' : '#fbbf24' }}>
+                  <span style={{ fontWeight: 'bold', color: m.score > 0.7 ? 'var(--clr-success)' : 'var(--clr-amber)' }}>
                     {(m.score * 100).toFixed(1)}%
                   </span>
                 </td>

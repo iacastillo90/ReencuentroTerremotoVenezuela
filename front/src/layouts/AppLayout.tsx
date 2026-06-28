@@ -52,8 +52,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </button>
 
           <div className="nav-logo-icon" style={{ background: 'transparent', display: 'flex', alignItems: 'center' }}>
-            <Heart size={20} color="#f59e0b" fill="#f43f5e" style={{ marginRight: '-8px', zIndex: 1 }} />
-            <Heart size={20} color="#3b82f6" fill="#3b82f6" />
+            <Heart size={20} color="#f59e0b" fill="var(--clr-danger)" style={{ marginRight: '-8px', zIndex: 1 }} />
+            <Heart size={20} color="var(--clr-primary)" fill="var(--clr-primary)" />
           </div>
           <div className="nav-brand-text">
             <h1>Reencuentros<span>Venezuela</span></h1>
