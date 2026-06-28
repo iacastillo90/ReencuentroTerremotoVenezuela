@@ -2,3 +2,10 @@ node_modules/
 dist/
 coverage/
 .env
+
+# Archivos temporales y de depuración local
+back/backend.log
+back/page.html
+back/screenshot.png
+doc.txt
+*.log
