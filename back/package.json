@@ -29,6 +29,7 @@
     "axios": "^1.18.1",
     "bullmq": "^5.79.2",
     "cheerio": "^1.2.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csv-parse": "^7.0.0",
     "dotenv": "^17.4.2",
@@ -46,9 +47,11 @@
     "openai": "^6.45.0",
     "puppeteer": "^25.2.1",
     "rss-parser": "^3.13.0",
+    "sanitize-html": "^2.17.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/hpp": "^0.2.7",
@@ -56,6 +59,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^26.0.1",
+    "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.0",
     "ioredis-mock": "^8.13.1",
     "jest": "^30.4.2",
