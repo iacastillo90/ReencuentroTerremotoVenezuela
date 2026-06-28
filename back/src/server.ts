@@ -6,7 +6,7 @@ import './workers/disaster-sync.worker';
 import './workers/ia-processor.worker';
 
 const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ayudave';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
 async function bootstrap() {
   try {
@@ -18,7 +18,7 @@ async function bootstrap() {
     await setupDisasterSyncJobs();
 
     app.listen(PORT, () => {
-      console.log(`[Server] Backend de AyudaVE corriendo en http://localhost:${PORT}`);
+      console.log(`[Server] Backend de Reencuentro Terremoto Venezuela corriendo en http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('[Server] Error crítico durante el inicio:', error);

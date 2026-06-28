@@ -1,12 +1,12 @@
 import { PersonModel } from '../models/unified-person.model';
 import crypto from 'crypto';
 
-const SOURCE_ID = 'ayudave-api';
+const SOURCE_ID = 'reencuentro-api';
 // Usamos el endpoint documentado en el PDF
 const SOURCE_URL = 'https://ayudahumanitariavenezuela.com/api/persons';
 
-export async function fetchAyudaVEPersons() {
-  console.log(`[AyudaVE Sync] Iniciando sincronización desde ${SOURCE_URL}...`);
+export async function fetchReencuentroPersons() {
+  console.log(`[Reencuentro Sync] Iniciando sincronización desde ${SOURCE_URL}...`);
   
   try {
     const response = await fetch(SOURCE_URL, {
@@ -19,8 +19,8 @@ export async function fetchAyudaVEPersons() {
       const data = await response.json();
       items = Array.isArray(data) ? data : (data.items || []);
     } else {
-      console.warn(`[AyudaVE Sync] La API retornó ${response.status}. Usando fallback de datos fidedignos simulados para desarrollo...`);
-      items = generateMockAyudaVEData();
+      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. Usando fallback de datos fidedignos simulados para desarrollo...`);
+      items = generateMockReencuentroData();
     }
 
     let processed = 0;
@@ -77,17 +77,17 @@ export async function fetchAyudaVEPersons() {
       }
     }
 
-    console.log(`[AyudaVE Sync] Sincronización completada: ${processed} personas procesadas.`);
+    console.log(`[Reencuentro Sync] Sincronización completada: ${processed} personas procesadas.`);
     return processed;
     
   } catch (error: any) {
-    console.error(`[AyudaVE Sync] Error crítico:`, error.message);
+    console.error(`[Reencuentro Sync] Error crítico:`, error.message);
     throw error;
   }
 }
 
 // Fallback de datos simulados realistas basados en la crisis real
-function generateMockAyudaVEData() {
+function generateMockReencuentroData() {
   const names = ['Carlos', 'Luis', 'Jose', 'Maria', 'Ana', 'Carmen', 'Jorge', 'Miguel', 'Sofia', 'Valentina'];
   const lastNames = ['Rodriguez', 'Perez', 'Gonzalez', 'Gomez', 'Lopez', 'Diaz', 'Martinez', 'Hernandez'];
   const states = ['Vargas', 'Distrito Capital', 'Miranda', 'Aragua', 'Carabobo'];
@@ -97,13 +97,13 @@ function generateMockAyudaVEData() {
     const latOffset = (Math.random() - 0.5) * 1.5;
     const lngOffset = (Math.random() - 0.5) * 2;
     mockData.push({
-      id: `ext-ayudave-${i}`,
+      id: `ext-reencuentro-${i}`,
       nombre: `${names[Math.floor(Math.random() * names.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
       status: Math.random() > 0.85 ? 'found' : 'missing',
       edad: Math.floor(Math.random() * 60) + 5,
       estado: states[Math.floor(Math.random() * states.length)],
-      descripcion: 'Reporte ingresado desde la central de ApoyaVe/AyudaVE.',
-      foto_url: `https://i.pravatar.cc/150?u=ayudave-${i}`,
+      descripcion: 'Reporte ingresado desde la central de ApoyaVe/Reencuentro.',
+      foto_url: `https://i.pravatar.cc/150?u=reencuentro-${i}`,
       lastSeen: {
         coordinates: {
           coordinates: [-66.9333 + lngOffset, 10.5833 + latOffset] // Cerca de La Guaira/Caracas
