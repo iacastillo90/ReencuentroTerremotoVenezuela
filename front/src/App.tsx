@@ -39,7 +39,11 @@ function App() {
           api.get<Counts>('/persons/counts')
         ]);
         const { total: t, persons: p } = pRes.data;
-        setPersons(p);
+        
+        // Mezclar aleatoriamente los primeros resultados para que la vista inicial sea diferente cada vez
+        const shuffledPersons = [...p].sort(() => Math.random() - 0.5);
+        
+        setPersons(shuffledPersons);
         setTotal(t);
         setOffset(PAGE_SIZE);
         setHasMore(PAGE_SIZE < t);
