@@ -13,6 +13,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
   const [text, setText] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -35,7 +36,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
     setError('');
 
     try {
-      const payload = {
+      let photoUrl = '';
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await api.post('/media', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        photoUrl = uploadRes.data.url;
+      }
+
+      const payload: any = {
         source: 'manual',
         externalId: `manual_${Date.now()}`,
         type,
@@ -44,6 +55,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         text: text.trim(),
         date: new Date().toISOString()
       };
+      
+      if (photoUrl) payload.photoUrl = photoUrl;
 
       await api.post('/persons', payload);
       setIsSuccess(true);
@@ -135,6 +148,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                   placeholder="Ej: Tiene 45 años, llevaba una camisa azul. Sufre de hipertensión y la última vez fue vista cerca de la plaza mayor. Estaba con su hijo pequeño..."
                   disabled={isSubmitting}
                 ></textarea>
+              </div>
+
+              <div className="form-group">
+                <label>Foto o Video Corto (MP4)</label>
+                <input 
+                  type="file" 
+                  accept="image/*,video/mp4" 
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  disabled={isSubmitting}
+                  style={{ padding: '0.5rem' }}
+                />
+                <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+                  Sube una imagen clara para ayudar a la inteligencia artificial en futuras coincidencias.
+                </small>
               </div>
 
               <div className="form-actions">

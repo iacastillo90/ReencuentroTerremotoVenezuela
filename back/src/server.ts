@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import app from './app';
 import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';
+import { initializeStorage } from './services/storage.service';
 import './workers/disaster-sync.worker';
 import './workers/ia-processor.worker';
 
@@ -13,6 +14,7 @@ async function bootstrap() {
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
 
+    await initializeStorage();
     await setupDisasterSyncJobs();
 
     app.listen(PORT, () => {

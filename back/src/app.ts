@@ -7,6 +7,7 @@ import { personRouter } from './routes/person.route';
 import { webhooksRouter } from './routes/webhooks.route';
 import { adminRouter } from './routes/admin.route';
 import { disastersRouter } from './routes/disasters.route';
+import { mediaRouter } from './routes/media.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/webhooks', webhooksRouter);
 // Ruta administrativa protegida
 app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
+app.use('/api/media', mediaRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
