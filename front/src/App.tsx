@@ -11,7 +11,7 @@ function App() {
   const [disasters, setDisasters] = useState<Disaster[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'disasters' | 'persons'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'disasters' | 'persons' | 'animals'>('all');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   useEffect(() => {
@@ -77,7 +77,19 @@ function App() {
               <Users size={20} />
               <div>
                 <h4>{persons.filter(p => p.status === 'missing').length}</h4>
-                <p>Desaparecidos</p>
+                <p>Personas Buscadas</p>
+              </div>
+            </div>
+            <div 
+              className={`stat-card animals ${activeFilter === 'animals' ? 'active' : ''}`}
+              onClick={() => setActiveFilter(activeFilter === 'animals' ? 'all' : 'animals')}
+              style={{ backgroundColor: activeFilter === 'animals' ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-hover)' }}
+            >
+              {/* Using AlertTriangle temporarily for animals if icon missing, but best if we have a PawPrint. We don't have PawPrint imported, so we just use an emoji or simple text */}
+              <span style={{ fontSize: '1.2rem', filter: 'grayscale(1)' }}>🐾</span>
+              <div>
+                <h4>0</h4>
+                <p>Mascotas Perdidas</p>
               </div>
             </div>
           </div>
@@ -136,6 +148,13 @@ function App() {
                 )}
               </div>
             </>
+          )}
+
+          {activeFilter === 'animals' && (
+            <div className="persons-list">
+              <h3>Mascotas Reportadas (0)</h3>
+              <p className="empty-state">No hay registros de mascotas perdidas en este momento. La plataforma está lista para recibir reportes de animales.</p>
+            </div>
           )}
 
           {activeFilter === 'disasters' && (

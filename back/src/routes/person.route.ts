@@ -3,6 +3,7 @@ import { personPayloadSchema } from '../validators/person.validator';
 import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { PersonModel } from '../models/unified-person.model';
+import { connection as redis } from '../config/redis.config';
 
 const router = Router();
 
@@ -20,6 +21,14 @@ router.get('/', async (req: Request, res: Response) => {
       filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
     }
 
+    const cacheKey = `persons:q=${q || ''}:status=${status || ''}`;
+    
+    // Attempt to get from cache first (Alta Demanda Protection)
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
     // Proyección segura: excluir PII, contactPerson, externalIds
     const safeProjection = {
       name: 1,
@@ -28,10 +37,14 @@ router.get('/', async (req: Request, res: Response) => {
       'lastSeen.municipality': 1,
       'lastSeen.description': 1,
       'lastSeen.date': 1,
+      'lastSeen.coordinates': 1,
       age: 1,
       gender: 1,
       description: 1,
       photoUrl: 1,
+      'data.cedula': 1,
+      'data.origen': 1,
+      'data.ficha_url': 1,
       'metadata.createdAt': 1,
       'metadata.urgencyScore': 1
     };
@@ -41,6 +54,9 @@ router.get('/', async (req: Request, res: Response) => {
       .limit(1000)
       .sort({ 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
       .lean();
+
+    // Cache the result for 60 seconds (1 minute) to survive traffic spikes
+    await redis.setex(cacheKey, 60, JSON.stringify(persons));
 
     return res.status(200).json(persons);
   } catch (error: any) {
