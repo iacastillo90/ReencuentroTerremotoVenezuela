@@ -10,6 +10,12 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentr
 
 async function bootstrap() {
   try {
+    // Fail-fast in production if JWT_SECRET is missing
+    if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+      console.error('[FATAL] JWT_SECRET is required in production');
+      process.exit(1);
+    }
+
     console.log(`[Server] Conectando a MongoDB en ${MONGO_URI}...`);
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
