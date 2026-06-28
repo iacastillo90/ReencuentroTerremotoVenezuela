@@ -9,11 +9,13 @@ interface ReportModalProps {
 }
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType = 'person' }) => {
+  const [reportAction, setReportAction] = useState<'busco' | 'vi'>('busco');
   const [type, setType] = useState<'person' | 'animal'>(defaultType);
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -52,8 +54,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         type,
         name: name.trim(),
         estado: estado.trim(),
-        text: text.trim(),
-        date: new Date().toISOString()
+        // Enrich text for the AI worker to understand context and intent
+        text: `${reportAction === 'vi' ? '[REPORTE: HE VISTO A ESTA PERSONA]' : '[REPORTE: ESTOY BUSCANDO A ESTA PERSONA]'} ${isAnonymous ? '[ANÓNIMO]' : ''}\n${text.trim()}`,
+        date: new Date().toISOString(),
+        isAnonymous
       };
       
       if (photoUrl) payload.photoUrl = photoUrl;
@@ -73,7 +77,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         
         <header className="report-modal-header">
           <h2 className="report-modal-title">
-            Reportar {type === 'person' ? 'Desaparecido' : 'Mascota Perdida'}
+            Crear Reporte
           </h2>
           {!isSubmitting && (
             <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
@@ -110,12 +114,21 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 </div>
               )}
 
-              <div className="form-group">
-                <label>¿A quién buscas?</label>
-                <select value={type} onChange={(e) => setType(e.target.value as any)}>
-                  <option value="person">Persona</option>
-                  <option value="animal">Mascota</option>
-                </select>
+              <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label>¿Qué deseas reportar?</label>
+                  <select value={reportAction} onChange={(e) => setReportAction(e.target.value as any)}>
+                    <option value="busco">Estoy buscando a alguien</option>
+                    <option value="vi">He visto a alguien</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Tipo</label>
+                  <select value={type} onChange={(e) => setType(e.target.value as any)}>
+                    <option value="person">Persona</option>
+                    <option value="animal">Mascota</option>
+                  </select>
+                </div>
               </div>
 
               <div className="form-group">
@@ -145,9 +158,23 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 <textarea 
                   value={text} 
                   onChange={(e) => setText(e.target.value)} 
-                  placeholder="Ej: Tiene 45 años, llevaba una camisa azul. Sufre de hipertensión y la última vez fue vista cerca de la plaza mayor. Estaba con su hijo pequeño..."
+                  placeholder={reportAction === 'busco' ? "Ej: Tiene 45 años, llevaba una camisa azul. Sufre de hipertensión..." : "Ej: Está en el refugio de La Trinidad, llevaba una camisa azul, se ve un poco desorientado..."}
                   disabled={isSubmitting}
                 ></textarea>
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="anon-checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  disabled={isSubmitting}
+                  style={{ width: 'auto' }}
+                />
+                <label htmlFor="anon-checkbox" style={{ margin: 0, fontWeight: 'normal', cursor: 'pointer' }}>
+                  Reportar de forma anónima (Ocultar mi nombre)
+                </label>
               </div>
 
               <div className="form-group">
