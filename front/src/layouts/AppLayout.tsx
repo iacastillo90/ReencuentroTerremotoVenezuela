@@ -3,7 +3,7 @@ import { MapPin, PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as Us
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
-type View = 'feed' | 'map' | 'report' | 'admin';
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -28,6 +28,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const navItems: { view: View; icon: React.ReactNode; label: string }[] = [
     { view: 'feed',   icon: <Users size={22} />,    label: 'Personas' },
     { view: 'map',    icon: <Map size={22} />,       label: 'Mapa' },
+    { view: 'library',icon: <BookOpen size={22} />,  label: 'Biblioteca' },
     { view: 'report', icon: <PlusCircle size={22} />, label: 'Reportar' },
   ];
 
@@ -71,6 +72,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           >
             <Map size={14} style={{ display: 'inline', marginRight: 6 }} />
             Mapa
+          </button>
+          <button
+            className={`toggle-pill ${activeView === 'library' ? 'active' : ''}`}
+            onClick={() => onViewChange('library')}
+          >
+            <BookOpen size={14} style={{ display: 'inline', marginRight: 6 }} />
+            Biblioteca
           </button>
         </div>
 
