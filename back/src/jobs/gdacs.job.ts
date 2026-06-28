@@ -1,6 +1,6 @@
 import Parser from 'rss-parser';
 import { DisasterEventModel } from '../models/disaster-event.model';
-import { getTargetBoundingBox, isPointInsideBBox } from '../util/geo.util';
+import { getTargetBoundingBox, isPointInsideBBox } from '../utils/geo.util';
 
 const parser = new Parser({
   customFields: {

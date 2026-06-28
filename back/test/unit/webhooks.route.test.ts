@@ -1,8 +1,8 @@
 import request from 'supertest';
-import app from '../app';
-import { addJobToIAQueue } from '../queues/ia-process.queue';
+import app from '../../src/app';
+import { addJobToIAQueue } from '../../src/queues/ia-process.queue';
 
-jest.mock('../queues/ia-process.queue', () => ({
+jest.mock('../../src/queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 

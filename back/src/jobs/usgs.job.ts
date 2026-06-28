@@ -1,5 +1,5 @@
 import { DisasterEventModel } from '../models/disaster-event.model';
-import { getTargetBoundingBox } from '../util/geo.util';
+import { getTargetBoundingBox } from '../utils/geo.util';
 
 export async function fetchUSGSEarthquakes() {
   const bbox = getTargetBoundingBox();

@@ -1,17 +1,17 @@
 import { Job } from 'bullmq';
-import { processAndReconcilePerson } from '../services/reconciliation.service';
+import { processAndReconcilePerson } from '../../src/services/reconciliation.service';
 
-import { iaProcessorWorker } from './ia-processor.worker';
+import { iaProcessorWorker } from '../../src/workers/ia-processor.worker';
 
-jest.mock('../services/reconciliation.service', () => ({
+jest.mock('../../src/services/reconciliation.service', () => ({
   processAndReconcilePerson: jest.fn()
 }));
 
-jest.mock('../config/redis.config', () => ({
+jest.mock('../../src/config/redis.config', () => ({
   connection: {} // mock redis connection
 }));
 
-jest.mock('../services/ai/ai.factory', () => ({
+jest.mock('../../src/services/ai/ai.factory', () => ({
   getAIProvider: jest.fn().mockReturnValue({
     processRecord: jest.fn().mockResolvedValue({
       name: 'Maria Rojas',

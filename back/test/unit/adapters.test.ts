@@ -1,5 +1,5 @@
-import { VenezuelaTeBuscaAdapter } from './venezuela-te-busca.adapter';
-import { WebFormAdapter } from './web-form.adapter';
+import { VenezuelaTeBuscaAdapter } from '../../src/adapters/venezuela-te-busca.adapter';
+import { WebFormAdapter } from '../../src/adapters/web-form.adapter';
 
 describe('Source Adapters', () => {
   describe('VenezuelaTeBuscaAdapter', () => {

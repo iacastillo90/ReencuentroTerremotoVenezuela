@@ -1,15 +1,15 @@
 import request from 'supertest';
-import app from '../app';
-import { checkSyncState } from '../services/sync-state.service';
-import { addJobToIAQueue } from '../queues/ia-process.queue';
-import { PersonModel } from '../models/unified-person.model';
+import app from '../../src/app';
+import { checkSyncState } from '../../src/services/sync-state.service';
+import { addJobToIAQueue } from '../../src/queues/ia-process.queue';
+import { PersonModel } from '../../src/models/unified-person.model';
 
 // Mock dependencies
-jest.mock('../services/sync-state.service', () => ({
+jest.mock('../../src/services/sync-state.service', () => ({
   checkSyncState: jest.fn()
 }));
 
-jest.mock('../queues/ia-process.queue', () => ({
+jest.mock('../../src/queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
@@ -17,7 +17,7 @@ const mockLean = jest.fn().mockResolvedValue([
   { name: 'Maria Rojas', status: 'missing', age: 30 }
 ]);
 
-jest.mock('../models/unified-person.model', () => ({
+jest.mock('../../src/models/unified-person.model', () => ({
   PersonModel: {
     find: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),

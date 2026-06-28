@@ -1,7 +1,7 @@
-import { AnthropicProvider } from './anthropic.service';
-import { OpenAIProvider } from './openai.service';
-import { GeminiProvider } from './gemini.service';
-import { getAIProvider } from './ai.factory';
+import { AnthropicProvider } from '../../src/services/ai/anthropic.service';
+import { OpenAIProvider } from '../../src/services/ai/openai.service';
+import { GeminiProvider } from '../../src/services/ai/gemini.service';
+import { getAIProvider } from '../../src/services/ai/ai.factory';
 
 // Mocks
 jest.mock('@anthropic-ai/sdk', () => {

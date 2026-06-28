@@ -1,5 +1,5 @@
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
-import { calculateSimilarity } from '../util/fuzzy-match.util';
+import { calculateSimilarity } from '../utils/fuzzy-match.util';
 import { addJobToManualAudit } from '../queues/manual-audit.queue';
 import { upsertPerson } from './person.service';
 

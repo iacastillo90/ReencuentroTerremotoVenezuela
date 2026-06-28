@@ -1,6 +1,6 @@
 import { parse } from 'csv-parse/sync';
 import { DisasterEventModel } from '../models/disaster-event.model';
-import { getTargetBoundingBox } from '../util/geo.util';
+import { getTargetBoundingBox } from '../utils/geo.util';
 
 export async function fetchFIRMSFires() {
   const apiKey = process.env.FIRMS_API_KEY;
