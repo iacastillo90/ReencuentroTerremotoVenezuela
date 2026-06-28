@@ -8,7 +8,7 @@ jest.mock('@anthropic-ai/sdk', () => {
   return jest.fn().mockImplementation(() => ({
     messages: {
       create: jest.fn().mockResolvedValue({
-        content: [{ type: 'text', text: '{"safeDescription": "Mocked Anthropic", "medicalStatus": "estable", "urgencyScore": 10}' }]
+        content: [{ type: 'text', text: '{"name": "Juan", "estado": "Zulia", "safeDescription": "Mocked Anthropic", "medicalStatus": "estable", "urgencyScore": 10}' }]
       })
     }
   }));
@@ -19,7 +19,7 @@ jest.mock('openai', () => {
     chat: {
       completions: {
         create: jest.fn().mockResolvedValue({
-          choices: [{ message: { content: '{"safeDescription": "Mocked OpenAI", "medicalStatus": "herido", "urgencyScore": 50}' } }]
+          choices: [{ message: { content: '{"name": "Juan", "estado": "Zulia", "safeDescription": "Mocked OpenAI", "medicalStatus": "herido", "urgencyScore": 50}' } }]
         })
       }
     }
@@ -30,7 +30,7 @@ jest.mock('@google/genai', () => ({
   GoogleGenAI: jest.fn().mockImplementation(() => ({
     models: {
       generateContent: jest.fn().mockResolvedValue({
-        text: '{"safeDescription": "Mocked Gemini", "medicalStatus": "crisis", "urgencyScore": 90}'
+        text: '{"name": "Juan", "estado": "Zulia", "safeDescription": "Mocked Gemini", "medicalStatus": "crisis", "urgencyScore": 90}'
       })
     }
   }))

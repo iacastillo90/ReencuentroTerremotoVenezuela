@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { upsertPerson } from '../services/person.service';
+import { processAndReconcilePerson } from '../services/reconciliation.service';
 import { connection } from '../config/redis.config';
 import { getAIProvider } from '../services/ai/ai.factory';
 
@@ -9,35 +9,34 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   // 1. Fase de Análisis IA
   const aiProvider = getAIProvider();
   
-  // Convert rawData to a string representation for the AI
-  const rawTextToAnalyze = JSON.stringify({
-    name: rawData.name,
-    description: rawData.description || 'No specific description provided',
-    estado: rawData.estado
-  });
+  // Send the full raw data or text to the AI for extraction
+  const rawTextToAnalyze = typeof rawData.text === 'string' 
+    ? rawData.text 
+    : JSON.stringify(rawData);
   
   const aiResult = await aiProvider.processRecord(rawTextToAnalyze);
   
+  // 2. Extracted Data
   const aiProcessedText = aiResult.safeDescription; 
   const urgencyScore = aiResult.urgencyScore;
-
+  const personName = aiResult.name || rawData.name || 'Desconocido';
+  const personState = aiResult.estado || rawData.estado || 'Desconocido';
+  const personAge = aiResult.age || (rawData.data?.age ? Number(rawData.data.age) : undefined);
   
-  // 2. Persistencia Idempotente en el Hub MongoDB usando el servicio
-  const ageNum = rawData.data?.age ? Number(rawData.data.age) : undefined;
-  
-  const person = await upsertPerson(
+  // 3. Reconciliación e Inserción Idempotente
+  const result = await processAndReconcilePerson(
     rawData.source || 'manual',
     rawData.externalId || job.id || 'unknown',
     {
       type: rawData.type || 'person',
-      name: rawData.name,
-      normalizedName: String(rawData.name).toLowerCase(),
+      name: personName,
+      normalizedName: String(personName).toLowerCase(),
       lastSeen: {
         description: aiProcessedText,
-        state: rawData.estado,
+        state: personState,
         date: rawData.date ? new Date(rawData.date) : new Date()
       },
-      age: ageNum,
+      age: personAge,
       metadata: {
         urgencyScore: urgencyScore,
         confidenceScore: rawData.confidence_score,
@@ -52,6 +51,6 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
     }
   );
 
-  console.log(`[ia-processor] Registro procesado e inyectado en Mongo. idHash: ${person.idHash}`);
+  console.log(`[ia-processor] Registro reconciliado (${result.status}). idHash: ${result.idHash || 'pendiente'}`);
 }, { connection: connection as any });
 
