@@ -13,6 +13,9 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const { login, user, token } = useAuth();
   
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
+  const isDevMode = GOOGLE_CLIENT_ID === 'dummy-client-id';
+  
   // States
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +39,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     } catch (err: any) {
       console.error(err);
       setError('Error al iniciar sesión con Google.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBypassLogin = async () => {
+    try {
+      setIsSubmitting(true);
+      setError('');
+      // Generar un JWT falso para el backend en entorno local
+      const mockPayload = {
+        sub: "dev-user-123",
+        email: "dev@ayudave.com",
+        name: "Desarrollador Local",
+        picture: "https://via.placeholder.com/150"
+      };
+      const mockToken = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })) + '.' + btoa(JSON.stringify(mockPayload)) + '.signature';
+      
+      const res = await api.post('/auth/google', { token: mockToken });
+      login(res.data.token, res.data.user);
+      
+      if (res.data.user.isProfileComplete) {
+        onSuccess();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Error al iniciar sesión en modo desarrollador.');
     } finally {
       setIsSubmitting(false);
     }
@@ -91,11 +121,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
               <p style={{ marginBottom: '1.5rem', color: 'var(--clr-text-muted)' }}>
                 Para reportar a una persona o mascota, por favor inicia sesión. Esto nos ayuda a evitar reportes duplicados y a contactarte si hay novedades.
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => setError('Google Login Failed')}
                 />
+                
+                {isDevMode && (
+                  <button 
+                    onClick={handleBypassLogin}
+                    disabled={isSubmitting}
+                    style={{
+                      background: 'var(--clr-surface)',
+                      border: '1px dashed var(--clr-border)',
+                      color: 'var(--clr-text-muted)',
+                      padding: '8px 16px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    Bypass Login (Modo de Desarrollo)
+                  </button>
+                )}
               </div>
             </div>
           ) : needsProfileCompletion ? (
