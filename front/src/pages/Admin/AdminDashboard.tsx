@@ -103,53 +103,55 @@ function SectionDuplicados() {
           <p>¡Sin duplicados pendientes! El sistema está limpio.</p>
         </div>
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Reporte Entrante</th>
-              <th>Candidato Existente</th>
-              <th>Similitud</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {jobs.map(job => (
-              <tr key={job.jobId}>
-                <td>
-                  <div className="name-cell">
-                    <div className="person-thumb-placeholder"><Users size={16} /></div>
-                    <div>
-                      <strong>{job.incoming?.personData?.name || '—'}</strong><br />
-                      <small style={{ color: '#64748b' }}>{job.incoming?.personData?.lastSeen?.state || ''}</small>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  {job.candidates?.slice(0, 1).map((c: any) => (
-                    <div key={c.idHash} className="name-cell">
+        <div className="table-responsive-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Reporte Entrante</th>
+                <th>Candidato Existente</th>
+                <th>Similitud</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map(job => (
+                <tr key={job.jobId}>
+                  <td>
+                    <div className="name-cell">
                       <div className="person-thumb-placeholder"><Users size={16} /></div>
                       <div>
-                        <strong>{c.name}</strong><br />
-                        <small style={{ color: '#64748b' }}>{c.lastSeen?.state || ''}</small>
+                        <strong>{job.incoming?.personData?.name || '—'}</strong><br />
+                        <small style={{ color: '#64748b' }}>{job.incoming?.personData?.lastSeen?.state || ''}</small>
                       </div>
                     </div>
-                  ))}
-                </td>
-                <td><span className="admin-badge pending">Alta</span></td>
-                <td>
-                  <div className="action-buttons">
-                    <button className="btn-merge" onClick={() => merge(job.jobId, job.candidates?.[0]?.idHash)}>
-                      Fusionar
-                    </button>
-                    <button className="btn-dismiss" onClick={() => dismiss(job.jobId)}>
-                      Son diferentes
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td>
+                    {job.candidates?.slice(0, 1).map((c: any) => (
+                      <div key={c.idHash} className="name-cell">
+                        <div className="person-thumb-placeholder"><Users size={16} /></div>
+                        <div>
+                          <strong>{c.name}</strong><br />
+                          <small style={{ color: '#64748b' }}>{c.lastSeen?.state || ''}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </td>
+                  <td><span className="admin-badge pending">Alta</span></td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="btn-merge" onClick={() => merge(job.jobId, job.candidates?.[0]?.idHash)}>
+                        Fusionar
+                      </button>
+                      <button className="btn-dismiss" onClick={() => dismiss(job.jobId)}>
+                        Son diferentes
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -195,83 +197,85 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
       {loading ? (
         <div className="admin-loading"><Loader2 className="spinner" size={24} /><span>Cargando registros...</span></div>
       ) : (
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Persona</th>
-              <th>Estado</th>
-              <th>Fuente</th>
-              <th>Auditoría IA</th>
-              <th>Urgencia</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.slice(0, 50).map(p => {
-              const status = p.status;
-              const auditStatus = p['metadata.auditStatus'] || p.metadata?.auditStatus;
-              const source = p['metadata.source'] || p.metadata?.source;
-              const urgency = p['metadata.urgencyScore'] ?? p.metadata?.urgencyScore ?? 0;
-              const state = p.lastSeen?.state || p['lastSeen.state'] || '—';
+        <div className="table-responsive-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Persona</th>
+                <th>Estado</th>
+                <th>Fuente</th>
+                <th>Auditoría IA</th>
+                <th>Urgencia</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice(0, 50).map(p => {
+                const status = p.status;
+                const auditStatus = p['metadata.auditStatus'] || p.metadata?.auditStatus;
+                const source = p['metadata.source'] || p.metadata?.source;
+                const urgency = p['metadata.urgencyScore'] ?? p.metadata?.urgencyScore ?? 0;
+                const state = p.lastSeen?.state || p['lastSeen.state'] || '—';
 
-              return (
-                <tr key={p.idHash}>
-                  <td>
-                    <div className="name-cell">
-                      {p.photoUrl
-                        ? <img src={p.photoUrl} alt={p.name} className="person-thumb" />
-                        : <div className="person-thumb-placeholder"><Users size={16} /></div>
-                      }
-                      <div>
-                        <strong style={{ color: '#f1f5f9' }}>{p.name}</strong><br />
-                        <small style={{ color: '#64748b' }}>{state}{p.age ? ` · ${p.age} años` : ''}</small>
+                return (
+                  <tr key={p.idHash}>
+                    <td>
+                      <div className="name-cell">
+                        {p.photoUrl
+                          ? <img src={p.photoUrl} alt={p.name} className="person-thumb" />
+                          : <div className="person-thumb-placeholder"><Users size={16} /></div>
+                        }
+                        <div>
+                          <strong style={{ color: '#f1f5f9' }}>{p.name}</strong><br />
+                          <small style={{ color: '#64748b' }}>{state}{p.age ? ` · ${p.age} años` : ''}</small>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`admin-badge ${status}`}>
-                      {status === 'missing' ? 'Desaparecido' : status === 'found' ? 'Encontrado' : status}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`admin-badge ${source === 'manual' ? 'manual' : 'api'}`}>
-                      {source === 'manual' ? 'Reporte manual' : source || 'API'}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`admin-badge ${auditStatus === 'pending_review' ? 'pending' : auditStatus === 'merged' ? 'found' : 'api'}`}>
-                      {auditStatus === 'pending_review' ? 'Revisión' : auditStatus === 'merged' ? 'Fusionado' : 'Limpio'}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ color: urgency > 70 ? '#fb7185' : urgency > 40 ? '#fbbf24' : '#34d399', fontWeight: 600 }}>
-                      {urgency}/100
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      {status === 'missing' && (
-                        <button className="btn-found" onClick={() => changeStatus(p.idHash, 'found')}>
-                          <CheckCircle size={14} style={{ display: 'inline', marginRight: 4 }} />
-                          Encontrado
-                        </button>
-                      )}
-                      {status === 'found' && (
-                        <button className="btn-dismiss" onClick={() => changeStatus(p.idHash, 'missing')}>
-                          <XCircle size={14} style={{ display: 'inline', marginRight: 4 }} />
-                          Reabrir
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>Sin resultados</td></tr>
-            )}
-          </tbody>
-        </table>
+                    </td>
+                    <td>
+                      <span className={`admin-badge ${status}`}>
+                        {status === 'missing' ? 'Desaparecido' : status === 'found' ? 'Encontrado' : status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`admin-badge ${source === 'manual' ? 'manual' : 'api'}`}>
+                        {source === 'manual' ? 'Reporte manual' : source || 'API'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`admin-badge ${auditStatus === 'pending_review' ? 'pending' : auditStatus === 'merged' ? 'found' : 'api'}`}>
+                        {auditStatus === 'pending_review' ? 'Revisión' : auditStatus === 'merged' ? 'Fusionado' : 'Limpio'}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ color: urgency > 70 ? '#fb7185' : urgency > 40 ? '#fbbf24' : '#34d399', fontWeight: 600 }}>
+                        {urgency}/100
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        {status === 'missing' && (
+                          <button className="btn-found" onClick={() => changeStatus(p.idHash, 'found')}>
+                            <CheckCircle size={14} style={{ display: 'inline', marginRight: 4 }} />
+                            Encontrado
+                          </button>
+                        )}
+                        {status === 'found' && (
+                          <button className="btn-dismiss" onClick={() => changeStatus(p.idHash, 'missing')}>
+                            <XCircle size={14} style={{ display: 'inline', marginRight: 4 }} />
+                            Reabrir
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>Sin resultados</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -334,11 +338,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
       {/* Main */}
       <main className="admin-main">
         <header className="admin-topbar">
+        <div className="admin-topbar-header-row">
           <h1>
             {activeSection === 'resumen'    && 'Resumen General'}
             {activeSection === 'duplicados' && 'Gestión de Duplicados'}
             {activeSection === 'registros'  && 'Control de Registros'}
           </h1>
+          <button className="admin-back-btn" onClick={onBack} style={{ display: 'none' /* Will show on mobile by default later if needed, actually we hide it in bottom nav so let's put it here */ }}>
+            <ArrowLeft size={16} /> Volver
+          </button>
+        </div>
           <div className="admin-topbar-meta">
             <span>{persons.length.toLocaleString()} registros totales</span>
           </div>
