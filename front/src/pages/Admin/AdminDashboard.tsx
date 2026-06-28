@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, GitMerge, ShieldCheck,
   ArrowLeft, Search, Loader2, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import './AdminDashboard.css';
 
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_API_KEY || '';

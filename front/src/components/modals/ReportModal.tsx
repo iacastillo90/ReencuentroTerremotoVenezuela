@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Send, Loader2, CheckCircle } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 import './ReportModal.css';
 
 interface ReportModalProps {

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Person } from '../types';
+import type { Person } from '../../types';
 import { 
   X, MapPin, User, Phone, CheckCircle, Heart, 
   MessageCircle, AlertCircle, Share2, Info
