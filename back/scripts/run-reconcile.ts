@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { runGeospatialCrossover, runFuzzyMatching } from '../src/jobs/reconcile.job';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ayudave';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
 async function run() {
   console.log(`Conectando a ${MONGO_URI}...`);

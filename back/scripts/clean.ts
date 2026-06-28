@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { PersonModel } from '../src/models/unified-person.model';
 import { DisasterEventModel } from '../src/models/disaster-event.model';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ayudave';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
 async function clean() {
   console.log(`Conectando a ${MONGO_URI}...`);
