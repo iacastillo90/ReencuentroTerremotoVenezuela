@@ -59,6 +59,19 @@ ReencuentroTerremotoVenezuela/
 
 ---
 
+## ☁️ Infraestructura y Despliegue Actual (Producción)
+
+Actualmente, la plataforma opera bajo un modelo de servicios en la nube descentralizados (PaaS / Serverless), garantizando un despliegue tolerante a fallos sin necesidad de gestionar servidores propios:
+
+1. **Frontend (Vercel):** La aplicación React se despliega automáticamente desde GitHub a **Vercel** (`reencuentroterremotovenezuela.vercel.app`), aprovechando su CDN global para distribuir la carga inicial al usuario casi instantáneamente.
+2. **Backend API (Render):** El servidor Node.js/Express está montado como un *Web Service* en **Render**. Escucha las peticiones de la aplicación web y gestiona la seguridad y rutas.
+3. **Backend Worker (Render):** Se usa un *Background Worker* separado (también en Render) que arranca el entorno, pero se dedica exclusivamente a limpiar las colas de BullMQ (como procesar las peticiones a la IA) y correr los `node-cron` para los scrapers. Esto asegura que tareas pesadas no bloqueen el API principal.
+4. **Base de Datos (MongoDB Atlas):** Se utiliza **MongoDB Atlas** en la nube, exponiendo la cadena `mongodb+srv://`. Ofrece failover automático y copias de seguridad continuas.
+5. **Caché y Colas (Upstash):** Las colas de trabajos y la caché en memoria son manejadas por una instancia *Serverless* de **Upstash Redis**. Proporciona tiempos de respuesta de milisegundos para contadores y ruteo de BullMQ con soporte TLS automático.
+6. **Almacenamiento (Supabase Storage):** Toda imagen cargada se guarda en un bucket de **Supabase** usando su capa de compatibilidad S3 (`MinIO client` en el backend), liberando así el disco efímero de Render.
+
+---
+
 ## 🧩 Entidades de Base de Datos (Modelos)
 
 Nuestra base de datos NoSQL aloja entidades diseñadas con un propósito específico para resolver el caos de la información durante desastres.
