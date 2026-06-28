@@ -4,437 +4,174 @@
     "version": "1.0.0",
     "note": "Información verificada al momento de publicación. Los datos pueden cambiar rápidamente durante la emergencia. Verificar antes de actuar."
   },
-
   "tabs": {
     "searchers": {
       "id": "buscadores",
-      "label": "Si buscas a alguien",
-      "description": "Plataformas, líneas y canales para localizar a personas afectadas por el terremoto."
+      "label": "Directorio de Emergencias",
+      "description": "Números nacionales, protección civil, bomberos y plataformas de búsqueda."
     },
     "affected": {
       "id": "afectados",
-      "label": "Si necesitas ayuda",
-      "description": "Refugios, insumos, atención médica y servicios para personas damnificadas."
+      "label": "Recursos y Ayuda",
+      "description": "Hospitales, centros de acopio, donaciones y qué hacer tras un sismo."
     }
   },
-
   "categories": {
-    "buscadores": [
-      "plataformas_busqueda",
-      "contacto_familiar",
-      "emergencias",
-      "voluntarios"
-    ],
-    "afectados": [
-      "refugios",
-      "centros_acopio",
-      "atencion_medica",
-      "conectividad",
-      "apoyo_emocional"
-    ]
+    "buscadores": ["emergencias_nacionales", "proteccion_civil", "bomberos", "plataformas_busqueda"],
+    "afectados": ["hospitales", "acopio", "donaciones", "guias"]
   },
-
   "resources": {
-
     "buscadores": [
-
+      {
+        "category": "emergencias_nacionales",
+        "categoryLabel": "Emergencia activa — números nacionales",
+        "items": [
+          {
+            "id": "171",
+            "name": "Emergencias 171",
+            "description": "Cantv (fijo)",
+            "url": "tel:171",
+            "active": true
+          },
+          {
+            "id": "112",
+            "name": "Digitel - Emergencias",
+            "description": "Línea de emergencias Digitel",
+            "url": "tel:112",
+            "active": true
+          },
+          {
+            "id": "911",
+            "name": "Emergencias 911 (Movistar)",
+            "description": "Línea nacional 911",
+            "url": "tel:911",
+            "active": true
+          },
+          {
+            "id": "ambulancias",
+            "name": "Aeroambulancias",
+            "description": "0212-993.25.41 / 0212-992.89.80",
+            "url": "tel:02129932541",
+            "active": true
+          },
+          {
+            "id": "rescarven",
+            "name": "Rescarven",
+            "description": "0212-993.69.11 / 0212-993.69.91",
+            "url": "tel:02129936911",
+            "active": true
+          }
+        ]
+      },
+      {
+        "category": "proteccion_civil",
+        "categoryLabel": "Protección Civil y Defensa Civil",
+        "items": [
+          {
+            "id": "pc-nacional",
+            "name": "Protección Civil Nacional",
+            "description": "0800-5588427 / 0800-2668446 / 0800-2624368",
+            "url": "tel:08005588427",
+            "active": true
+          },
+          {
+            "id": "defensa-civil",
+            "name": "Defensa Civil Nacional",
+            "description": "0800-28326 / 0800-24845",
+            "url": "tel:080028326",
+            "active": true
+          }
+        ]
+      },
       {
         "category": "plataformas_busqueda",
-        "categoryLabel": "Plataformas de búsqueda",
+        "categoryLabel": "Plataformas de búsqueda y emergencia",
         "items": [
           {
-            "id": "acopiove-busquedas",
-            "name": "AcopioVE — Búsqueda de personas",
-            "description": "Consulta el registro de personas localizadas en hospitales y albergues. Busca por nombre, apellido o cédula.",
-            "url": "https://acopiove.org/busquedas",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "También disponible por WhatsApp: +58 412-821-2482"
+            "id": "reencuentro",
+            "name": "Reencuentro Venezuela",
+            "description": "Busca a personas desaparecidas con inteligencia artificial y reconocimiento facial.",
+            "url": "https://reencuentro.help",
+            "active": true
           },
           {
-            "id": "civis-desaparecidos",
-            "name": "CIVIS Venezuela — Desaparecidos",
-            "description": "Busca, reporta y consulta el listado de personas localizadas. Incluye mapa interactivo con ubicación de afectados.",
-            "url": "https://civisvenezuela.com/desaparecidos",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Funciona parcialmente sin conexión. También tiene app para iOS y Android."
-          },
-          {
-            "id": "civis-estadisticas",
-            "name": "CIVIS — Panorama de la emergencia",
-            "description": "Cifras en vivo: personas localizadas, desaparecidas, refugios activos y zonas críticas.",
-            "url": "https://civisvenezuela.com/estadisticas",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "civis-mapa",
-            "name": "CIVIS — Mapa de daños y ayuda",
-            "description": "Mapa unificado con riesgos, edificios afectados, zonas de ayuda y ubicación de desaparecidos.",
-            "url": "https://civisvenezuela.com/mapa",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          }
-        ]
-      },
-
-      {
-        "category": "contacto_familiar",
-        "categoryLabel": "Restablecimiento de contacto familiar",
-        "items": [
-          {
-            "id": "cruz-roja-rcf",
-            "name": "Cruz Roja — Restablecimiento de Contacto Familiar (RCF)",
-            "description": "Servicio oficial de la Cruz Roja para reconectar familias separadas por el desastre. Canal verificado y moderado.",
-            "url": "https://acopiove.org/?modal=rcf",
-            "type": "organization",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Especialmente útil para familias en el exterior que buscan a personas dentro de Venezuela."
-          },
-          {
-            "id": "acopiove-bot-whatsapp",
-            "name": "Bot de WhatsApp — AcopioVE",
-            "description": "Asistente automático para buscar familiares, consultar refugios cercanos y obtener teléfonos de emergencia. Funciona con conexión limitada.",
-            "url": "https://wa.me/584128212482",
-            "type": "whatsapp",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Escribe 'Hola' o 'Inicio' para comenzar. Escribe 'menu' en cualquier momento para reiniciar."
-          },
-          {
-            "id": "civis-checkin",
-            "name": "CIVIS — Check-in de seguridad",
-            "description": "Permite avisar a tu familia que estás bien y consultar el estado de tus seres queridos.",
-            "url": "https://civisvenezuela.com/checkin",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "civis-estoy-bien",
-            "name": "CIVIS — Marcarme a salvo",
-            "description": "Registra tu estado como 'a salvo' para que tu familia pueda encontrarte en el sistema.",
-            "url": "https://civisvenezuela.com/estoy-bien",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          }
-        ]
-      },
-
-      {
-        "category": "emergencias",
-        "categoryLabel": "Emergencias y números oficiales",
-        "items": [
-          {
-            "id": "civis-numeros",
-            "name": "CIVIS — Directorio de emergencias",
-            "description": "Números de Protección Civil, Cruz Roja, ambulancias y servicios de rescate por región y ciudad.",
-            "url": "https://civisvenezuela.com/numeros",
-            "type": "directory",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "acopiove-telefonos",
-            "name": "AcopioVE — Teléfonos de emergencia",
-            "description": "Directorio con 78 teléfonos verificados por ciudad y tipo de servicio (rescate, salud, protección civil).",
-            "url": "https://acopiove.org/?modal=telefonos",
-            "type": "directory",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "civis-fuentes-oficiales",
-            "name": "CIVIS — Fuentes oficiales",
-            "description": "Acceso directo a FUNVISIS, sistema 911, Protección Civil e INAMEH. Alertas sísmicas en tiempo real.",
-            "url": "https://civisvenezuela.com/fuentes-oficiales",
-            "type": "directory",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "civis-replicas",
-            "name": "CIVIS — Réplicas y sismos recientes",
-            "description": "Monitoreo de réplicas en tiempo real con datos del USGS (Servicio Geológico de EE.UU.).",
-            "url": "https://civisvenezuela.com/replicas",
-            "type": "platform",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Útil para saber si la zona donde está tu familiar ha tenido réplicas recientes."
-          }
-        ]
-      },
-
-      {
-        "category": "voluntarios",
-        "categoryLabel": "Voluntarios e intérpretes",
-        "items": [
-          {
-            "id": "acopiove-interpretes",
-            "name": "AcopioVE — Voluntarios intérpretes",
-            "description": "Red de 1.878 intérpretes registrados que ofrecen apoyo remoto a familias afectadas, especialmente para venezolanos en el exterior.",
-            "url": "https://acopiove.org/interpretes",
-            "type": "volunteers",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Especialmente útil para familias de la diáspora que necesitan intermediarios para gestiones dentro de Venezuela."
-          },
-          {
-            "id": "civis-soy-voluntario",
-            "name": "CIVIS — Registrarme como voluntario",
-            "description": "Plataforma para que voluntarios ofrezcan transporte, comida, alojamiento temporal o habilidades específicas a personas afectadas.",
-            "url": "https://civisvenezuela.com/voluntario",
-            "type": "volunteers",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "acopiove-coordinadores",
-            "name": "AcopioVE — Coordinadores logísticos (diáspora)",
-            "description": "Red de coordinadores que organizan envíos de ayuda humanitaria desde el exterior hacia Venezuela.",
-            "url": "https://acopiove.org/?modal=coordinadores",
-            "type": "volunteers",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Para venezolanos en el exterior que quieren enviar ayuda física al país."
+            "id": "venezuela-te-busca",
+            "name": "Venezuela Te Busca",
+            "description": "Reporta y busca familiares o amigos desaparecidos tras el terremoto.",
+            "url": "https://venezuelatebusca.com",
+            "active": true
           }
         ]
       }
-
     ],
-
     "afectados": [
-
       {
-        "category": "refugios",
-        "categoryLabel": "Refugios y alojamiento",
+        "category": "hospitales",
+        "categoryLabel": "Clínicas y hospitales (Caracas)",
         "items": [
           {
-            "id": "acopiove-refugios",
-            "name": "AcopioVE — Mapa de refugios",
-            "description": "33 refugios activos verificados en Venezuela. Filtrables por ciudad. Incluye capacidad, contacto y estado (abierto/lleno).",
-            "url": "https://acopiove.org/refugios",
-            "type": "shelter",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
+            "id": "h-clinico",
+            "name": "Hospital Clínico Universitario",
+            "description": "Chaguaramos - 0212-606.71.11",
+            "url": "tel:02126067111",
+            "active": true
           },
           {
-            "id": "civis-refugios",
-            "name": "CIVIS — Refugios con cupo disponible",
-            "description": "Lista actualizada de refugios con disponibilidad en tiempo real. Incluye dirección y cómo llegar.",
-            "url": "https://civisvenezuela.com/refugios",
-            "type": "shelter",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
+            "id": "h-domingo",
+            "name": "Hospital Dr. Domingo Luciani",
+            "description": "El Llanito - 0212-257.87.12",
+            "url": "tel:02122578712",
+            "active": true
           },
           {
-            "id": "acopiove-techo",
-            "name": "AcopioVE — Techo solidario",
-            "description": "Personas que ofrecen espacio en sus hogares para alojar temporalmente a familias damnificadas.",
-            "url": "https://acopiove.org/?tipo=alojamiento",
-            "type": "shelter",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Alojamiento temporal en hogares privados. Verificado por la plataforma antes de publicarse."
+            "id": "h-perez",
+            "name": "Hospital Miguel Pérez Carreño",
+            "description": "Bella Vista - 0212-472.84.72",
+            "url": "tel:02124728472",
+            "active": true
           }
         ]
       },
-
       {
-        "category": "centros_acopio",
-        "categoryLabel": "Insumos y centros de acopio",
+        "category": "acopio",
+        "categoryLabel": "Centros de acopio",
         "items": [
           {
-            "id": "acopiove-centros",
-            "name": "AcopioVE — Centros de acopio",
-            "description": "544 centros activos en Venezuela y la diáspora (20 países, 189 ciudades). Agua, alimentos, medicinas y ropa. Ordenados por nivel de verificación.",
-            "url": "https://acopiove.org/centros",
-            "type": "supply_center",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Puedes filtrar por ciudad. Los centros con ★ están confirmados por dos o más fuentes independientes."
+            "id": "caritas-montalban",
+            "name": "Cáritas Venezuela — Sede Montalbán",
+            "description": "Av. Teherán, a 200 m de la UCAB, frente a urb. Juan Pablo II, Montalbán",
+            "url": "#",
+            "active": true
           },
           {
-            "id": "civis-puntos-abastecimiento",
-            "name": "CIVIS — Puntos de abastecimiento",
-            "description": "Dónde conseguir agua, comida, medicamentos y kits de emergencia en tu zona.",
-            "url": "https://civisvenezuela.com/puntos",
-            "type": "supply_center",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "civis-aportar",
-            "name": "CIVIS — Qué puedo llevar / recibir",
-            "description": "Guía para saber qué insumos específicos se necesitan y a quién llevarlos. También para quien quiere ofrecer ayuda en especie.",
-            "url": "https://civisvenezuela.com/aportar",
-            "type": "supply_center",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "acopiove-donaciones",
-            "name": "AcopioVE — Canales de donación",
-            "description": "Canales oficiales verificados para donar dinero o insumos desde Venezuela o el exterior.",
-            "url": "https://acopiove.org/?modal=donaciones",
-            "type": "donations",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "acopiove-censo-celiaco",
-            "name": "AcopioVE — Censo de emergencia: celíacos",
-            "description": "Registro para personas celíacas o con sensibilidad al gluten que necesitan alimentos sin TACC en refugios y centros de acopio.",
-            "url": "https://docs.google.com/forms/d/e/1FAIpQLSeTfwwcg6pH4A2jdILcJJl-XLkPZZzx4EmqjF6mXz6yXZgT5g/viewform",
-            "type": "special_needs",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Para personas con restricciones alimentarias que se encuentran en refugios o zonas afectadas."
+            "id": "pc-cafetal",
+            "name": "Protección Civil El Cafetal",
+            "description": "El Cafetal, Baruta — 24 h",
+            "url": "#",
+            "active": true
           }
         ]
       },
-
       {
-        "category": "atencion_medica",
-        "categoryLabel": "Atención médica",
+        "category": "donaciones",
+        "categoryLabel": "Organizaciones para Donar",
         "items": [
           {
-            "id": "civis-ficha-medica",
-            "name": "CIVIS — Mi ficha médica (QR)",
-            "description": "Crea una ficha médica de emergencia con tus condiciones, medicamentos y alergias. Genera un código QR que puede ser escaneado por rescatistas.",
-            "url": "https://civisvenezuela.com/ficha-medica",
-            "type": "medical",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Especialmente recomendado para personas con enfermedades crónicas, adultos mayores o con necesidades especiales."
+            "id": "we-love-foundation",
+            "name": "We Love Foundation",
+            "description": "La campaña de recaudación más grande para los afectados por el terremoto en Venezuela.",
+            "url": "https://welovefoundation.org",
+            "active": true
           },
           {
-            "id": "civis-necesito-ayuda",
-            "name": "CIVIS — Solicitar ayuda de emergencia",
-            "description": "Reporta tu ubicación y tipo de necesidad (médica, agua, comida, rescate). Equipos de respuesta pueden ver tu solicitud en el mapa.",
-            "url": "https://civisvenezuela.com/necesito-ayuda",
-            "type": "medical",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Para emergencias que requieren rescate o atención inmediata, usar primero el botón SOS."
-          },
-          {
-            "id": "civis-sos",
-            "name": "CIVIS — SOS Emergencia",
-            "description": "Alerta de emergencia inmediata. Envía tu ubicación GPS a equipos de rescate activos.",
-            "url": "https://civisvenezuela.com/sos",
-            "type": "medical",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "⚠️ Usar solo en emergencias reales. No sustituye al 911 ni a los servicios oficiales."
-          },
-          {
-            "id": "civis-servicios-zona",
-            "name": "CIVIS — Servicios en tu zona",
-            "description": "Consulta el estado de luz, agua potable, señal de celular y gasolina en tu área. Útil para saber qué zonas tienen hospitales operativos.",
-            "url": "https://civisvenezuela.com/servicios",
-            "type": "medical",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          }
-        ]
-      },
-
-      {
-        "category": "conectividad",
-        "categoryLabel": "Conectividad y comunicación",
-        "items": [
-          {
-            "id": "civis-alertas",
-            "name": "CIVIS — Alertas oficiales",
-            "description": "Canal unificado de alertas de Protección Civil, FUNVISIS e INAMEH. Incluye alertas de réplicas y riesgo de deslizamientos.",
-            "url": "https://civisvenezuela.com/alertas",
-            "type": "connectivity",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": null
-          },
-          {
-            "id": "acopiove-logistica-diaspora",
-            "name": "AcopioVE — Logística de la diáspora",
-            "description": "Red de coordinadores internacionales que organizan envíos de insumos desde el exterior. Útil si tienes familiares afuera que quieren mandarte ayuda.",
-            "url": "https://acopiove.org/?modal=coordinadores",
-            "type": "connectivity",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Coordinadores activos en Colombia, Ecuador, EE.UU., España y otros países."
-          }
-        ]
-      },
-
-      {
-        "category": "apoyo_emocional",
-        "categoryLabel": "Apoyo emocional",
-        "items": [
-          {
-            "id": "civis-calma",
-            "name": "CIVIS — Calma: apoyo emocional",
-            "description": "Recursos de primeros auxilios psicológicos, ejercicios de respiración y orientación para manejar el estrés postraumático durante la emergencia.",
-            "url": "https://civisvenezuela.com/calma",
-            "type": "mental_health",
-            "active": true,
-            "verified": true,
-            "verifiedAt": "2026-06-28",
-            "notes": "Recomendado especialmente para niños y adultos mayores que presenciaron el sismo o perdieron su hogar."
+            "id": "unicef",
+            "name": "UNICEF",
+            "description": "Agua, salud y protección para niñas y niños afectados.",
+            "url": "https://unicef.org",
+            "active": true
           }
         ]
       }
-
     ]
   }
 }
