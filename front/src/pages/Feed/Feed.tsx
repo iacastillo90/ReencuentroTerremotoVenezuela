@@ -30,7 +30,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.lastSeen?.state || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.description || '').toLowerCase().includes(search.toLowerCase())
-    );
+    )
+    .sort((a, b) => {
+      // 1. Primero los que tienen foto
+      const aHasPhoto = a.photoUrl ? 1 : 0;
+      const bHasPhoto = b.photoUrl ? 1 : 0;
+      if (bHasPhoto !== aHasPhoto) return bHasPhoto - aHasPhoto;
+      // 2. Dentro de cada grupo, mayor urgencia primero
+      const aScore = a.metadata?.urgencyScore ?? 0;
+      const bScore = b.metadata?.urgencyScore ?? 0;
+      return bScore - aScore;
+    });
 
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: persons.filter(p => p.status === 'missing').length },
