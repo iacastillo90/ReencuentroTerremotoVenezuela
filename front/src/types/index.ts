@@ -5,6 +5,8 @@ export interface Person {
   lastSeen: {
     state: string;
     description: string;
+    municipality?: string;
+    date?: string;
     coordinates?: {
       coordinates: [number, number];
     }

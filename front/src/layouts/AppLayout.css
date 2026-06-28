@@ -269,5 +269,7 @@
 /* ─── Wide (≥ 1440px) ───────────── */
 @media (min-width: 1440px) {
   .navbar { padding: 0 2.5rem; }
-  --sidebar-w: 400px;
+  :root {
+    --sidebar-w: 400px;
+  }
 }
