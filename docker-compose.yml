@@ -1,36 +1,130 @@
-version: '3.8'
+# ================================================================
+# REENCUENTRO TERREMOTOS VENEZUELA — Orquestador de Infraestructura
+# ================================================================
+# Ecosistema completo desacoplado:
+#   mongodb  → Base de datos central
+#   redis    → Motor de colas BullMQ + caché de respuestas
+#   minio    → Almacenamiento seguro local de fotos y videos
+#   api      → Servidor Express (recibe tráfico de usuarios)
+#   worker   → Worker BullMQ (procesa IA en segundo plano)
+#
+# Uso:
+#   Desarrollo:  docker compose up -d
+#   Producción:  docker compose up -d --build
+# ================================================================
 
 services:
+
+  # ── 1. Base de Datos Central ─────────────────────────────────
   mongodb:
-    image: mongo:4.4
-    container_name: ayudave-mongo
+    image: mongo:7
+    container_name: reencuentros_mongo
+    restart: always
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
+  # ── 2. Redis (Colas BullMQ + Caché) ──────────────────────────
   redis:
-    image: redis:alpine
-    container_name: ayudave-redis
+    image: redis:7-alpine
+    container_name: reencuentros_redis
+    restart: always
     ports:
       - "6379:6379"
-    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
+  # ── 3. MinIO (Fotos y Videos Seguros, Locales) ────────────────
   minio:
     image: minio/minio:latest
-    container_name: ayudave-minio
+    container_name: reencuentros_minio
+    restart: always
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9000:9000"  # API S3-compatible
+      - "9001:9001"  # Consola de administración web
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
 
+  # ── 4. API Principal (Tráfico de usuarios) ───────────────────
+  api:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    image: reencuentros-api:latest
+    container_name: reencuentros_api
+    restart: always
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./back/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGO_URI: mongodb://mongodb:27017/ayudave
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── 5. Worker de IA (BullMQ, segundo plano) ──────────────────
+  # Usa la misma imagen que la API pero con un CMD diferente.
+  # Si la IA consume 100% de CPU, la API sigue respondiendo sin interrupciones.
+  worker:
+    image: reencuentros-api:latest
+    container_name: reencuentros_worker
+    restart: always
+    command: ["node", "dist/src/workers/ia-processor.worker.js"]
+    env_file:
+      - ./back/.env
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/ayudave
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    # El worker puede escalar horizontalmente si hay alta demanda:
+    # docker compose up -d --scale worker=3
+
+# ── Volúmenes Persistentes ────────────────────────────────────
+# Los datos de personas sobreviven a reinicios y actualizaciones
 volumes:
-  mongodb_data:
+  mongo_data:
+  redis_data:
   minio_data:

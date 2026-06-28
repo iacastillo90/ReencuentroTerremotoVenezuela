@@ -1,0 +1,29 @@
+# Excluir lo que no necesita el builder de Docker
+# → Menos contexto = builds más rápidos y seguros
+
+node_modules
+dist
+npm-debug.log*
+
+# Logs y archivos temporales
+*.log
+backend.log
+page.html
+screenshot.png
+
+# Variables de entorno (se inyectan en runtime)
+.env
+.env.*
+
+# Tests (no necesarios en producción)
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+jest.config*
+
+# Archivos del sistema y editor
+.git
+.gitignore
+.DS_Store
+.vscode
+*.md

@@ -2,7 +2,7 @@
   "name": "scraping",
   "version": "1.0.0",
   "description": "> **Misión:** Centralizar la búsqueda de personas desaparecidas, los alertas de desastres naturales y la información de emergencias para Venezuela, en una sola plataforma abierta, confiable y resiliente.",
-  "main": "bridge.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "test": "jest",
     "dev": "ts-node src/server.ts",
