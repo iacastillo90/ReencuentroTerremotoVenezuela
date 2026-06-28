@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { MapPin, PlusCircle, Settings, Menu, Map, Users, BookOpen, X } from 'lucide-react';
+import { MapPin, PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut } from 'lucide-react';
+import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
 type View = 'feed' | 'map' | 'report' | 'admin';
@@ -22,6 +23,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onAdmin
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const navItems: { view: View; icon: React.ReactNode; label: string }[] = [
     { view: 'feed',   icon: <Users size={22} />,    label: 'Personas' },
@@ -73,6 +75,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
 
         <div className="nav-actions">
+          {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '0.5rem', color: 'var(--clr-text-muted)', fontSize: '0.9rem' }}>
+              <UserIcon size={18} />
+              <span className="hide-mobile" style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name.split(' ')[0]}</span>
+              <button className="btn-icon" onClick={logout} title="Cerrar sesión" style={{ padding: '4px' }}>
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : null}
           <button className="btn-icon" onClick={onAdmin} title="Administración">
             <Settings size={17} />
           </button>
