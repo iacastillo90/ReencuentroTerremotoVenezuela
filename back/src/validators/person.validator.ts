@@ -11,6 +11,7 @@ export const personPayloadSchema = z.object({
   date: z.string().datetime().optional(), // ISO string
   confidence_score: z.number().optional(),
   confidence_label: z.string().optional(),
+  reportedBy: z.string().optional(),
   data: z.object({
     age: z.union([z.string(), z.number()]).optional(),
     cedula_hash: z.string().optional()

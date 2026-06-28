@@ -46,6 +46,7 @@ export interface UnifiedPerson extends Document {
     confidenceLabel?: string;
     aiProcessed: boolean;
     auditStatus: 'clean' | 'pending_review' | 'merged' | 'dismissed';
+    reportedBy?: Types.ObjectId | string;
   };
 }
 
@@ -88,6 +89,7 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     confidenceLabel: String,
     aiProcessed: { type: Boolean, default: false },
     auditStatus: { type: String, enum: ['clean', 'pending_review', 'merged', 'dismissed'], default: 'clean' },
+    reportedBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
 });
 

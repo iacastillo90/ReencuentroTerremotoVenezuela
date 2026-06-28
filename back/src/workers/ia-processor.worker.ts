@@ -47,7 +47,8 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lastSync: new Date(),
-        source: rawData.source || 'manual'
+        source: rawData.source || 'manual',
+        reportedBy: rawData.reportedBy
       }
     }
   );
