@@ -4,7 +4,7 @@ import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { PersonModel } from '../models/unified-person.model';
 import { connection as redis } from '../config/redis.config';
-import { requireProfileComplete } from '../middlewares/auth.middleware';
+import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -29,6 +29,39 @@ router.get('/counts', async (_req: Request, res: Response) => {
     return res.status(200).json(counts);
   } catch (error: any) {
     console.error('[PersonRoute] GET /counts Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ── GET /mine — Obtener reportes del usuario autenticado ───────────────────
+router.get('/mine', requireUser, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const safeProjection = {
+      name: 1,
+      status: 1,
+      'lastSeen.state': 1,
+      'lastSeen.municipality': 1,
+      'lastSeen.description': 1,
+      'lastSeen.date': 1,
+      'lastSeen.coordinates': 1,
+      age: 1,
+      gender: 1,
+      description: 1,
+      photoUrl: 1,
+      'data.cedula': 1,
+      'metadata.createdAt': 1,
+      'metadata.urgencyScore': 1
+    };
+
+    const persons = await PersonModel.find({ 'metadata.reportedBy': userId })
+      .select(safeProjection)
+      .sort({ 'metadata.createdAt': -1 })
+      .lean();
+
+    return res.status(200).json(persons);
+  } catch (error: any) {
+    console.error('[PersonRoute] GET /mine Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });

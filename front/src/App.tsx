@@ -11,8 +11,9 @@ import { useAuth } from './store/AuthContext';
 import type { Person, Disaster } from './types';
 
 import { LibraryPage } from './pages/Library/LibraryPage';
+import { ProfilePage } from './pages/Profile/ProfilePage';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library';
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -102,7 +103,13 @@ function App() {
     <>
       <AppLayout
         activeView={activeView}
-        onViewChange={v => setActiveView(v)}
+        onViewChange={v => {
+          if (v === 'profile' && !user) {
+            setIsAuthenticating(true);
+            return;
+          }
+          setActiveView(v);
+        }}
         onReport={() => {
           if (!user || !user.isProfileComplete) {
             setIsAuthenticating(true);
@@ -117,6 +124,7 @@ function App() {
             : undefined
         }
       >
+        {activeView === 'profile' && <ProfilePage onSelectPerson={setSelectedPerson} />}
         {activeView === 'library' && <LibraryPage />}
         {activeView === 'feed' && (
           <FeedPage
