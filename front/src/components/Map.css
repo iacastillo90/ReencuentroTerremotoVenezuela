@@ -1,0 +1,55 @@
+.map-container {
+  height: 100%;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaflet-map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+.popup-card {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.popup-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.popup-card p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge[data-status="missing"] {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge[data-status="found"] {
+  background-color: #dcfce3;
+  color: #15803d;
+}
+
+.disaster-popup h3 {
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 6px;
+}
