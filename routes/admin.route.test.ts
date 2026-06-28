@@ -26,6 +26,14 @@ jest.mock('../models/unified-person.model', () => ({
 }));
 
 describe('Admin Routes', () => {
+  beforeAll(() => {
+    process.env.ADMIN_API_KEY = 'test-api-key';
+  });
+
+  afterAll(() => {
+    delete process.env.ADMIN_API_KEY;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -48,17 +56,27 @@ describe('Admin Routes', () => {
     it('should list waiting jobs', async () => {
       (manualAuditQueue.getWaiting as jest.Mock).mockResolvedValue([mockJob]);
 
-      const response = await request(app).get('/api/admin/audit');
+      const response = await request(app)
+        .get('/api/admin/audit')
+        .set('x-api-key', 'test-api-key');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveLength(1);
       expect(response.body[0].jobId).toBe('job-1');
     });
+    
+    it('should reject without valid API key', async () => {
+      const response = await request(app).get('/api/admin/audit');
+      expect(response.status).toBe(401);
+    });
   });
 
   describe('POST /api/admin/audit/:jobId/merge', () => {
     it('should return 400 if targetIdHash is missing', async () => {
-      const response = await request(app).post('/api/admin/audit/job-1/merge').send({});
+      const response = await request(app)
+        .post('/api/admin/audit/job-1/merge')
+        .set('x-api-key', 'test-api-key')
+        .send({});
       expect(response.status).toBe(400);
     });
 
@@ -74,6 +92,7 @@ describe('Admin Routes', () => {
 
       const response = await request(app)
         .post('/api/admin/audit/job-1/merge')
+        .set('x-api-key', 'test-api-key')
         .send({ targetIdHash: 'hash-1' });
 
       expect(response.status).toBe(200);
@@ -97,6 +116,7 @@ describe('Admin Routes', () => {
 
       const response = await request(app)
         .post('/api/admin/audit/job-1/dismiss')
+        .set('x-api-key', 'test-api-key')
         .send();
 
       expect(response.status).toBe(200);

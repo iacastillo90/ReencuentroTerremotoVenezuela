@@ -1,18 +1,39 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import rateLimit from 'express-rate-limit';
 import { personRouter } from './routes/person.route';
 import { webhooksRouter } from './routes/webhooks.route';
 import { adminRouter } from './routes/admin.route';
 import { disastersRouter } from './routes/disasters.route';
+import { requireAdminApiKey } from './middlewares/auth.middleware';
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// --- 1. Seguridad Básica HTTP ---
+app.use(helmet()); // Protege contra vulnerabilidades web comunes configurando Headers HTTP
 
+// --- 2. Protección contra ataques de denegación de servicio (Rate Limiting Global) ---
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // Límite de 100 requests por IP por ventana
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas peticiones. Por favor, intente más tarde.' }
+});
+app.use(globalLimiter);
+
+// --- 3. Body Parsers y Prevención de Contaminación de Parámetros ---
+app.use(cors());
+app.use(express.json({ limit: '1mb' })); // Limitar el peso de los payloads para prevenir ataques
+app.use(hpp()); // Protege contra HTTP Parameter Pollution
+
+// --- 4. Rutas de la Aplicación ---
 app.use('/api/persons', personRouter);
 app.use('/api/webhooks', webhooksRouter);
-app.use('/api/admin', adminRouter);
+// Ruta administrativa protegida
+app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
 
 // Health check endpoint

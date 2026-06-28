@@ -25,7 +25,10 @@
     "cors": "^2.8.6",
     "csv-parse": "^7.0.0",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "fastest-levenshtein": "^1.0.16",
+    "helmet": "^8.2.0",
+    "hpp": "^0.2.3",
     "ioredis": "^5.11.1",
     "mongoose": "^9.7.3",
     "openai": "^6.45.0",
@@ -35,6 +38,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/hpp": "^0.2.7",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.1",
     "@types/supertest": "^7.2.0",
