@@ -17,6 +17,22 @@ export function requireAdminApiKey(req: Request, res: Response, next: NextFuncti
   next();
 }
 
+export function requirePartnerApiKey(req: Request, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-partner-api-key'];
+  const validKey = process.env.PARTNER_API_KEY;
+
+  if (!validKey) {
+    console.warn('[Security] PARTNER_API_KEY is not defined in environment variables. Denying all partner access.');
+    return res.status(403).json({ error: 'Server configuration error' });
+  }
+
+  if (!apiKey || apiKey !== validKey) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid Partner API Key' });
+  }
+
+  next();
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-reencuentro-2024';
 
 export function requireUser(req: Request, res: Response, next: NextFunction) {

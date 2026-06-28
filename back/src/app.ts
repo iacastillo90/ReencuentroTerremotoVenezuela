@@ -9,6 +9,7 @@ import { adminRouter } from './routes/admin.route';
 import { disastersRouter } from './routes/disasters.route';
 import { mediaRouter } from './routes/media.route';
 import { authRouter } from './routes/auth.route';
+import { partnerRouter } from './routes/partner.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/partners', partnerRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
