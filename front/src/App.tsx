@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './services/api';
 import { AppLayout } from './layouts/AppLayout';
 import { FeedPage, FeedSidebar } from './pages/Feed/Feed';
@@ -10,23 +10,35 @@ import type { Person, Disaster } from './types';
 
 type View = 'feed' | 'map' | 'report' | 'admin';
 
+const PAGE_SIZE = 50;
+
 function App() {
-  const [persons, setPersons] = useState<Person[]>([]);
-  const [disasters, setDisasters] = useState<Disaster[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<View>('feed');
+  const [persons, setPersons]         = useState<Person[]>([]);
+  const [disasters, setDisasters]     = useState<Disaster[]>([]);
+  const [total, setTotal]             = useState(0);
+  const [offset, setOffset]           = useState(0);
+  const [loading, setLoading]         = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore]         = useState(true);
+  const [activeView, setActiveView]   = useState<View>('feed');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+  const isFetchingRef = useRef(false);
 
+  // Carga inicial
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitial = async () => {
       setLoading(true);
       try {
         const [pRes, dRes] = await Promise.all([
-          api.get<Person[]>('/persons'),
+          api.get<{ total: number; persons: Person[] }>(`/persons?limit=${PAGE_SIZE}&offset=0`),
           api.get<Disaster[]>('/disasters/active')
         ]);
-        setPersons(pRes.data);
+        const { total: t, persons: p } = pRes.data;
+        setPersons(p);
+        setTotal(t);
+        setOffset(PAGE_SIZE);
+        setHasMore(PAGE_SIZE < t);
         setDisasters(dRes.data);
       } catch (e) {
         console.error('Error fetching data:', e);
@@ -34,8 +46,31 @@ function App() {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchInitial();
   }, []);
+
+  // Cargar más (scroll infinito)
+  const loadMore = useCallback(async () => {
+    if (isFetchingRef.current || !hasMore || loadingMore) return;
+    isFetchingRef.current = true;
+    setLoadingMore(true);
+    try {
+      const res = await api.get<{ total: number; persons: Person[] }>(
+        `/persons?limit=${PAGE_SIZE}&offset=${offset}`
+      );
+      const { total: t, persons: newPersons } = res.data;
+      setPersons(prev => [...prev, ...newPersons]);
+      setTotal(t);
+      const newOffset = offset + newPersons.length;
+      setOffset(newOffset);
+      setHasMore(newOffset < t);
+    } catch (e) {
+      console.error('Error cargando más:', e);
+    } finally {
+      setLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, [offset, hasMore, loadingMore]);
 
   // Admin view — full screen takeover
   if (activeView === 'admin') {
@@ -51,7 +86,7 @@ function App() {
         onAdmin={() => setActiveView('admin')}
         sidebar={
           activeView === 'feed'
-            ? <FeedSidebar persons={persons} disasters={disasters} />
+            ? <FeedSidebar persons={persons} disasters={disasters} total={total} />
             : undefined
         }
       >
@@ -60,7 +95,11 @@ function App() {
             persons={persons}
             disasters={disasters}
             loading={loading}
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            total={total}
             onSelectPerson={setSelectedPerson}
+            onLoadMore={loadMore}
           />
         )}
 

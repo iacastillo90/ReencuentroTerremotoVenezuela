@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
 import type { Person, Disaster } from '../../types';
@@ -8,16 +8,39 @@ interface FeedPageProps {
   persons: Person[];
   disasters: Disaster[];
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  total: number;
   onSelectPerson: (p: Person) => void;
+  onLoadMore: () => void;
 }
 
 type Filter = 'all' | 'missing' | 'found' | 'disasters';
 
 export const FeedPage: React.FC<FeedPageProps> = ({
-  persons, disasters, loading, onSelectPerson
+  persons, disasters, loading, loadingMore, hasMore, total, onSelectPerson, onLoadMore
 }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('missing');
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver — dispara loadMore al llegar al final
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !search) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, onLoadMore, search]);
 
   const filtered = persons
     .filter(p => {
@@ -30,22 +53,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.lastSeen?.state || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.description || '').toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      // 1. Primero los que tienen foto
-      const aHasPhoto = a.photoUrl ? 1 : 0;
-      const bHasPhoto = b.photoUrl ? 1 : 0;
-      if (bHasPhoto !== aHasPhoto) return bHasPhoto - aHasPhoto;
-      // 2. Dentro de cada grupo, mayor urgencia primero
-      const aScore = a.metadata?.urgencyScore ?? 0;
-      const bScore = b.metadata?.urgencyScore ?? 0;
-      return bScore - aScore;
-    });
+    );
 
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: persons.filter(p => p.status === 'missing').length },
     { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: persons.filter(p => p.status === 'found').length },
-    { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: persons.length },
+    { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: total },
     { key: 'disasters', icon: <AlertTriangle size={13} />, label: 'Desastres',     count: disasters.length },
   ];
 
@@ -71,7 +84,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             >
               {c.icon} {c.label}
               {c.count !== undefined && (
-                <span className="chip-count">{c.count}</span>
+                <span className="chip-count">{c.count.toLocaleString()}</span>
               )}
             </button>
           ))}
@@ -123,6 +136,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({
               onClick={() => onSelectPerson(p)}
             />
           ))}
+
+          {/* Sentinel para scroll infinito */}
+          <div ref={sentinelRef} style={{ height: '1px' }} />
+
+          {/* Spinner de carga más */}
+          {loadingMore && (
+            <div className="feed-loading-more">
+              <Loader2 size={20} className="spinner" />
+              <span>Cargando más registros...</span>
+            </div>
+          )}
+
+          {/* Fin del feed */}
+          {!hasMore && persons.length > 0 && !search && (
+            <div className="feed-end">
+              <span>✓ {total.toLocaleString()} registros cargados</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -133,20 +164,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 export const FeedSidebar: React.FC<{
   persons: Person[];
   disasters: Disaster[];
-}> = ({ persons, disasters }) => (
+  total: number;
+}> = ({ persons, disasters, total }) => (
   <div className="sidebar-panel">
     <div className="sidebar-stats">
       <div className="sidebar-stat danger">
         <AlertTriangle size={20} />
         <div>
-          <h4>{persons.filter(p => p.status === 'missing').length}</h4>
+          <h4>{persons.filter(p => p.status === 'missing').length.toLocaleString()}</h4>
           <p>Desaparecidos</p>
         </div>
       </div>
       <div className="sidebar-stat success">
         <Users size={20} />
         <div>
-          <h4>{persons.filter(p => p.status === 'found').length}</h4>
+          <h4>{persons.filter(p => p.status === 'found').length.toLocaleString()}</h4>
           <p>Encontrados</p>
         </div>
       </div>
@@ -158,10 +190,10 @@ export const FeedSidebar: React.FC<{
         </div>
       </div>
       <div className="sidebar-stat" style={{ color: 'var(--clr-amber)' }}>
-        <span style={{ fontSize: '1.1rem' }}>🐾</span>
+        <span style={{ fontSize: '1.1rem' }}>🗄️</span>
         <div>
-          <h4>0</h4>
-          <p>Mascotas</p>
+          <h4>{total.toLocaleString()}</h4>
+          <p>Total en BD</p>
         </div>
       </div>
     </div>

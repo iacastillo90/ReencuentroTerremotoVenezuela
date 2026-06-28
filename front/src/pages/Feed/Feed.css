@@ -302,3 +302,21 @@
   .feed-card-photo { aspect-ratio: 16/9; }
   .feed-list { padding-bottom: 2rem; }
 }
+
+.feed-loading-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1rem;
+  color: var(--clr-text-dim);
+  font-size: 0.82rem;
+}
+
+.feed-end {
+  text-align: center;
+  padding: 1.25rem 1rem 2rem;
+  color: var(--clr-text-dim);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--clr-border);
+}
