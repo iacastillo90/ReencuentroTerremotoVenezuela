@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from './services/api';
 import { InteractiveMap } from './components/Map';
-import { Person, Disaster } from './types';
+import type { Person, Disaster } from './types';
 import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
 import './App.css';
 
