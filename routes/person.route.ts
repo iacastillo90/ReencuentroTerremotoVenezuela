@@ -2,8 +2,52 @@ import { Router, Request, Response } from 'express';
 import { personPayloadSchema } from '../validators/person.validator';
 import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
+import { PersonModel } from '../models/unified-person.model';
 
 const router = Router();
+
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const { q, status } = req.query;
+    const filter: any = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (q && typeof q === 'string') {
+      const normalizedQuery = q.trim().toLowerCase();
+      filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
+    }
+
+    // Proyección segura: excluir PII, contactPerson, externalIds
+    const safeProjection = {
+      name: 1,
+      status: 1,
+      'lastSeen.state': 1,
+      'lastSeen.municipality': 1,
+      'lastSeen.description': 1,
+      'lastSeen.date': 1,
+      age: 1,
+      gender: 1,
+      description: 1,
+      photoUrl: 1,
+      'metadata.createdAt': 1,
+      'metadata.urgencyScore': 1
+    };
+
+    const persons = await PersonModel.find(filter)
+      .select(safeProjection)
+      .limit(50)
+      .sort({ 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
+      .lean();
+
+    return res.status(200).json(persons);
+  } catch (error: any) {
+    console.error('[PersonRoute] GET Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 router.post('/', async (req: Request, res: Response) => {
   try {
