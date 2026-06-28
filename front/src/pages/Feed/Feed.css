@@ -49,14 +49,10 @@
 
 .feed-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
   padding-bottom: 2px;
 }
-
-.feed-chips::-webkit-scrollbar { display: none; }
 
 .chip {
   flex-shrink: 0;
@@ -92,14 +88,17 @@
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding-bottom: calc(var(--bottom-nav-h) + 1rem);
+  gap: 1rem;
+  padding: 1rem;
+  padding-bottom: calc(var(--bottom-nav-h) + 2rem);
 }
 
 /* ─── Person Card (feed) ─── */
 .feed-card {
   background: var(--clr-card);
-  border-bottom: 1px solid var(--clr-border);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   cursor: pointer;
   transition: background 0.15s;
   animation: fadeIn 0.3s ease-out;
