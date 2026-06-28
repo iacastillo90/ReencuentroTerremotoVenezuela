@@ -3,7 +3,7 @@ import { connection } from '../config/redis.config';
 import { fetchUSGSEarthquakes } from '../jobs/usgs.job';
 import { fetchFIRMSFires } from '../jobs/firms.job';
 import { fetchGDACS } from '../jobs/gdacs.job';
-import { fetchAyudaVEPersons } from '../jobs/ayudave.job';
+import { fetchReencuentroPersons } from '../jobs/reencuentro.job';
 import { fetchVenezuelaReporta } from '../jobs/venezuelareporta.job';
 
 
@@ -17,9 +17,9 @@ export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) =
   } else if (job.name === 'sync-gdacs') {
     console.log(`[Worker] Starting GDACS Sync Job ${job.id}`);
     await fetchGDACS();
-  } else if (job.name === 'sync-ayudave') {
-    console.log(`[Worker] Starting AyudaVE Sync Job ${job.id}`);
-    await fetchAyudaVEPersons();
+  } else if (job.name === 'sync-reencuentro') {
+    console.log(`[Worker] Starting Reencuentro Sync Job ${job.id}`);
+    await fetchReencuentroPersons();
   } else if (job.name === 'sync-venezuelareporta') {
     console.log(`[Worker] Starting VenezuelaReporta Sync Job ${job.id}`);
     await fetchVenezuelaReporta();

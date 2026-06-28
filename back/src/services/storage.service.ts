@@ -11,7 +11,7 @@ export const minioClient = new Client({
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin'
 });
 
-const BUCKET_NAME = process.env.MINIO_BUCKET || 'ayudave-media';
+const BUCKET_NAME = process.env.MINIO_BUCKET || 'reencuentro-media';
 
 // Asegurar que el bucket exista
 export async function initializeStorage() {

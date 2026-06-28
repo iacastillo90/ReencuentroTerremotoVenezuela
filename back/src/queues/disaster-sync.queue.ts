@@ -39,8 +39,8 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '0 * * * *' }
   });
 
-  // AyudaVE API cada 10 minutos
-  await disasterSyncQueue.add('sync-ayudave', {}, {
+  // Reencuentro API cada 10 minutos
+  await disasterSyncQueue.add('sync-reencuentro', {}, {
     repeat: { pattern: '*/10 * * * *' }
   });
 
