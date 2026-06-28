@@ -278,9 +278,87 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
   );
 }
 
+// ── Sección: Usuarios ──────────────────────────────────────────
+function SectionUsuarios() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadUsers = useCallback(async () => {
+    try {
+      // Usar api para enviar el Authorization header con JWT
+      const res = await api.get('/admin/users');
+      setUsers(res.data);
+    } catch (e) {
+      console.error(e);
+      alert('Error cargando usuarios (¿Eres admin?)');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
+
+  const changeRole = async (id: string, newRole: string) => {
+    try {
+      await api.patch(`/admin/users/${id}/role`, { role: newRole });
+      setUsers(prev => prev.map(u => u._id === id ? { ...u, role: newRole } : u));
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error cambiando rol');
+    }
+  };
+
+  if (loading) return <div className="admin-loading"><Loader2 className="spinner" size={24} /><span>Cargando usuarios...</span></div>;
+
+  return (
+    <div className="admin-section">
+      <div className="admin-section-header">
+        <h3><Users size={18} /> Control de Usuarios</h3>
+        <span className="admin-badge pending">{users.length} Registrados</span>
+      </div>
+      <div className="table-responsive-wrapper">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol Actual</th>
+              <th>Acciones de Rol</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(u => (
+              <tr key={u._id}>
+                <td>
+                  <div className="name-cell">
+                    {u.picture ? <img src={u.picture} alt={u.name} className="person-thumb" /> : <div className="person-thumb-placeholder"><Users size={16} /></div>}
+                    <div><strong>{u.name}</strong></div>
+                  </div>
+                </td>
+                <td>{u.email}</td>
+                <td>
+                  <span className={`admin-badge ${u.role === 'admin' ? 'missing' : u.role === 'verifier' ? 'api' : 'found'}`}>
+                    {u.role.toUpperCase()}
+                  </span>
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    {u.role !== 'admin' && <button className="btn-merge" onClick={() => changeRole(u._id, 'admin')}>Hacer Admin</button>}
+                    {u.role !== 'verifier' && <button className="btn-found" onClick={() => changeRole(u._id, 'verifier')}>Hacer Verificador</button>}
+                    {u.role !== 'user' && <button className="btn-dismiss" onClick={() => changeRole(u._id, 'user')}>Quitar Permisos</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente Principal ─────────────────────────────────────
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
-  const [activeSection, setActiveSection] = useState<'resumen' | 'duplicados' | 'registros'>('resumen');
+  const [activeSection, setActiveSection] = useState<'resumen' | 'duplicados' | 'registros' | 'usuarios'>('resumen');
   const [persons, setPersons] = useState<PersonRow[]>([]);
   const [counts, setCounts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -316,6 +394,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
           ['resumen',    'Resumen General',    <LayoutDashboard size={18} />],
           ['duplicados', 'Duplicados (IA)',     <GitMerge size={18} />],
           ['registros',  'Control Registros',  <ShieldCheck size={18} />],
+          ['usuarios',   'Usuarios (Roles)',   <Users size={18} />],
         ] as const).map(([key, label, icon]) => (
           <div
             key={key}
@@ -345,6 +424,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             {activeSection === 'resumen'    && 'Resumen General'}
             {activeSection === 'duplicados' && 'Gestión de Duplicados'}
             {activeSection === 'registros'  && 'Control de Registros'}
+            {activeSection === 'usuarios'   && 'Gestión de Usuarios y Roles'}
           </h1>
           <button className="admin-back-btn" onClick={onBack} style={{ display: 'none' /* Will show on mobile by default later if needed, actually we hide it in bottom nav so let's put it here */ }}>
             <ArrowLeft size={16} /> Volver
@@ -370,6 +450,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
               onStatusChange={handleStatusChange}
             />
           )}
+          {activeSection === 'usuarios' && <SectionUsuarios />}
         </div>
       </main>
     </div>

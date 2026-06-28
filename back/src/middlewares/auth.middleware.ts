@@ -1,20 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export function requireAdminApiKey(req: Request, res: Response, next: NextFunction) {
+export function requireAdminOrVerifier(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers['x-api-key'];
   const validKey = process.env.ADMIN_API_KEY;
 
-  if (!validKey) {
-    console.warn('[Security] ADMIN_API_KEY is not defined in environment variables. Denying all admin access.');
-    return res.status(403).json({ error: 'Server configuration error' });
+  // 1. Check API Key
+  if (apiKey && validKey && apiKey === validKey) {
+    return next();
   }
 
-  if (!apiKey || apiKey !== validKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+  // 2. Check JWT Role
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      if (decoded.role === 'admin' || decoded.role === 'verifier') {
+        (req as any).user = decoded;
+        return next();
+      }
+    } catch (e) {
+      // invalid token, fall through to 401
+    }
   }
 
-  next();
+  return res.status(401).json({ error: 'Unauthorized: Invalid Admin Credentials' });
 }
 
 export function requirePartnerApiKey(req: Request, res: Response, next: NextFunction) {
@@ -58,4 +69,17 @@ export function requireProfileComplete(req: Request, res: Response, next: NextFu
     }
     next();
   });
+}
+
+// RBAC Middleware
+export function requireRoles(allowedRoles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    requireUser(req, res, () => {
+      const userRole = (req as any).user.role;
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
+      }
+      next();
+    });
+  };
 }

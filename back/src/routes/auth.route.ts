@@ -50,7 +50,7 @@ router.post('/google', async (req: Request, res: Response) => {
     }
 
     const authToken = jwt.sign(
-      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete },
+      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -88,7 +88,7 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const authToken = jwt.sign(
-      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete },
+      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
