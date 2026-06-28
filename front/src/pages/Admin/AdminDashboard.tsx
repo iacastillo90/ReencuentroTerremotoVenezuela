@@ -271,7 +271,7 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>Sin resultados</td></tr>
+                <tr key="empty-state"><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>Sin resultados</td></tr>
               )}
             </tbody>
           </table>
