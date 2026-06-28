@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from './services/api';
 import { InteractiveMap } from './components/Map';
 import { PersonDetailModal } from './components/PersonDetailModal';
+import { ReportModal } from './components/ReportModal';
 import type { Person, Disaster } from './types';
 import { Search, AlertTriangle, Users, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 import './App.css';
@@ -13,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'disasters' | 'persons' | 'animals'>('all');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -47,7 +49,9 @@ function App() {
           <h1>Reencuentro<span>VE</span></h1>
         </div>
         <div className="nav-actions">
-          <button className="btn-primary">Reportar Desaparecido</button>
+          <button className="btn-primary" onClick={() => setIsReporting(true)}>
+            Reportar Desaparecido
+          </button>
         </div>
       </nav>
 
@@ -191,6 +195,12 @@ function App() {
         <PersonDetailModal 
           person={selectedPerson} 
           onClose={() => setSelectedPerson(null)} 
+        />
+      )}
+
+      {isReporting && (
+        <ReportModal 
+          onClose={() => setIsReporting(false)} 
         />
       )}
     </div>
