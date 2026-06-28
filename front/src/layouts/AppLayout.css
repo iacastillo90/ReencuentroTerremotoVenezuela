@@ -35,25 +35,29 @@
 }
 
 .nav-logo-icon {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-brand h1 {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: var(--clr-text);
-  line-height: 1;
+  line-height: 1.1;
+  font-family: 'Inter', sans-serif;
 }
-
-.nav-brand h1 span { color: var(--clr-primary); }
+.nav-brand h1 span { 
+  color: var(--clr-danger); 
+  font-weight: 400;
+}
 
 /* View Toggle Pills — hidden on mobile, shown tablet+ */
 .nav-toggle-pills {
@@ -179,6 +183,15 @@
 }
 
 .bottom-nav-item.active { color: var(--clr-primary); }
+
+.nav-item-center {
+  transform: translateY(-15px);
+  background: var(--clr-surface);
+  border-radius: 50%;
+  padding: 8px;
+  border: 1px solid var(--clr-border);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+}
 
 /* ─── Hamburger Menu button (tablet) ─ */
 .hamburger-btn {
