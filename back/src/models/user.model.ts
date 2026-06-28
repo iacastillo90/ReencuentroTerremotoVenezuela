@@ -9,6 +9,7 @@ export interface IUser extends Document {
   sector?: string;
   contactNumber?: string;
   isProfileComplete: boolean;
+  tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +23,7 @@ const UserSchema = new Schema<IUser>({
   sector: { type: String },
   contactNumber: { type: String },
   isProfileComplete: { type: Boolean, default: false },
+  tokenVersion: { type: Number, default: 1 },
 }, { timestamps: true });
 
 export const UserModel = model<IUser>('User', UserSchema);
