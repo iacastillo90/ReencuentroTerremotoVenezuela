@@ -6,8 +6,6 @@ import {
 import { api } from '../../services/api';
 import './AdminDashboard.css';
 
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_API_KEY || '';
-
 interface PersonRow {
   _id: string;
   name: string;
@@ -68,7 +66,7 @@ function SectionDuplicados() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get('/admin/audit', { headers: { 'x-api-key': ADMIN_KEY } });
+      const res = await api.get('/admin/audit');
       setJobs(res.data);
     } catch { /* silenciar errores 401 si la key no está configurada */ }
     finally { setLoading(false); }
@@ -77,12 +75,12 @@ function SectionDuplicados() {
   useEffect(() => { load(); }, [load]);
 
   const merge = async (jobId: string, targetIdHash: string) => {
-    await api.post(`/admin/audit/${jobId}/merge`, { targetIdHash }, { headers: { 'x-api-key': ADMIN_KEY } });
+    await api.post(`/admin/audit/${jobId}/merge`, { targetIdHash });
     setJobs(prev => prev.filter(j => j.jobId !== jobId));
   };
 
   const dismiss = async (jobId: string) => {
-    await api.post(`/admin/audit/${jobId}/dismiss`, {}, { headers: { 'x-api-key': ADMIN_KEY } });
+    await api.post(`/admin/audit/${jobId}/dismiss`);
     setJobs(prev => prev.filter(j => j.jobId !== jobId));
   };
 
@@ -168,9 +166,7 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
 
   const changeStatus = async (idHash: string, newStatus: string) => {
     try {
-      await api.patch(`/admin/persons/${idHash}/status`, { status: newStatus }, {
-        headers: { 'x-api-key': ADMIN_KEY }
-      });
+      await api.patch(`/admin/persons/${idHash}/status`, { status: newStatus });
       onStatusChange(idHash, newStatus);
     } catch (e: any) {
       alert(e.response?.data?.error || 'Error actualizando estado');
