@@ -37,75 +37,52 @@ async function seed() {
     }
   } as any);
 
-  // 4. Insertar Personas Desaparecidas Simuladas
-  await PersonModel.create([
-    {
+  // 4. Generar 1000 Personas Desaparecidas Simuladas para ver el clustering
+  const names = ['Juan', 'Ana', 'Carlos', 'Maria', 'Pedro', 'Laura', 'Jose', 'Carmen', 'Luis', 'Sofia'];
+  const lastNames = ['Perez', 'Lopez', 'Gomez', 'Rodriguez', 'Martinez', 'Garcia', 'Fernandez', 'Gonzalez'];
+  const states = ['Distrito Capital', 'Miranda', 'Aragua', 'Carabobo', 'Lara', 'Zulia'];
+  const baseLat = 10.48; // Caracas region
+  const baseLng = -66.9; 
+  
+  const dummyPersons = [];
+  for (let i = 0; i < 1000; i++) {
+    const isMale = Math.random() > 0.5;
+    const name = names[Math.floor(Math.random() * names.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    
+    // Spread markers around Venezuela
+    const latOffset = (Math.random() - 0.5) * 5; // Spread vertically
+    const lngOffset = (Math.random() - 0.5) * 8; // Spread horizontally
+
+    dummyPersons.push({
       type: 'person',
-      idHash: 'hash-juan-perez',
-      normalizedName: 'juan perez',
-      name: 'Juan Pérez',
-      status: 'missing',
-      age: 35,
-      gender: 'M',
-      contactPerson: { name: 'Maria', phone: '04141234567', relationship: 'Esposa' },
+      idHash: `hash-dummy-${i}`,
+      normalizedName: `${name} ${lastName}`.toLowerCase(),
+      name: `${name} ${lastName}`,
+      status: Math.random() > 0.8 ? 'found' : 'missing',
+      age: Math.floor(Math.random() * 60) + 10,
+      gender: isMale ? 'M' : 'F',
+      contactPerson: { name: 'Familiar', phone: '04141234567', relationship: 'Familia' },
       lastSeen: {
         date: new Date(),
-        state: 'Distrito Capital',
-        municipality: 'Libertador',
-        description: 'Visto por última vez cerca del centro de Caracas, llevaba franela roja.',
+        state: states[Math.floor(Math.random() * states.length)],
+        municipality: 'Desconocido',
+        description: 'Reportado durante las últimas horas.',
         coordinates: {
           type: 'Point',
-          coordinates: [-66.9050, 10.4900]
+          coordinates: [baseLng + lngOffset, baseLat + latOffset]
         }
       },
+      photoUrl: `https://i.pravatar.cc/150?u=${i}`,
       sourceRecords: [],
-      metadata: { urgencyScore: 85, createdAt: new Date(), updatedAt: new Date(), confidenceScore: 100 }
-    } as any,
-    {
-      type: 'person',
-      idHash: 'hash-ana-lopez',
-      normalizedName: 'ana lopez',
-      name: 'Ana López',
-      status: 'missing',
-      age: 28,
-      gender: 'F',
-      contactPerson: { name: 'Carlos', phone: '04121234567', relationship: 'Hermano' },
-      lastSeen: {
-        date: new Date(),
-        state: 'Miranda',
-        municipality: 'Chacao',
-        description: 'No se ha podido comunicar desde el sismo.',
-        coordinates: {
-          type: 'Point',
-          coordinates: [-66.8500, 10.4950]
-        }
-      },
-      sourceRecords: [],
-      metadata: { urgencyScore: 92, createdAt: new Date(), updatedAt: new Date(), confidenceScore: 100 }
-    } as any,
-    {
-      type: 'person',
-      idHash: 'hash-carlos-gomez',
-      normalizedName: 'carlos gomez',
-      name: 'Carlos Gómez',
-      status: 'found',
-      age: 42,
-      gender: 'M',
-      contactPerson: { name: 'Pedro', phone: '04161234567', relationship: 'Amigo' },
-      lastSeen: {
-        date: new Date(),
-        state: 'Aragua',
-        municipality: 'Maracay',
-        description: 'Se reportó a salvo en un refugio.',
-        coordinates: {
-          type: 'Point',
-          coordinates: [-67.5951, 10.2469]
-        }
-      },
-      sourceRecords: [],
-      metadata: { urgencyScore: 10, createdAt: new Date(), updatedAt: new Date(), confidenceScore: 100 }
-    } as any
-  ]);
+      metadata: { urgencyScore: Math.floor(Math.random() * 100), createdAt: new Date(), updatedAt: new Date(), confidenceScore: 100 }
+    });
+  }
+
+  // Dividir en chunks para no sobrecargar el bulk insert
+  for (let i = 0; i < dummyPersons.length; i += 200) {
+    await PersonModel.create(dummyPersons.slice(i, i + 200) as any[]);
+  }
 
   console.log('¡Seeding completado con éxito!');
   process.exit(0);
