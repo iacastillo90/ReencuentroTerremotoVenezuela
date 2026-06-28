@@ -1,0 +1,21 @@
+/**
+ * Stub del store legacy de AyudaVE (SQL/PostgreSQL - Tablas originales v2.0).
+ * En producción, este módulo se conectaría al cliente de PostgreSQL (pg / TypeORM).
+ * Mantenido aquí para compatibilidad con el patrón Dual Write del bridge.
+ */
+export const legacyStore = {
+  async upsertMediaBatch(records: any[]): Promise<boolean> {
+    // Stub: simula la inserción en las tablas legacy relacionales de AyudaVE
+    console.log(`[legacyStore] Simulando inserción de ${records.length} registros en PostgreSQL (Legacy)`);
+    return true;
+  },
+
+  async getSyncState(key: string): Promise<null> {
+    // Siempre simular registro nuevo (testing inicial)
+    return null;
+  },
+
+  async updateSyncState(key: string, checksum: string): Promise<void> {
+    // Stub
+  }
+};

@@ -1,0 +1,9 @@
+
+> scraping@1.0.0 dev
+> ts-node src/server.ts
+
+[Server] Conectando a MongoDB en mongodb://127.0.0.1:27017/ayudave...
+[Server] MongoDB Conectado exitosamente.
+[Server] Backend de AyudaVE corriendo en http://localhost:4000
+(node:144428) [MONGOOSE] Warning: mongoose: Duplicate schema index on {"idHash":1} for model "UnifiedPerson". This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
