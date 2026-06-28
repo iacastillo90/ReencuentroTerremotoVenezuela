@@ -81,7 +81,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      MONGO_URI: mongodb://mongodb:27017/ayudave
+      MONGO_URI: mongodb://mongodb:27017/reencuentro
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
@@ -111,7 +111,7 @@ services:
       - ./back/.env
     environment:
       NODE_ENV: production
-      MONGO_URI: mongodb://mongodb:27017/ayudave
+      MONGO_URI: mongodb://mongodb:27017/reencuentro
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
