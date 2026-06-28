@@ -64,6 +64,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <span><MapPin size={14} style={{ display: 'inline', marginRight: 4 }} /> {person.lastSeen?.state || 'Ubicación desconocida'}</span>
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
+                {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
               </div>
             </div>
           </div>
@@ -84,6 +85,12 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           <div className="info-section">
             <h3><Info size={18} /> Información y Señas</h3>
             <div className="info-grid">
+              {person.data?.cedula && (
+                <div className="info-item">
+                  <label>Cédula / documento</label>
+                  <p>{person.data.cedula}</p>
+                </div>
+              )}
               <div className="info-item">
                 <label>Género</label>
                 <p>{getGenderText(person.gender)}</p>
