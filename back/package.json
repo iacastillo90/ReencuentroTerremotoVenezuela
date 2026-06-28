@@ -4,7 +4,10 @@
   "description": "> **Misión:** Centralizar la búsqueda de personas desaparecidas, los alertas de desastres naturales y la información de emergencias para Venezuela, en una sola plataforma abierta, confiable y resiliente.",
   "main": "bridge.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "ts-node src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
