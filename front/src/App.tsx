@@ -3,8 +3,9 @@ import { api } from './services/api';
 import { InteractiveMap } from './components/Map';
 import { PersonDetailModal } from './components/PersonDetailModal';
 import { ReportModal } from './components/ReportModal';
+import { AdminDashboard } from './admin/AdminDashboard';
 import type { Person, Disaster } from './types';
-import { Search, AlertTriangle, Users, MapPin, Loader2, ArrowLeft } from 'lucide-react';
+import { Search, AlertTriangle, Users, MapPin, Loader2, Settings } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'library'>('map');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -41,6 +43,10 @@ function App() {
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.lastSeen?.state?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (isAdmin) {
+    return <AdminDashboard onBack={() => setIsAdmin(false)} />;
+  }
 
   return (
     <div className="app-container">
@@ -68,6 +74,14 @@ function App() {
         </div>
 
         <div className="nav-actions">
+          <button
+            className="btn-secondary"
+            onClick={() => setIsAdmin(true)}
+            title="Panel de Administración"
+            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'inherit', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Settings size={16} /> Admin
+          </button>
           <button className="btn-primary" onClick={() => setIsReporting(true)}>
             Reportar Desaparecido
           </button>
