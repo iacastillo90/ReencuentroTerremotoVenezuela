@@ -281,22 +281,28 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
 // ── Sección: Usuarios ──────────────────────────────────────────
 function SectionUsuarios() {
   const [users, setUsers] = useState<any[]>([]);
+  const [verifications, setVerifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'users' | 'verifications'>('users');
 
-  const loadUsers = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      // Usar api para enviar el Authorization header con JWT
-      const res = await api.get('/admin/users');
-      setUsers(res.data);
+      setLoading(true);
+      const [usersRes, verifRes] = await Promise.all([
+        api.get('/admin/users'),
+        api.get('/admin/verifications')
+      ]);
+      setUsers(usersRes.data);
+      setVerifications(verifRes.data);
     } catch (e) {
       console.error(e);
-      alert('Error cargando usuarios (¿Eres admin?)');
+      alert('Error cargando datos (¿Eres admin?)');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const changeRole = async (id: string, newRole: string) => {
     try {
@@ -307,14 +313,31 @@ function SectionUsuarios() {
     }
   };
 
-  if (loading) return <div className="admin-loading"><Loader2 className="spinner" size={24} /><span>Cargando usuarios...</span></div>;
+  const changeVerificationStatus = async (id: string, newStatus: string) => {
+    try {
+      await api.patch(`/admin/verifications/${id}/status`, { status: newStatus });
+      setVerifications(prev => prev.map(v => v._id === id ? { ...v, status: newStatus } : v));
+      if (newStatus === 'approved') {
+        loadData(); // recargar para ver el nuevo rol
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error actualizando solicitud');
+    }
+  };
+
+  if (loading) return <div className="admin-loading"><Loader2 className="spinner" size={24} /><span>Cargando datos...</span></div>;
 
   return (
     <div className="admin-section">
-      <div className="admin-section-header">
+      <div className="admin-section-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <h3><Users size={18} /> Control de Usuarios</h3>
-        <span className="admin-badge pending">{users.length} Registrados</span>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => setViewMode('users')} className={`admin-back-btn ${viewMode === 'users' ? 'active' : ''}`} style={{ background: viewMode === 'users' ? 'var(--blue)' : 'transparent', color: '#fff', border: '1px solid var(--line)' }}>Usuarios Registrados</button>
+          <button onClick={() => setViewMode('verifications')} className={`admin-back-btn ${viewMode === 'verifications' ? 'active' : ''}`} style={{ background: viewMode === 'verifications' ? 'var(--blue)' : 'transparent', color: '#fff', border: '1px solid var(--line)' }}>Solicitudes ({verifications.filter(v => v.status === 'pending').length})</button>
+        </div>
       </div>
+      
+      {viewMode === 'users' ? (
       <div className="table-responsive-wrapper">
         <table className="admin-table">
           <thead>
@@ -352,6 +375,54 @@ function SectionUsuarios() {
           </tbody>
         </table>
       </div>
+      ) : (
+      <div className="table-responsive-wrapper">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Notas</th>
+              <th>Evidencia</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {verifications.map(v => (
+              <tr key={v._id}>
+                <td>
+                  <div className="name-cell">
+                    {v.user?.picture ? <img src={v.user.picture} alt={v.user.name} className="person-thumb" /> : <div className="person-thumb-placeholder"><Users size={16} /></div>}
+                    <div>
+                      <strong>{v.user?.name}</strong>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{v.user?.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>{v.notes || '-'}</td>
+                <td>{v.evidenceUrl ? <a href={v.evidenceUrl} target="_blank" rel="noreferrer">Ver Archivo</a> : '-'}</td>
+                <td>
+                  <span className={`admin-badge ${v.status === 'approved' ? 'found' : v.status === 'rejected' ? 'missing' : 'pending'}`}>
+                    {v.status.toUpperCase()}
+                  </span>
+                </td>
+                <td>
+                  {v.status === 'pending' && (
+                    <div className="action-buttons">
+                      <button className="btn-found" onClick={() => changeVerificationStatus(v._id, 'approved')}>Aprobar</button>
+                      <button className="btn-dismiss" onClick={() => changeVerificationStatus(v._id, 'rejected')}>Rechazar</button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {verifications.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>No hay solicitudes de verificación</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      )}
     </div>
   );
 }
