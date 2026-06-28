@@ -7,6 +7,7 @@ export const personPayloadSchema = z.object({
   name: z.string().min(2),
   estado: z.string().min(2),
   text: z.string().optional(),
+  photoUrl: z.string().url().optional(),
   date: z.string().datetime().optional(), // ISO string
   confidence_score: z.number().optional(),
   confidence_label: z.string().optional(),

@@ -15,6 +15,7 @@ function App() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'disasters' | 'persons' | 'animals'>('all');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
+  const [viewMode, setViewMode] = useState<'map' | 'library'>('map');
 
   useEffect(() => {
     fetchData();
@@ -48,6 +49,24 @@ function App() {
           <div className="logo-icon"><MapPin size={24} color="#fff" /></div>
           <h1>Reencuentro<span>VE</span></h1>
         </div>
+        
+        <div className="nav-center-toggles" style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-hover)', padding: '0.25rem', borderRadius: '8px' }}>
+          <button 
+            className={`toggle-btn ${viewMode === 'map' ? 'active' : ''}`}
+            onClick={() => setViewMode('map')}
+            style={{ padding: '0.5rem 1rem', border: 'none', background: viewMode === 'map' ? '#fff' : 'transparent', borderRadius: '6px', fontWeight: viewMode === 'map' ? '600' : '400', cursor: 'pointer', boxShadow: viewMode === 'map' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+          >
+            Mapa Interactivo
+          </button>
+          <button 
+            className={`toggle-btn ${viewMode === 'library' ? 'active' : ''}`}
+            onClick={() => setViewMode('library')}
+            style={{ padding: '0.5rem 1rem', border: 'none', background: viewMode === 'library' ? '#fff' : 'transparent', borderRadius: '6px', fontWeight: viewMode === 'library' ? '600' : '400', cursor: 'pointer', boxShadow: viewMode === 'library' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
+          >
+            Biblioteca de Casos
+          </button>
+        </div>
+
         <div className="nav-actions">
           <button className="btn-primary" onClick={() => setIsReporting(true)}>
             Reportar Desaparecido
@@ -180,13 +199,54 @@ function App() {
               <Loader2 className="spinner" size={40} />
               <p>Cargando datos geoespaciales...</p>
             </div>
-          ) : (
+          ) : viewMode === 'map' ? (
             <InteractiveMap 
               persons={filteredPersons} 
               disasters={disasters} 
               activeFilter={activeFilter} 
               onSelectPerson={setSelectedPerson}
             />
+          ) : (
+            <div className="library-grid" style={{ padding: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', overflowY: 'auto', height: '100%', backgroundColor: 'var(--bg-primary)' }}>
+              {filteredPersons.map(person => (
+                <div 
+                  key={person.idHash} 
+                  className="person-card" 
+                  onClick={() => setSelectedPerson(person)}
+                  style={{ cursor: 'pointer', backgroundColor: 'var(--card-bg)', height: 'fit-content' }}
+                >
+                  <div className="person-card-inner" style={{ flexDirection: 'column' }}>
+                    <div className="person-photo-container" style={{ width: '100%', height: '200px', marginBottom: '1rem', borderRadius: '8px', overflow: 'hidden' }}>
+                      {person.photoUrl ? (
+                        <img src={person.photoUrl} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="person-photo-placeholder" style={{ width: '100%', height: '100%', backgroundColor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={40} color="var(--text-secondary)" /></div>
+                      )}
+                    </div>
+                    <div className="person-info" style={{ width: '100%' }}>
+                      <div className="person-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{person.name}</h4>
+                        <span className={`badge ${person.status}`}>
+                          {person.status === 'missing' ? 'Desaparecido' : 'Encontrado'}
+                        </span>
+                      </div>
+                      <p className="person-location" style={{ color: 'var(--text-secondary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <MapPin size={14} /> {person.lastSeen?.state || 'Desconocido'}
+                      </p>
+                      {person.data?.cedula && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 0' }}>CI: {person.data.cedula}</p>}
+                      <p className="person-urgency" style={{ margin: 0 }}>
+                        Urgencia: <strong>{person.metadata?.urgencyScore || 0}/100</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filteredPersons.length === 0 && (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                  No se encontraron registros que coincidan con la búsqueda.
+                </div>
+              )}
+            </div>
           )}
         </section>
       </main>

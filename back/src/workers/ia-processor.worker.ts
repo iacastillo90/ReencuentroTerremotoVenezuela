@@ -37,6 +37,7 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         date: rawData.date ? new Date(rawData.date) : new Date()
       },
       age: personAge,
+      photoUrl: rawData.photoUrl,
       metadata: {
         urgencyScore: urgencyScore,
         confidenceScore: rawData.confidence_score,
