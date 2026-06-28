@@ -10,7 +10,9 @@ import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { useAuth } from './store/AuthContext';
 import type { Person, Disaster } from './types';
 
-type View = 'feed' | 'map' | 'report' | 'admin';
+import { LibraryPage } from './pages/Library/LibraryPage';
+
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -29,38 +31,50 @@ function App() {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const isFetchingRef = useRef(false);
   const { user } = useAuth();
 
-  // Carga inicial
-  useEffect(() => {
-    const fetchInitial = async () => {
-      setLoading(true);
-      try {
-        const [pRes, dRes, cRes] = await Promise.all([
-          api.get<{ total: number; persons: Person[] }>(`/persons?limit=${PAGE_SIZE}&offset=0`),
-          api.get<Disaster[]>('/disasters/active'),
-          api.get<Counts>('/persons/counts')
-        ]);
-        const { total: t, persons: p } = pRes.data;
-        
-        // Mezclar aleatoriamente los primeros resultados para que la vista inicial sea diferente cada vez
-        const shuffledPersons = [...p].sort(() => Math.random() - 0.5);
-        
-        setPersons(shuffledPersons);
-        setTotal(t);
-        setOffset(PAGE_SIZE);
-        setHasMore(PAGE_SIZE < t);
-        setDisasters(dRes.data);
-        setCounts(cRes.data);
-      } catch (e) {
-        console.error('Error fetching data:', e);
-      } finally {
-        setLoading(false);
+  // Función base para obtener datos
+  const fetchPersons = async (query: string, newOffset: number, append: boolean = false) => {
+    try {
+      const endpoint = `/persons?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`;
+      const [pRes, dRes, cRes] = await Promise.all([
+        api.get<{ total: number; persons: Person[] }>(endpoint),
+        // Only fetch these if it's initial load to save requests, but doing it parallel is fine
+        api.get<Disaster[]>('/disasters/active'),
+        api.get<Counts>('/persons/counts')
+      ]);
+      const { total: t, persons: p } = pRes.data;
+      
+      setTotal(t);
+      setHasMore(newOffset + p.length < t);
+      setDisasters(dRes.data);
+      setCounts(cRes.data);
+
+      if (append) {
+        setPersons(prev => [...prev, ...p]);
+      } else {
+        // If no query and it's offset 0, shuffle a bit
+        const data = (!query && newOffset === 0) ? [...p].sort(() => Math.random() - 0.5) : p;
+        setPersons(data);
       }
-    };
-    fetchInitial();
-  }, []);
+    } catch (e) {
+      console.error('Error fetching data:', e);
+    }
+  };
+
+  // Carga inicial o cuando cambia la búsqueda
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      setLoading(true);
+      setOffset(0);
+      await fetchPersons(searchQuery, 0, false);
+      setLoading(false);
+    }, searchQuery ? 500 : 0); // 500ms debounce
+    
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Cargar más (scroll infinito)
   const loadMore = useCallback(async () => {
@@ -68,15 +82,9 @@ function App() {
     isFetchingRef.current = true;
     setLoadingMore(true);
     try {
-      const res = await api.get<{ total: number; persons: Person[] }>(
-        `/persons?limit=${PAGE_SIZE}&offset=${offset}`
-      );
-      const { total: t, persons: newPersons } = res.data;
-      setPersons(prev => [...prev, ...newPersons]);
-      setTotal(t);
-      const newOffset = offset + newPersons.length;
+      const newOffset = offset + (searchQuery ? PAGE_SIZE : PAGE_SIZE); // Keep it simple
+      await fetchPersons(searchQuery, newOffset, true);
       setOffset(newOffset);
-      setHasMore(newOffset < t);
     } catch (e) {
       console.error('Error cargando más:', e);
     } finally {
@@ -109,6 +117,7 @@ function App() {
             : undefined
         }
       >
+        {activeView === 'library' && <LibraryPage />}
         {activeView === 'feed' && (
           <FeedPage
             persons={persons}
@@ -118,6 +127,8 @@ function App() {
             hasMore={hasMore}
             total={total}
             counts={counts}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             onSelectPerson={setSelectedPerson}
             onLoadMore={loadMore}
           />
@@ -136,6 +147,14 @@ function App() {
         <PersonDetailModal
           person={selectedPerson}
           onClose={() => setSelectedPerson(null)}
+          onReport={() => {
+            setSelectedPerson(null);
+            if (!user || !user.isProfileComplete) {
+              setIsAuthenticating(true);
+            } else {
+              setIsReporting(true);
+            }
+          }}
         />
       )}
 
