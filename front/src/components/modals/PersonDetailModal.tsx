@@ -5,6 +5,7 @@ import {
   MessageCircle, AlertCircle, Share2, Info, Lock
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
+import { api } from '../../services/api';
 import './PersonDetailModal.css';
 
 interface PersonDetailModalProps {
@@ -22,6 +23,30 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
   const [cedulaMatched, setCedulaMatched] = useState(false);
 
   const canViewSensitive = isMissing || cedulaMatched || user?.role === 'admin' || user?.role === 'verifier';
+
+  // Contact
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      alert("Debes iniciar sesión para enviar un mensaje.");
+      return;
+    }
+    try {
+      setSending(true);
+      await api.post('/contacts', { reportId: person.idHash, message });
+      alert("Mensaje enviado exitosamente. El reportante será notificado de forma segura.");
+      setShowContactForm(false);
+      setMessage('');
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Error al enviar mensaje");
+    } finally {
+      setSending(false);
+    }
+  };
 
   const handleCedulaMatch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,17 +128,43 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           </div>
 
           <div className="action-buttons">
-            <button className="btn-main-action btn-contact" onClick={() => onReport && onReport()}>
+            <button className="btn-main-action btn-contact" onClick={() => setShowContactForm(!showContactForm)}>
               <MessageCircle size={18} />
-              Tengo información
+              Contactar (Enmascarado)
             </button>
             {isMissing && (
               <button className="btn-main-action btn-confirm-safe" onClick={() => onReport && onReport()}>
                 <CheckCircle size={18} />
-                Confirmar que está a salvo
+                Tengo información adicional
               </button>
             )}
           </div>
+
+          {showContactForm && (
+            <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid #1e293b' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}><Lock size={16} color="#fbbf24" /> Comunicación Segura</h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de AyudaVE intermediará si es necesario.
+              </p>
+              <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <textarea 
+                  placeholder="Escribe aquí tu mensaje sobre esta persona..."
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', minHeight: '80px' }}
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" disabled={sending} style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                    {sending ? 'Enviando...' : 'Enviar Mensaje'}
+                  </button>
+                  <button type="button" onClick={() => setShowContactForm(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           <div className="info-section">
             <h3><Info size={18} /> Información y Señas</h3>

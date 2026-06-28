@@ -154,7 +154,9 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
     }
 
     const payload = validationResult.data;
-    payload.reportedBy = (req as any).user.userId;
+    if (!payload.isAnonymous) {
+      payload.reportedBy = (req as any).user.userId;
+    }
     const updatedAt = payload.date ? new Date(payload.date) : new Date();
 
     // 2. Check Deduplication / SyncState
