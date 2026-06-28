@@ -48,9 +48,10 @@ interface MapProps {
   persons: Person[];
   disasters: Disaster[];
   activeFilter: 'all' | 'disasters' | 'persons';
+  onSelectPerson?: (person: Person) => void;
 }
 
-export function InteractiveMap({ persons, disasters, activeFilter }: MapProps) {
+export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerson }: MapProps) {
   const [center, setCenter] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
 
   return (
@@ -78,6 +79,15 @@ export function InteractiveMap({ persons, disasters, activeFilter }: MapProps) {
                       </p>
                       <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
                       <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
+                      {onSelectPerson && (
+                        <button 
+                          className="btn-primary" 
+                          style={{ width: '100%', marginTop: '10px', fontSize: '0.8rem', padding: '0.5rem' }}
+                          onClick={() => onSelectPerson(person)}
+                        >
+                          Ver perfil completo
+                        </button>
+                      )}
                     </div>
                   </Popup>
                 </Marker>

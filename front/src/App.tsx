@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from './services/api';
 import { InteractiveMap } from './components/Map';
+import { PersonDetailModal } from './components/PersonDetailModal';
 import type { Person, Disaster } from './types';
 import { Search, AlertTriangle, Users, MapPin, Loader2, ArrowLeft } from 'lucide-react';
 import './App.css';
@@ -11,6 +12,7 @@ function App() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'disasters' | 'persons'>('all');
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -100,7 +102,12 @@ function App() {
                   <p className="empty-state">No se encontraron registros.</p>
                 ) : (
                   filteredPersons.map(person => (
-                    <div key={person.idHash} className="person-card">
+                    <div 
+                      key={person.idHash} 
+                      className="person-card" 
+                      onClick={() => setSelectedPerson(person)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="person-card-inner">
                         <div className="person-photo-container">
                           {person.photoUrl ? (
@@ -151,10 +158,22 @@ function App() {
               <p>Cargando datos geoespaciales...</p>
             </div>
           ) : (
-            <InteractiveMap persons={filteredPersons} disasters={disasters} activeFilter={activeFilter} />
+            <InteractiveMap 
+              persons={filteredPersons} 
+              disasters={disasters} 
+              activeFilter={activeFilter} 
+              onSelectPerson={setSelectedPerson}
+            />
           )}
         </section>
       </main>
+
+      {selectedPerson && (
+        <PersonDetailModal 
+          person={selectedPerson} 
+          onClose={() => setSelectedPerson(null)} 
+        />
+      )}
     </div>
   );
 }
