@@ -43,6 +43,11 @@ export async function setupDisasterSyncJobs() {
   await disasterSyncQueue.add('sync-ayudave', {}, {
     repeat: { pattern: '*/10 * * * *' }
   });
+
+  // VenezuelaReporta API cada 10 minutos
+  await disasterSyncQueue.add('sync-venezuelareporta', {}, {
+    repeat: { pattern: '*/10 * * * *' }
+  });
   
   
   console.log('[DisasterSync] Cron jobs registered.');
