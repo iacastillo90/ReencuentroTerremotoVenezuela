@@ -1,11 +1,9 @@
 import { Worker, Job } from 'bullmq';
-import { PersonModel } from '../models/unified-person.model';
-import { createHash } from 'crypto';
+import { upsertPerson } from '../services/person.service';
+import { connection } from '../config/redis.config';
 
 // import { Anthropic } from '@anthropic-ai/sdk';
 // const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const redisConfig = { connection: { host: process.env.REDIS_HOST || '127.0.0.1', port: 6379 } };
 
 /**
  * Prompt estricto de IA garantizando la protección de PII
@@ -26,32 +24,36 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const aiProcessedText = "Descripción segura, sin PII. Estado de salud: estable."; 
   const urgencyScore = 75; // Score calculado por la IA
   
-  // 2. Generación del ID Biográfico Hashing (Identidad unificada en TDD)
-  const ageStr = rawData.data?.age ? String(rawData.data.age) : 'unknown';
-  const baseForHash = `${rawData.name}|${rawData.estado}|${ageStr}`.toLowerCase();
-  const idHash = createHash('sha256').update(baseForHash).digest('hex');
+  // 2. Persistencia Idempotente en el Hub MongoDB usando el servicio
+  const ageNum = rawData.data?.age ? Number(rawData.data.age) : undefined;
   
-  // 3. Persistencia Idempotente en el Hub MongoDB
-  await PersonModel.findOneAndUpdate(
-    { idHash },
+  const person = await upsertPerson(
+    rawData.source || 'manual',
+    rawData.externalId || job.id || 'unknown',
     {
-      $set: {
-        type: rawData.type,
-        name: rawData.name,
-        normalizedName: String(rawData.name).toLowerCase(),
-        'lastSeen.state': rawData.estado,
-        'metadata.lastSync': new Date(),
-        'metadata.urgencyScore': urgencyScore,
-        'metadata.confidenceScore': rawData.confidence_score,
-        'metadata.confidenceLabel': rawData.confidence_label,
-        'data.cedula_hash': rawData.data?.cedula_hash,
-        description: aiProcessedText
+      type: rawData.type || 'person',
+      name: rawData.name,
+      normalizedName: String(rawData.name).toLowerCase(),
+      lastSeen: {
+        description: aiProcessedText,
+        state: rawData.estado,
+        date: rawData.date ? new Date(rawData.date) : new Date()
       },
-      $setOnInsert: { 'metadata.createdAt': new Date(), externalIds: [] },
-      $addToSet: { externalIds: { source: rawData.source, id: rawData.externalId } }
-    },
-    { upsert: true, new: true }
+      age: ageNum,
+      metadata: {
+        urgencyScore: urgencyScore,
+        confidenceScore: rawData.confidence_score,
+        confidenceLabel: rawData.confidence_label,
+        aiProcessed: true,
+        auditStatus: 'clean',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSync: new Date(),
+        source: rawData.source || 'manual'
+      }
+    }
   );
 
-  console.log(`[ia-processor] Registro procesado e inyectado en Mongo. idHash: ${idHash}`);
-}, redisConfig);
+  console.log(`[ia-processor] Registro procesado e inyectado en Mongo. idHash: ${person.idHash}`);
+}, { connection: connection as any });
+
