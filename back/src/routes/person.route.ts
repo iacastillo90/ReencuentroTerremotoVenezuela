@@ -38,7 +38,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const persons = await PersonModel.find(filter)
       .select(safeProjection)
-      .limit(50)
+      .limit(1000)
       .sort({ 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
       .lean();
 
