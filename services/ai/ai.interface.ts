@@ -1,4 +1,7 @@
 export interface AIProcessResult {
+  name: string;
+  estado: string;
+  age?: number;
   safeDescription: string;
   medicalStatus: 'estable' | 'herido' | 'crisis';
   urgencyScore: number;
@@ -10,13 +13,19 @@ export interface IAIProvider {
 
 export const SYSTEM_PROMPT = `
 INSTRUCCIÓN DE SISTEMA: 
-Extrae únicamente la última ubicación vista (estado/municipio), descripción física y características no sensibles de la persona.
+Analiza el reporte de persona desaparecida.
+Extrae el nombre completo de la persona buscada ("name") y la última ubicación/estado ("estado").
+Si se menciona una edad aproximada, extráela ("age").
+Extrae la descripción física y características de la persona ("safeDescription").
 Elimina, ignora y censura de forma absoluta cualquier número de teléfono, dirección exacta domiciliaria y descripciones de diagnósticos médicos o historia clínica. 
-Resume el estado médico SÓLO utilizando estas tres etiquetas de severidad permitidas: "estable", "herido", "crisis".
-Bajo ninguna circunstancia expongas información de identidad sensible.
+Resume el estado médico SÓLO utilizando estas tres etiquetas permitidas: "estable", "herido", "crisis".
+Bajo ninguna circunstancia expongas información de contacto.
 
-Devuelve la respuesta ESTRICTAMENTE en formato JSON con la siguiente estructura, sin texto adicional ni marcadores markdown de bloque de código:
+Devuelve la respuesta ESTRICTAMENTE en formato JSON con la siguiente estructura (reemplaza con null si falta edad):
 {
+  "name": "string",
+  "estado": "string",
+  "age": number | null,
   "safeDescription": "string",
   "medicalStatus": "estable" | "herido" | "crisis",
   "urgencyScore": number (0-100)
