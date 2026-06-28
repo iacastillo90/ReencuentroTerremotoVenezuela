@@ -10,6 +10,10 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { q, status } = req.query;
+
+    // Paginación — máx 200 por página
+    const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
     const filter: any = {};
 
     if (status) {
@@ -21,12 +25,14 @@ router.get('/', async (req: Request, res: Response) => {
       filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
     }
 
-    const cacheKey = `persons:q=${q || ''}:status=${status || ''}`;
-    
-    // Attempt to get from cache first (Alta Demanda Protection)
-    const cachedData = await redis.get(cacheKey);
-    if (cachedData) {
-      return res.status(200).json(JSON.parse(cachedData));
+    const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
+
+    // Solo cachear primera página sin búsqueda activa
+    if (!q && offset === 0) {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData) {
+        return res.status(200).json(JSON.parse(cachedData));
+      }
     }
 
     // Proyección segura: excluir PII, contactPerson, externalIds
@@ -49,16 +55,25 @@ router.get('/', async (req: Request, res: Response) => {
       'metadata.urgencyScore': 1
     };
 
-    const persons = await PersonModel.find(filter)
-      .select(safeProjection)
-      .limit(1000)
-      .sort({ 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
-      .lean();
+    // Prioridad: con foto primero, luego por urgencia
+    const [persons, total] = await Promise.all([
+      PersonModel.find(filter)
+        .select(safeProjection)
+        .sort({ photoUrl: -1, 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean(),
+      PersonModel.countDocuments(filter)
+    ]);
 
-    // Cache the result for 60 seconds (1 minute) to survive traffic spikes
-    await redis.setex(cacheKey, 60, JSON.stringify(persons));
+    const responsePayload = { total, limit, offset, persons };
 
-    return res.status(200).json(persons);
+    // Cachear solo primera página sin búsqueda (30s)
+    if (!q && offset === 0) {
+      await redis.setex(cacheKey, 30, JSON.stringify(responsePayload));
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (error: any) {
     console.error('[PersonRoute] GET Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
