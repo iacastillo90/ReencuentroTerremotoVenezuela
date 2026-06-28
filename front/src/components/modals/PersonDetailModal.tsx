@@ -9,9 +9,10 @@ import './PersonDetailModal.css';
 interface PersonDetailModalProps {
   person: Person;
   onClose: () => void;
+  onReport?: () => void;
 }
 
-export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose }) => {
+export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport }) => {
   const isMissing = person.status === 'missing';
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -71,12 +72,12 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           </div>
 
           <div className="action-buttons">
-            <button className="btn-main-action btn-contact">
+            <button className="btn-main-action btn-contact" onClick={() => onReport && onReport()}>
               <MessageCircle size={18} />
               Tengo información
             </button>
             {isMissing && (
-              <button className="btn-main-action btn-confirm-safe">
+              <button className="btn-main-action btn-confirm-safe" onClick={() => onReport && onReport()}>
                 <CheckCircle size={18} />
                 Confirmar que está a salvo
               </button>
