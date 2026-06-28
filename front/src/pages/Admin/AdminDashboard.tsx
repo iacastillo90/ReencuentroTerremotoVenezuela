@@ -289,7 +289,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
 
   useEffect(() => {
     api.get('/persons?limit=5000').then(res => {
-      setPersons(res.data);
+      setPersons(res.data.persons || []);
     }).finally(() => setLoading(false));
   }, []);
 
