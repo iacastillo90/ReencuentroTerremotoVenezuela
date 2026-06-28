@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Person } from '../../types';
 import { 
-  X, MapPin, User, Phone, CheckCircle, Heart, 
+  X, MapPin, User, CheckCircle, Heart, 
   MessageCircle, AlertCircle, Share2, Info
 } from 'lucide-react';
 import './PersonDetailModal.css';

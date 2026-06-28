@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import type { Person, Disaster } from '../types';
+import type { Person, Disaster } from '../../types';
 import './Map.css';
 
 // Fix para los iconos de leaflet en react
@@ -52,7 +52,7 @@ interface MapProps {
 }
 
 export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerson }: MapProps) {
-  const [center, setCenter] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
+  const [center] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
 
   return (
     <div className="map-container">

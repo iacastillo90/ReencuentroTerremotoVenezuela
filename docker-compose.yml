@@ -17,7 +17,7 @@ services:
 
   # ── 1. Base de Datos Central ─────────────────────────────────
   mongodb:
-    image: mongo:7
+    image: mongo:4.4
     container_name: reencuentros_mongo
     restart: always
     ports:
@@ -25,7 +25,7 @@ services:
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 15s
       timeout: 5s
       retries: 5
