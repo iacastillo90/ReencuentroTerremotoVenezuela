@@ -3,7 +3,7 @@ import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, 
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library';
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -127,17 +127,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             {item.label && <span>{item.label}</span>}
           </button>
         ))}
-        {user ? (
-          <button className="bottom-nav-item" onClick={logout}>
-            <LogOut size={22} />
-            <span>Salir</span>
-          </button>
-        ) : (
-          <button className="bottom-nav-item" onClick={() => handleBottomNav('feed' as any)}>
-            <UserIcon size={22} />
-            <span>Perfil</span>
-          </button>
-        )}
+        <button className={`bottom-nav-item ${activeView === 'profile' ? 'active' : ''}`} onClick={() => handleBottomNav('profile' as any)}>
+          <UserIcon size={22} />
+          <span>Perfil</span>
+        </button>
       </nav>
 
       {/* ─ Drawer — tablet ─ */}
