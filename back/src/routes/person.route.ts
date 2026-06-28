@@ -14,13 +14,15 @@ router.get('/counts', async (_req: Request, res: Response) => {
     const cached = await redis.get(CACHE_KEY);
     if (cached) return res.status(200).json(JSON.parse(cached));
 
-    const [missing, found, total] = await Promise.all([
+    const [missing, found, total, pending, manual] = await Promise.all([
       PersonModel.countDocuments({ status: 'missing' }),
       PersonModel.countDocuments({ status: 'found' }),
-      PersonModel.countDocuments({})
+      PersonModel.countDocuments({}),
+      PersonModel.countDocuments({ 'metadata.auditStatus': 'pending_review' }),
+      PersonModel.countDocuments({ 'metadata.source': 'manual' })
     ]);
 
-    const counts = { missing, found, total };
+    const counts = { missing, found, total, pending, manual };
     await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
 
     return res.status(200).json(counts);

@@ -36,29 +36,26 @@ interface AdminDashboardProps {
 }
 
 // ── Sección: Resumen ─────────────────────────────────────────
-function SectionResumen({ persons }: { persons: PersonRow[] }) {
-  const missing = persons.filter(p => p.status === 'missing').length;
-  const found   = persons.filter(p => p.status === 'found').length;
-  const pending = persons.filter(p => (p['metadata.auditStatus'] || p.metadata?.auditStatus) === 'pending_review').length;
-  const manual  = persons.filter(p => (p['metadata.source'] || p.metadata?.source) === 'manual').length;
+function SectionResumen({ counts }: { counts: any }) {
+  if (!counts) return null;
 
   return (
     <div className="admin-stats-row">
       <div className="admin-stat-card">
         <div className="admin-stat-icon red"><Users size={22} /></div>
-        <div><h4>{missing}</h4><p>Personas Desaparecidas</p></div>
+        <div><h4>{counts.missing.toLocaleString()}</h4><p>Personas Desaparecidas</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon green"><CheckCircle size={22} /></div>
-        <div><h4>{found}</h4><p>Personas Encontradas</p></div>
+        <div><h4>{counts.found.toLocaleString()}</h4><p>Personas Encontradas</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon amber"><AlertTriangle size={22} /></div>
-        <div><h4>{pending}</h4><p>Pendientes de Revisión</p></div>
+        <div><h4>{counts.pending.toLocaleString()}</h4><p>Pendientes de Revisión</p></div>
       </div>
       <div className="admin-stat-card">
         <div className="admin-stat-icon blue"><GitMerge size={22} /></div>
-        <div><h4>{manual}</h4><p>Reportes Manuales (IA)</p></div>
+        <div><h4>{counts.manual.toLocaleString()}</h4><p>Reportes Manuales (IA)</p></div>
       </div>
     </div>
   );
@@ -285,11 +282,16 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
   const [activeSection, setActiveSection] = useState<'resumen' | 'duplicados' | 'registros'>('resumen');
   const [persons, setPersons] = useState<PersonRow[]>([]);
+  const [counts, setCounts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/persons?limit=5000').then(res => {
-      setPersons(res.data.persons || []);
+    Promise.all([
+      api.get('/persons?limit=200'),
+      api.get('/persons/counts')
+    ]).then(([personsRes, countsRes]) => {
+      setPersons(personsRes.data.persons || []);
+      setCounts(countsRes.data);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -297,7 +299,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     setPersons(prev => prev.map(p => p.idHash === idHash ? { ...p, status: newStatus } : p));
   };
 
-  const pendingCount = persons.filter(p => (p['metadata.auditStatus'] || p.metadata?.auditStatus) === 'pending_review').length;
+  const pendingCount = counts ? counts.pending : 0;
 
   return (
     <div className="admin-layout">
@@ -349,14 +351,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
           </button>
         </div>
           <div className="admin-topbar-meta">
-            <span>{persons.length.toLocaleString()} registros totales</span>
+            <span>{counts ? counts.total.toLocaleString() : persons.length} registros totales</span>
           </div>
         </header>
 
         <div className="admin-content">
           {activeSection === 'resumen' && (
             <>
-              <SectionResumen persons={persons} />
+              <SectionResumen counts={counts} />
               <SectionDuplicados />
             </>
           )}
