@@ -2,9 +2,13 @@ import { Client } from 'minio';
 import crypto from 'crypto';
 import path from 'path';
 
-// Configuración cliente MinIO local
+// Limpiar el endpoint por si el usuario pone https:// por error
+const rawEndpoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
+const cleanEndpoint = rawEndpoint.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+// Configuración cliente MinIO local/cloud
 export const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT || '127.0.0.1',
+  endPoint: cleanEndpoint,
   port: parseInt(process.env.MINIO_PORT || '9000'),
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
@@ -49,10 +53,11 @@ export async function uploadMedia(fileBuffer: Buffer, originalName: string, mime
   });
 
   const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-  const endPoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
+  const rawEndpoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
+  const cleanEndpoint = rawEndpoint.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const port = process.env.MINIO_PORT || '9000';
   
-  const baseUrl = process.env.PUBLIC_STORAGE_URL || `${protocol}://${endPoint}:${port}/${BUCKET_NAME}`;
+  const baseUrl = process.env.PUBLIC_STORAGE_URL || `${protocol}://${cleanEndpoint}:${port}/${BUCKET_NAME}`;
   
   return `${baseUrl}/${fileName}`;
 }
