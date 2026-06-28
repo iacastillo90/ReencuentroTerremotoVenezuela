@@ -1,6 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { AuthModal } from '../../components/modals/AuthModal';
-import { useAuth } from '../../store/AuthContext';
+import { render, screen } from '@testing-library/react';
+import { AuthModal } from '../components/modals/AuthModal';
+import { useAuth } from '../store/AuthContext';
 
 // Mock de GoogleOAuthProvider y GoogleLogin
 jest.mock('@react-oauth/google', () => ({
@@ -8,7 +8,7 @@ jest.mock('@react-oauth/google', () => ({
 }));
 
 // Mock del contexto de Autenticación
-jest.mock('../../store/AuthContext', () => ({
+jest.mock('../store/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
