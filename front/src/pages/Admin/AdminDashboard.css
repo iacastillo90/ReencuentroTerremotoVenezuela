@@ -13,7 +13,9 @@
 .admin-sidebar {
   width: 100%;
   flex-shrink: 0;
-  background: #1e293b;
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255,255,255,0.06);
   display: flex;
   flex-direction: row;
@@ -78,7 +80,9 @@
 }
 
 .admin-topbar {
-  background: #1e293b;
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255,255,255,0.06);
   padding: 1rem;
   display: flex;
@@ -128,13 +132,20 @@
 }
 
 .admin-stat-card {
-  background: #1e293b;
-  border-radius: 12px;
-  padding: 1.25rem;
-  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.5);
 }
 
 .admin-stat-icon {
@@ -157,11 +168,13 @@
 
 /* --- Pending Review Table --- */
 .admin-section {
-  background: #1e293b;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
   margin-bottom: 2rem;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .admin-section-header {
@@ -280,6 +293,7 @@
 
 .btn-merge:hover {
   background: rgba(16, 185, 129, 0.3);
+  transform: scale(1.05);
 }
 
 .btn-dismiss {
@@ -296,6 +310,7 @@
 
 .btn-dismiss:hover {
   background: rgba(244, 63, 94, 0.3);
+  transform: scale(1.05);
 }
 
 .btn-found {
@@ -312,6 +327,7 @@
 
 .btn-found:hover {
   background: rgba(16, 185, 129, 0.15);
+  transform: scale(1.05);
 }
 
 /* --- Search bar --- */
