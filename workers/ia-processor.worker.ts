@@ -1,28 +1,26 @@
 import { Worker, Job } from 'bullmq';
 import { upsertPerson } from '../services/person.service';
 import { connection } from '../config/redis.config';
-
-// import { Anthropic } from '@anthropic-ai/sdk';
-// const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-/**
- * Prompt estricto de IA garantizando la protección de PII
- */
-const SYSTEM_PROMPT = `
-INSTRUCCIÓN DE SISTEMA: Extrae únicamente la última ubicación vista (estado/municipio), descripción física y características no sensibles de la persona.
-Elimina, ignora y censura de forma absoluta cualquier número de teléfono, dirección exacta domiciliaria y descripciones de diagnósticos médicos o historia clínica. 
-Resume el estado médico SÓLO utilizando estas tres etiquetas de severidad permitidas: "estable", "herido", "crisis".
-Bajo ninguna circunstancia expongas información de identidad sensible.
-`;
+import { getAIProvider } from '../services/ai/ai.factory';
 
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
   
-  // 1. Fase de Análisis IA (Anthropic - Comentado por scaffolding)
-  // const claudeResponse = await claude.messages.create({ ... });
-  // Simulación:
-  const aiProcessedText = "Descripción segura, sin PII. Estado de salud: estable."; 
-  const urgencyScore = 75; // Score calculado por la IA
+  // 1. Fase de Análisis IA
+  const aiProvider = getAIProvider();
+  
+  // Convert rawData to a string representation for the AI
+  const rawTextToAnalyze = JSON.stringify({
+    name: rawData.name,
+    description: rawData.description || 'No specific description provided',
+    estado: rawData.estado
+  });
+  
+  const aiResult = await aiProvider.processRecord(rawTextToAnalyze);
+  
+  const aiProcessedText = aiResult.safeDescription; 
+  const urgencyScore = aiResult.urgencyScore;
+
   
   // 2. Persistencia Idempotente en el Hub MongoDB usando el servicio
   const ageNum = rawData.data?.age ? Number(rawData.data.age) : undefined;
