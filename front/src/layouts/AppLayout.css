@@ -1,0 +1,273 @@
+/* ═══════════════════════════
+   AppLayout — Shell principal
+   Mobile-first → Tablet → Desktop
+   ═══════════════════════════ */
+
+/* ─── App Shell ─────────── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--clr-bg);
+}
+
+/* ─── Top Navbar ─────────── */
+.navbar {
+  height: var(--nav-h);
+  flex-shrink: 0;
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-logo-icon {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-brand h1 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--clr-text);
+  line-height: 1;
+}
+
+.nav-brand h1 span { color: var(--clr-primary); }
+
+/* View Toggle Pills — hidden on mobile, shown tablet+ */
+.nav-toggle-pills {
+  display: none;
+  background: rgba(255,255,255,0.05);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 2px;
+}
+
+.toggle-pill {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: var(--clr-text-muted);
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.toggle-pill.active {
+  background: var(--clr-card);
+  color: var(--clr-text);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-report {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-report:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--clr-primary-glow); }
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-text-muted);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover { background: var(--clr-hover); color: var(--clr-text); }
+
+/* ─── Main body (below navbar) ─ */
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── Sidebar (desktop only) ─ */
+.sidebar {
+  display: none;
+}
+
+/* ─── Content area ─────────── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Bottom Nav (mobile) ─── */
+.bottom-nav {
+  height: var(--bottom-nav-h);
+  flex-shrink: 0;
+  background: rgba(10,10,15,0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.5rem;
+  z-index: 100;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+  border-radius: var(--radius-md);
+}
+
+.bottom-nav-item span {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.bottom-nav-item.active { color: var(--clr-primary); }
+
+/* ─── Hamburger Menu button (tablet) ─ */
+.hamburger-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--clr-border);
+  background: transparent;
+  color: var(--clr-text);
+  border-radius: var(--radius-md);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hamburger-btn:hover { background: var(--clr-hover); }
+
+/* ─── Drawer (tablet sidebar) ─ */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: min(320px, 80vw);
+  background: var(--clr-surface);
+  border-right: 1px solid var(--clr-border);
+  z-index: 201;
+  overflow-y: auto;
+  animation: slideRight 0.25s cubic-bezier(0.16,1,0.3,1);
+  padding: 1rem;
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════
+   BREAKPOINTS
+   ══════════════════════════════════════ */
+
+/* ─── Tablet (≥ 768px) ────────────── */
+@media (min-width: 768px) {
+  .navbar { padding: 0 1.5rem; }
+
+  .bottom-nav { display: none; }
+
+  .hamburger-btn { display: flex; }
+
+  .nav-toggle-pills { display: none; } /* still hidden, using hamburger */
+
+  .app-body { padding-bottom: 0; }
+}
+
+/* ─── Desktop (≥ 1024px) ─────────── */
+@media (min-width: 1024px) {
+  .navbar { padding: 0 2rem; }
+
+  .hamburger-btn { display: none; }
+
+  .nav-toggle-pills { display: flex; }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    border-right: 1px solid var(--clr-border);
+    background: var(--clr-surface);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .drawer-overlay { display: none !important; }
+}
+
+/* ─── Wide (≥ 1440px) ───────────── */
+@media (min-width: 1440px) {
+  .navbar { padding: 0 2.5rem; }
+  --sidebar-w: 400px;
+}

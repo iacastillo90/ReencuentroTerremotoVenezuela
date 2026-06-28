@@ -11,8 +11,11 @@ export interface Person {
   };
   age?: number;
   gender?: string;
+  description?: string;
+  photoUrl?: string;
   metadata: {
     urgencyScore: number;
+    createdAt?: string;
   };
   data?: {
     cedula?: string;
