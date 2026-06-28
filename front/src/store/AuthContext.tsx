@@ -31,6 +31,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
+      // Fetch CSRF token on app init (silent fail)
+      api.get('/auth/csrf-token').catch(() => {});
+
       if (token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         try {
@@ -55,7 +58,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch { /* ignore */ }
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
