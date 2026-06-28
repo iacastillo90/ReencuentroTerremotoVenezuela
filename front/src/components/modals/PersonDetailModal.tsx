@@ -66,6 +66,13 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
                 {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
+                
+                {person.data?.verificado_por && (
+                  <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle size={14} /> Verificado por {person.data.verificado_por}
+                  </span>
+                )}
+
                 {person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {person.metadata.reportedBy.name}</span>}
               </div>
             </div>
@@ -102,8 +109,13 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <p>{person.lastSeen?.municipality ? `${person.lastSeen.municipality}, ` : ''}{person.lastSeen?.state || 'Desconocido'}</p>
               </div>
               <div className="info-item full-width">
-                <label>Descripción / Señas particulares</label>
+                <label>Descripción / Detalles</label>
                 <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
+                {person.data?.ficha_url && (
+                  <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '8px', color: 'var(--clr-primary)', fontWeight: 500, fontSize: '0.85rem' }}>
+                    Ver ficha original ↗
+                  </a>
+                )}
               </div>
             </div>
           </div>
