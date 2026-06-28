@@ -7,6 +7,8 @@ import { VerificationRequestModel } from '../models/verification-request.model';
 import { MatchModel } from '../models/match.model';
 import { StateHistoryModel } from '../models/state-history.model';
 import { requireRoles } from '../middlewares/auth.middleware';
+import { adminStatusUpdateSchema, adminMergeSchema } from '../validators/admin.validator';
+import { auditLog } from '../middlewares/audit.middleware';
 
 const router = Router();
 
@@ -149,11 +151,13 @@ router.get('/audit', async (req: Request, res: Response) => {
 router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
   try {
     const jobId = req.params.jobId as string;
-    const { targetIdHash } = req.body; // El ID de la persona existente en BD
 
-    if (!targetIdHash) {
-      return res.status(400).json({ error: 'Missing targetIdHash' });
+    const validation = adminMergeSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
     }
+
+    const { targetIdHash } = validation.data;
 
     const job = await manualAuditQueue.getJob(jobId);
     if (!job) {
@@ -186,6 +190,16 @@ router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
     );
 
     await job.remove(); // Sacarlo de la cola
+
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'info',
+      actor: (req as any).user?.userId || 'admin',
+      action: 'POST /admin/audit/:jobId/merge',
+      resource: targetIdHash,
+      detail: { jobId },
+      req,
+    });
 
     return res.status(200).json({ status: 'merged', idHash: mergedPerson.idHash });
   } catch (error) {
@@ -221,6 +235,15 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
 
     await job.remove(); // Sacarlo de la cola
 
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'info',
+      actor: (req as any).user?.userId || 'admin',
+      action: 'POST /admin/audit/:jobId/dismiss',
+      detail: { jobId },
+      req,
+    });
+
     return res.status(200).json({ status: 'inserted_as_new', idHash: newPerson.idHash });
   } catch (error) {
     console.error('[AdminRoute] POST /audit/:jobId/dismiss Error:', error);
@@ -232,12 +255,15 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
 router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), async (req: Request, res: Response) => {
   try {
     const { idHash } = req.params;
-    const { status, notes } = req.body;
     const userId = (req as any).user?.userId;
 
-    if (!['missing', 'found', 'deceased', 'unknown'].includes(status)) {
-      return res.status(400).json({ error: 'Estado inválido' });
+    const validation = adminStatusUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Estado inválido', details: validation.error.issues });
     }
+
+    const { status } = validation.data;
+    const notes = req.body.notes;
 
     const person = await PersonModel.findOne({ idHash });
     if (!person) {
@@ -262,6 +288,16 @@ router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), asy
         notes
       });
     }
+
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'info',
+      actor: (req as any).user?.userId || 'admin',
+      action: 'PATCH /admin/persons/:idHash/status',
+      resource: idHash as string,
+      detail: { newStatus: status },
+      req,
+    });
 
     return res.status(200).json({ status: updated?.status, idHash: updated?.idHash });
   } catch (error) {
