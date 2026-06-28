@@ -14,6 +14,8 @@ interface FeedPageProps {
   hasMore: boolean;
   total: number;
   counts: Counts;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
   onSelectPerson: (p: Person) => void;
   onLoadMore: () => void;
 }
@@ -21,9 +23,8 @@ interface FeedPageProps {
 type Filter = 'all' | 'missing' | 'found' | 'disasters';
 
 export const FeedPage: React.FC<FeedPageProps> = ({
-  persons, disasters, loading, loadingMore, hasMore, total, counts, onSelectPerson, onLoadMore
+  persons, disasters, loading, loadingMore, hasMore, total, counts, searchQuery, onSearchChange, onSelectPerson, onLoadMore
 }) => {
-  const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('missing');
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +35,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !search) {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !searchQuery) {
           onLoadMore();
         }
       },
@@ -43,20 +44,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, onLoadMore, search]);
+  }, [hasMore, loadingMore, onLoadMore]);
 
   const filtered = persons
     .filter(p => {
       if (filter === 'missing') return p.status === 'missing';
       if (filter === 'found')   return p.status === 'found';
       return true;
-    })
-    .filter(p =>
-      !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.lastSeen?.state || '').toLowerCase().includes(search.toLowerCase()) ||
-      (p.description || '').toLowerCase().includes(search.toLowerCase())
-    );
+    });
 
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: counts.missing },
@@ -73,9 +68,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           <Search size={17} color="var(--clr-text-dim)" />
           <input
             type="text"
-            placeholder="Buscar por nombre, zona o descripción..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o zona..."
+            value={searchQuery}
+            onChange={e => onSearchChange(e.target.value)}
           />
         </div>
         <div className="feed-chips">
@@ -128,7 +123,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         <div className="feed-empty">
           <Users size={48} />
           <p>No se encontraron personas con esos filtros.</p>
-          {search && <small>Intenta con otro nombre o zona.</small>}
+          {searchQuery && <small>Intenta con otro nombre o zona.</small>}
         </div>
       ) : (
         <div className="feed-list">
@@ -152,9 +147,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           )}
 
           {/* Fin del feed */}
-          {!hasMore && persons.length > 0 && !search && (
+          {!hasMore && persons.length > 0 && (
             <div className="feed-end">
-              <span>✓ {total.toLocaleString()} registros cargados</span>
+              <span>✓ {total.toLocaleString()} registros encontrados</span>
             </div>
           )}
         </div>
