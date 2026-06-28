@@ -6,6 +6,7 @@ import { PersonModel } from '../models/unified-person.model';
 import { AuditLogModel } from '../models/audit-log.model';
 import { connection as redis } from '../config/redis.config';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
+import { safeRegexQuery } from '../utils/regex-escape.util';
 
 const router = Router();
 
@@ -82,8 +83,10 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (q && typeof q === 'string') {
-      const normalizedQuery = q.trim().toLowerCase();
-      filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
+      const sanitizedQuery = safeRegexQuery(q);
+      if (sanitizedQuery) {
+        filter.normalizedName = { $regex: sanitizedQuery, $options: 'i' };
+      }
     }
 
     const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
