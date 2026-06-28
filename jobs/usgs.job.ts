@@ -1,11 +1,12 @@
 import { DisasterEventModel } from '../models/disaster-event.model';
+import { getTargetBoundingBox } from '../util/geo.util';
 
 export async function fetchUSGSEarthquakes() {
-  const VENEZUELA_BOX = { minlat: 0.6, maxlat: 12.2, minlon: -73.4, maxlon: -59.8 };
+  const bbox = getTargetBoundingBox();
   
   const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson` +
-              `&minlatitude=${VENEZUELA_BOX.minlat}&maxlatitude=${VENEZUELA_BOX.maxlat}` +
-              `&minlongitude=${VENEZUELA_BOX.minlon}&maxlongitude=${VENEZUELA_BOX.maxlon}` +
+              `&minlatitude=${bbox.minLat}&maxlatitude=${bbox.maxLat}` +
+              `&minlongitude=${bbox.minLon}&maxlongitude=${bbox.maxLon}` +
               `&minmagnitude=2.5&orderby=time&limit=50`;
 
   try {

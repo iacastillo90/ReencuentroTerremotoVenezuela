@@ -26,9 +26,17 @@ export async function setupDisasterSyncJobs() {
 
   // USGS cada 5 minutos
   await disasterSyncQueue.add('sync-usgs', {}, {
-    repeat: {
-      pattern: '*/5 * * * *'
-    }
+    repeat: { pattern: '*/5 * * * *' }
+  });
+
+  // FIRMS cada 3 horas
+  await disasterSyncQueue.add('sync-firms', {}, {
+    repeat: { pattern: '0 */3 * * *' }
+  });
+
+  // GDACS cada 1 hora
+  await disasterSyncQueue.add('sync-gdacs', {}, {
+    repeat: { pattern: '0 * * * *' }
   });
   
   console.log('[DisasterSync] Cron jobs registered.');
