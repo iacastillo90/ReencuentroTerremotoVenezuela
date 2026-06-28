@@ -278,6 +278,100 @@ function SectionRegistros({ persons, loading, onStatusChange }: {
   );
 }
 
+// ── Sección: Matches de IA ────────────────────────────────────
+function SectionMatches() {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadMatches = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/admin/matches');
+      setMatches(res.data);
+    } catch (e) {
+      console.error(e);
+      alert('Error cargando coincidencias (¿Tienes permisos?)');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadMatches(); }, [loadMatches]);
+
+  const changeStatus = async (id: string, newStatus: string) => {
+    try {
+      await api.patch(`/admin/matches/${id}/status`, { status: newStatus });
+      setMatches(prev => prev.map(m => m._id === id ? { ...m, status: newStatus } : m));
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error actualizando match');
+    }
+  };
+
+  if (loading) return <div className="admin-loading"><Loader2 className="spinner" size={24} /><span>Cargando coincidencias...</span></div>;
+
+  return (
+    <div className="admin-section">
+      <div className="admin-section-header">
+        <h3><GitMerge size={18} /> Coincidencias de Búsqueda (Matches IA)</h3>
+        <span className="admin-badge pending">{matches.length} Matches</span>
+      </div>
+      <div className="table-responsive-wrapper">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Alerta (Solicitud)</th>
+              <th>Reporte Encontrado</th>
+              <th>Similitud</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matches.map(m => (
+              <tr key={m._id}>
+                <td>
+                  <strong>Buscado:</strong> {m.searchRequestId?.searchName || 'Desconocido'}<br/>
+                  <small style={{ color: 'var(--text-secondary)' }}>{m.searchRequestId?.category || 'Sin categoría'}</small>
+                </td>
+                <td>
+                  {m.person ? (
+                    <div className="name-cell">
+                      {m.person.photoUrl ? <img src={m.person.photoUrl} alt="Foto" className="person-thumb" /> : <div className="person-thumb-placeholder"><Users size={16} /></div>}
+                      <div>
+                        <strong>{m.person.name}</strong><br/>
+                        <small style={{ color: 'var(--text-secondary)' }}>{m.person.lastSeen?.state}</small>
+                      </div>
+                    </div>
+                  ) : <span style={{ color: 'var(--clr-danger)' }}>Reporte eliminado</span>}
+                </td>
+                <td>
+                  <span style={{ fontWeight: 'bold', color: m.score > 0.7 ? '#10b981' : '#fbbf24' }}>
+                    {(m.score * 100).toFixed(1)}%
+                  </span>
+                </td>
+                <td>
+                  <span className={`admin-badge ${m.status === 'confirmado' ? 'found' : m.status === 'descartado' ? 'missing' : 'pending'}`}>
+                    {m.status.toUpperCase()}
+                  </span>
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    {m.status !== 'confirmado' && <button className="btn-found" onClick={() => changeStatus(m._id, 'confirmado')}>Confirmar</button>}
+                    {m.status !== 'descartado' && <button className="btn-dismiss" onClick={() => changeStatus(m._id, 'descartado')}>Descartar</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {matches.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>No hay coincidencias generadas por la IA</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Sección: Usuarios ──────────────────────────────────────────
 function SectionUsuarios() {
   const [users, setUsers] = useState<any[]>([]);
@@ -429,7 +523,7 @@ function SectionUsuarios() {
 
 // ── Componente Principal ─────────────────────────────────────
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
-  const [activeSection, setActiveSection] = useState<'resumen' | 'duplicados' | 'registros' | 'usuarios'>('resumen');
+  const [activeSection, setActiveSection] = useState<'resumen' | 'matches' | 'duplicados' | 'registros' | 'usuarios'>('resumen');
   const [persons, setPersons] = useState<PersonRow[]>([]);
   const [counts, setCounts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -463,7 +557,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
 
         {([
           ['resumen',    'Resumen General',    <LayoutDashboard size={18} />],
-          ['duplicados', 'Duplicados (IA)',     <GitMerge size={18} />],
+          ['matches',    'Matches de Búsqueda', <GitMerge size={18} />],
+          ['duplicados', 'Duplicados (Data)',  <GitMerge size={18} />],
           ['registros',  'Control Registros',  <ShieldCheck size={18} />],
           ['usuarios',   'Usuarios (Roles)',   <Users size={18} />],
         ] as const).map(([key, label, icon]) => (
@@ -493,7 +588,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
         <div className="admin-topbar-header-row">
           <h1>
             {activeSection === 'resumen'    && 'Resumen General'}
-            {activeSection === 'duplicados' && 'Gestión de Duplicados'}
+            {activeSection === 'matches'    && 'Coincidencias de Búsqueda (IA)'}
+            {activeSection === 'duplicados' && 'Gestión de Datos Duplicados'}
             {activeSection === 'registros'  && 'Control de Registros'}
             {activeSection === 'usuarios'   && 'Gestión de Usuarios y Roles'}
           </h1>
@@ -514,6 +610,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             </>
           )}
           {activeSection === 'duplicados' && <SectionDuplicados />}
+          {activeSection === 'matches' && <SectionMatches />}
           {activeSection === 'registros' && (
             <SectionRegistros
               persons={persons}

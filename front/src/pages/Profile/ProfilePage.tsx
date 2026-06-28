@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
-import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText, ShieldAlert, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText, ShieldAlert, CheckCircle, MessageCircle } from 'lucide-react';
 import './Profile.css';
 
 interface ProfilePageProps {
@@ -13,6 +13,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const { user, logout } = useAuth();
   const [myReports, setMyReports] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<any[]>([]);
   const [requestNotes, setRequestNotes] = useState('');
   const [showRequestForm, setShowRequestForm] = useState(false);
 
@@ -32,8 +33,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       try {
         const res = await api.get<Person[]>('/persons/mine');
         setMyReports(res.data);
+        const msgs = await api.get('/contacts/received');
+        setMessages(msgs.data);
       } catch (err) {
-        console.error('Error fetching my reports', err);
+        console.error('Error fetching data', err);
       } finally {
         setLoading(false);
       }
@@ -114,7 +117,33 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         </div>
       )}
 
-      <div className="profile-content">
+      <div className="profile-content" style={{ marginTop: '20px' }}>
+        <h3><MessageCircle size={18} /> Mensajes Recibidos ({messages.length})</h3>
+        {messages.length === 0 ? (
+          <div className="profile-empty">
+            <p>No tienes mensajes de la comunidad.</p>
+          </div>
+        ) : (
+          <div className="my-reports-list">
+            {messages.map(msg => (
+              <div key={msg._id} className="report-card" style={{ borderLeft: '3px solid var(--blue)' }}>
+                <div className="report-card-header">
+                  <h4>Mensaje sobre reporte: {msg.reportId}</h4>
+                  <span className={`status-badge found`}>Nuevo</span>
+                </div>
+                <div className="report-card-body">
+                  <p><Clock size={12} /> {new Date(msg.createdAt).toLocaleDateString('es-VE')}</p>
+                  <p className="report-desc" style={{ fontStyle: 'italic', marginTop: '8px', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                    "{msg.message}"
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="profile-content" style={{ marginTop: '20px' }}>
         <h3><FileText size={18} /> Mis reportes ({myReports.length})</h3>
         
         {loading ? (

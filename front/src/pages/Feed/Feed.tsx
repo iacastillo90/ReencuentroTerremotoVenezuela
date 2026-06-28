@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
 import type { Person, Disaster } from '../../types';
+import { useAuth } from '../../store/AuthContext';
+import { api } from '../../services/api';
 import './Feed.css';
 
 interface Counts { missing: number; found: number; total: number; }
@@ -27,6 +29,25 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 }) => {
   const [filter, setFilter] = useState<Filter>('missing');
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const [creatingAlert, setCreatingAlert] = useState(false);
+
+  const handleCreateSearchRequest = async () => {
+    if (!searchQuery) return;
+    try {
+      setCreatingAlert(true);
+      await api.post('/search-requests', {
+        searchName: searchQuery,
+        category: 'adulto', // Default category
+        isMinor: false
+      });
+      alert('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.');
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error al crear alerta de búsqueda');
+    } finally {
+      setCreatingAlert(false);
+    }
+  };
 
   // IntersectionObserver — dispara loadMore al llegar al final
   useEffect(() => {
@@ -123,7 +144,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         <div className="feed-empty">
           <Users size={48} />
           <p>No se encontraron personas con esos filtros.</p>
-          {searchQuery && <small>Intenta con otro nombre o zona.</small>}
+          {searchQuery && (
+            <div style={{ marginTop: '15px' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                ¿No encuentras a quien buscas?
+              </p>
+              {user ? (
+                <button 
+                  onClick={handleCreateSearchRequest} 
+                  disabled={creatingAlert}
+                  style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {creatingAlert ? 'Creando...' : 'Crear Alerta de Búsqueda'}
+                </button>
+              ) : (
+                <p style={{ fontSize: '0.85rem', color: 'var(--clr-amber)' }}>Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="feed-list">
