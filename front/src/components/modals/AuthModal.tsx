@@ -46,14 +46,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
   const handleBypassLogin = async () => {
     try {
+      const inputEmail = window.prompt("Ingresa un correo para la sesión de prueba (reutiliza el mismo para mantener tu perfil):", "dev@ayudave.com");
+      if (!inputEmail) return; // El usuario canceló
+      
+      const safeEmail = inputEmail.trim().toLowerCase();
+      const mockId = btoa(safeEmail).replace(/=/g, ''); // Generar un ID estable por correo
+      
       setIsSubmitting(true);
       setError('');
+      
       // Generar un JWT falso para el backend en entorno local
       const mockPayload = {
-        sub: "dev-user-123",
-        email: "dev@ayudave.com",
-        name: "Desarrollador Local",
-        picture: "https://via.placeholder.com/150"
+        sub: `dev-${mockId}`,
+        email: safeEmail,
+        name: `Usuario ${safeEmail.split('@')[0]}`,
+        picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${mockId}`
       };
       const mockToken = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })) + '.' + btoa(JSON.stringify(mockPayload)) + '.signature';
       
