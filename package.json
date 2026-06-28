@@ -1,0 +1,34 @@
+{
+  "name": "scraping",
+  "version": "1.0.0",
+  "description": "> **Misión:** Centralizar la búsqueda de personas desaparecidas, los alertas de desastres naturales y la información de emergencias para Venezuela, en una sola plataforma abierta, confiable y resiliente.",
+  "main": "bridge.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iacastillo90/ReencuentroTerremotoVenezuela.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/iacastillo90/ReencuentroTerremotoVenezuela/issues"
+  },
+  "homepage": "https://github.com/iacastillo90/ReencuentroTerremotoVenezuela#readme",
+  "dependencies": {
+    "fastest-levenshtein": "^1.0.16",
+    "mongoose": "^9.7.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.0.1",
+    "jest": "^30.4.2",
+    "mongodb-memory-server": "^11.2.0",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
