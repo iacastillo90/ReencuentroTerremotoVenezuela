@@ -11,7 +11,7 @@ import { mediaRouter } from './routes/media.route';
 import { authRouter } from './routes/auth.route';
 import { partnerRouter } from './routes/partner.route';
 import { localizadoRouter } from './routes/localizado.route';
-import { requireAdminApiKey } from './middlewares/auth.middleware';
+import { requireAdminOrVerifier } from './middlewares/auth.middleware';
 
 const app = express();
 
@@ -37,7 +37,7 @@ app.use(hpp()); // Protege contra HTTP Parameter Pollution
 app.use('/api/persons', personRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Ruta administrativa protegida
-app.use('/api/admin', requireAdminApiKey, adminRouter);
+app.use('/api/admin', requireAdminOrVerifier, adminRouter);
 app.use('/api/disasters', disastersRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/auth', authRouter);

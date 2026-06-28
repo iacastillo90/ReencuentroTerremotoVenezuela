@@ -2,8 +2,41 @@ import { Router, Request, Response } from 'express';
 import { manualAuditQueue } from '../queues/manual-audit.queue';
 import { upsertPerson } from '../services/person.service';
 import { PersonModel } from '../models/unified-person.model';
+import { UserModel } from '../models/user.model';
+import { requireRoles } from '../middlewares/auth.middleware';
 
 const router = Router();
+
+// Endpoint para listar usuarios registrados (Solo Admins)
+router.get('/users', requireRoles(['admin']), async (req: Request, res: Response) => {
+  try {
+    const users = await UserModel.find().sort({ createdAt: -1 }).lean();
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error('[AdminRoute] GET /users Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Endpoint para cambiar el rol de un usuario (Solo Admins)
+router.patch('/users/:id/role', requireRoles(['admin']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['user', 'verifier', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Rol inválido' });
+    }
+
+    const updated = await UserModel.findByIdAndUpdate(id, { role }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    return res.status(200).json({ status: 'updated', user: updated });
+  } catch (error) {
+    console.error('[AdminRoute] PATCH /users/:id/role Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 // Endpoint para listar posibles duplicados
 router.get('/audit', async (req: Request, res: Response) => {
