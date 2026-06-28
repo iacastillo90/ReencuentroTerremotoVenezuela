@@ -3,9 +3,9 @@ import { api } from './services/api';
 import { AppLayout } from './layouts/AppLayout';
 import { FeedPage, FeedSidebar } from './pages/Feed/Feed';
 import { MapPage } from './pages/Map/MapPage';
-import { PersonDetailModal } from './components/PersonDetailModal';
-import { ReportModal } from './components/ReportModal';
-import { AdminDashboard } from './admin/AdminDashboard';
+import { PersonDetailModal } from './components/modals/PersonDetailModal';
+import { ReportModal } from './components/modals/ReportModal';
+import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import type { Person, Disaster } from './types';
 
 type View = 'feed' | 'map' | 'report' | 'admin';

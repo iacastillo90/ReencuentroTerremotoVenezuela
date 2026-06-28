@@ -1,5 +1,5 @@
 import React from 'react';
-import { InteractiveMap } from '../../components/Map';
+import { InteractiveMap } from '../../components/map/Map';
 import type { Person, Disaster } from '../../types';
 import './Map.css';
 

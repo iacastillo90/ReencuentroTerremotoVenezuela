@@ -1,7 +1,7 @@
 import React from 'react';
 import { MapPin, Users } from 'lucide-react';
 import type { Person } from '../../../types';
-import './Feed.css';
+import '../Feed.css';
 
 interface FeedCardProps {
   person: Person;
