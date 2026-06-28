@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { normalizeCedula, normalizePhoneVE, hashSensitiveData } from '../validators/venezuela.validator';
 
 interface RawRecord {
   source: string;
@@ -50,21 +51,23 @@ export function normalize(raw: RawRecord): NormalizedRecord {
     checksum: ''
   };
 
-  // Censura estricta: hashear cédula, jamás almacenar el valor raw
-  const cedula = raw.cedula || normalized.data.cedula;
-  if (cedula) {
-    normalized.data.cedula_hash = crypto
-      .createHash('sha256')
-      .update(String(cedula).replace(/\D/g, '').trim())
-      .digest('hex');
-    delete normalized.data.cedula;
-    delete raw.cedula;
-  }
+  // ── Cédula: validar formato venezolano y hashear (jamás persiste el valor raw) ──
+  const rawCedula = raw.cedula || normalized.data.cedula;
+  const cleanCedula = normalizeCedula(rawCedula);
+  normalized.data.cedula_hash = hashSensitiveData(cleanCedula);
+  delete normalized.data.cedula;
+  delete raw.cedula;
 
-  // Eliminar PII médico y de identidad privada
+  // ── Teléfono privado: normalizar a E.164 y hashear ──
+  const rawPhone = (raw as any).telefono_privado || normalized.data.telefono_privado;
+  const cleanPhone = normalizePhoneVE(rawPhone);
+  normalized.data.contact_hash = hashSensitiveData(cleanPhone);
+
+  // ── Purgar todos los campos PII sensibles antes de persistir ──
   const sensitiveKeys = [
     'diagnostico', 'historia_clinica',
-    'telefono', 'telefono_privado', 'direccion_exacta'
+    'telefono', 'telefono_privado', 'direccion_exacta',
+    'cedula'
   ];
   sensitiveKeys.forEach(key => {
     delete (raw as any)[key];
