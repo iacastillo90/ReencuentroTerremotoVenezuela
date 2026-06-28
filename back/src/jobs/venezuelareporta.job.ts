@@ -67,6 +67,12 @@ export async function fetchVenezuelaReporta() {
                   }
                 },
                 photoUrl: item.foto_url || null,
+                data: {
+                  cedula: item.cedula || null,
+                  ficha_url: item.ficha_url || null,
+                  origen: item.origen || null,
+                  verificado_por: item.verificado_por || null
+                },
                 sourceRecords: [{ source: SOURCE_ID, externalId: item.id, rawData: item }],
                 metadata: {
                   urgencyScore: mappedStatus === 'missing' ? 85 : 0,
