@@ -65,6 +65,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
                 {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
+                {person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {person.metadata.reportedBy.name}</span>}
               </div>
             </div>
           </div>
