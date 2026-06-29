@@ -21,12 +21,18 @@ export function getJwtSecret(): string {
 }
 
 export async function requireUser(req: Request, res: Response, next: NextFunction) {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+  }
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
@@ -99,6 +105,22 @@ export function requireAdminApiKey(req: Request, res: Response, next: NextFuncti
     detail: { migration: 'Migrate to JWT admin auth' },
     req,
   });
+
+  next();
+}
+
+export function requireWebhookApiKey(req: Request, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-webhook-api-key'];
+  const validKey = process.env.WEBHOOK_API_KEY;
+
+  if (!validKey) {
+    console.error('[FATAL] WEBHOOK_API_KEY is not defined in environment variables. Denying all webhook access.');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (!apiKey || apiKey !== validKey) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid webhook API key' });
+  }
 
   next();
 }
