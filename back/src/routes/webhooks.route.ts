@@ -2,8 +2,11 @@ import { Router, Request, Response } from 'express';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { webhookWhatsAppSchema, webhookTelegramSchema } from '../validators/webhooks.validator';
 import { auditLog } from '../middlewares/audit.middleware';
+import { requireWebhookApiKey } from '../middlewares/auth.middleware';
 
 const router = Router();
+
+router.use('/n8n', requireWebhookApiKey);
 
 // Endpoint para recibir mensajes de WhatsApp desde n8n
 router.post('/n8n/whatsapp', async (req: Request, res: Response) => {
