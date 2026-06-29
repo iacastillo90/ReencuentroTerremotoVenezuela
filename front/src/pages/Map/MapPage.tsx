@@ -1,6 +1,7 @@
 import React from 'react';
 import { InteractiveMap } from '../../components/map/Map';
-import { MapFilters, MapLayers } from '../../components/map/MapFilters';
+import { MapFilters } from '../../components/map/MapFilters';
+import type { MapLayers } from '../../components/map/MapFilters';
 import type { Person, Disaster } from '../../types';
 import { useState } from 'react';
 import './Map.css';
