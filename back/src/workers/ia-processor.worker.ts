@@ -23,6 +23,17 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const personState = aiResult.estado || rawData.estado || 'Desconocido';
   const personAge = aiResult.age || (rawData.data?.age ? Number(rawData.data.age) : undefined);
   
+  // Generar Embedding Vectorial (Fase 3)
+  let embedding: number[] | undefined = undefined;
+  if (aiProvider.generateEmbedding) {
+    const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
+    try {
+      embedding = await aiProvider.generateEmbedding(textToEmbed);
+    } catch (e) {
+      console.warn('[ia-processor] Error generando embedding, ignorando:', e);
+    }
+  }
+  
   // 3. Reconciliación e Inserción Idempotente
   const result = await processAndReconcilePerson(
     rawData.source || 'manual',
@@ -38,6 +49,7 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       },
       age: personAge,
       photoUrl: rawData.photoUrl,
+      embedding: embedding,
       metadata: {
         urgencyScore: urgencyScore,
         confidenceScore: rawData.confidence_score,

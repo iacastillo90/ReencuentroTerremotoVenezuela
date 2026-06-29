@@ -16,6 +16,7 @@ export interface IAIProvider {
   processRecord(rawData: string): Promise<AIProcessResult>;
   transcribeAudio?(audioBuffer: Buffer, mimeType: string): Promise<string>;
   analyzeImageDraft?(imageBuffer: Buffer, mimeType: string): Promise<ImageDraftAnalysis>;
+  generateEmbedding?(text: string): Promise<number[]>;
 }
 
 export const SYSTEM_PROMPT = `

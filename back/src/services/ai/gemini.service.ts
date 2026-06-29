@@ -86,4 +86,17 @@ No agregues comentarios ni markdown fuera del JSON.
       throw new Error('No se pudo analizar la imagen usando Gemini.');
     }
   }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    try {
+      const response = await this.client.models.embedContent({
+        model: 'text-embedding-004',
+        contents: text
+      });
+      return response.embeddings?.[0]?.values || [];
+    } catch (error) {
+      console.error('Gemini Embedding Error:', error);
+      throw new Error('No se pudo generar el embedding con Gemini.');
+    }
+  }
 }
