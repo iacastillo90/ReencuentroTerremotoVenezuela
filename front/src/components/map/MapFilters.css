@@ -79,8 +79,15 @@
   box-shadow: 0 2px 8px var(--clr-amber-bg);
 }
 
+/* Responsividad Mobile */
+@media (max-width: 768px) {
+  .map-filters-container {
+    display: none;
+  }
+}
+
 /* Responsividad Desktop / Tablet */
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .map-filters-container {
     top: 1.5rem;
   }
