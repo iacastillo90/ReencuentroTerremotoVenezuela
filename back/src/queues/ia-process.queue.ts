@@ -12,7 +12,7 @@ export const iaProcessQueue = new Queue(IA_PROCESS_QUEUE_NAME, {
       delay: 1000,
     },
     removeOnComplete: true,
-    removeOnFail: false,
+    removeOnFail: { age: 24 * 3600, count: 100 },
   }
 });
 
