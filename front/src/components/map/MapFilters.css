@@ -1,0 +1,105 @@
+.map-filters-container {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: 90%;
+  max-width: 800px;
+  background-color: rgba(17, 17, 24, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-full);
+  padding: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.filters-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  align-items: center;
+  /* Ocultar barra de scroll para estética en móviles */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filters-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+  color: var(--clr-text-muted);
+  font-family: var(--font-family, 'Work Sans'), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.filter-chip:hover {
+  background: var(--clr-hover);
+  color: var(--clr-text);
+}
+
+.filter-chip.active {
+  background: var(--clr-primary);
+  color: white;
+  border-color: var(--clr-primary);
+  box-shadow: 0 2px 8px var(--clr-primary-glow);
+}
+
+/* Colores Específicos de Capa cuando están activas */
+.filter-chip.quake-chip.active {
+  background: var(--clr-danger);
+  border-color: var(--clr-danger);
+  box-shadow: 0 2px 8px var(--clr-danger-bg);
+}
+
+.filter-chip.flood-chip.active {
+  background: #0284c7; /* Azul agua */
+  border-color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+}
+
+.filter-chip.zap-chip.active {
+  background: #8b5cf6; /* Púrpura electricidad */
+  border-color: #8b5cf6;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.filter-chip.fire-chip.active {
+  background: var(--clr-amber);
+  border-color: var(--clr-amber);
+  box-shadow: 0 2px 8px var(--clr-amber-bg);
+}
+
+/* Responsividad Desktop / Tablet */
+@media (min-width: 768px) {
+  .map-filters-container {
+    top: 1.5rem;
+    padding: 0.75rem;
+  }
+  .filter-chip {
+    padding: 0.6rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .map-filters-container {
+    max-width: 1200px;
+    padding: 1rem;
+    border-radius: var(--radius-xl);
+  }
+  .filters-scroll {
+    justify-content: center; /* Centrar los chips en pantallas gigantes */
+  }
+}
