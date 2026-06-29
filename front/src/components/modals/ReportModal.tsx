@@ -20,14 +20,48 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [clothingQuestion, setClothingQuestion] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !isSubmitting) {
+    if (e.target === e.currentTarget && !isSubmitting && !isAnalyzingImage) {
       onClose();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+    
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+      setIsAnalyzingImage(true);
+      setClothingQuestion('');
+      try {
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        const res = await api.post('/media/analyze-image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (res.data) {
+          if (res.data.permanentFeatures) {
+            setText((prev) => prev ? `${prev}\nRasgos detectados en la foto: ${res.data.permanentFeatures}` : `Rasgos detectados en la foto: ${res.data.permanentFeatures}`);
+          }
+          if (res.data.clothingQuestion) {
+            setClothingQuestion(res.data.clothingQuestion);
+          }
+        }
+      } catch (err) {
+        console.error('Error analizando imagen:', err);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    } else {
+      setClothingQuestion('');
     }
   };
 
@@ -245,10 +279,34 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 <input 
                   type="file" 
                   accept="image/*,video/mp4" 
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  disabled={isSubmitting}
+                  onChange={handleFileChange}
+                  disabled={isSubmitting || isAnalyzingImage}
                   style={{ padding: '0.5rem' }}
                 />
+                
+                {isAnalyzingImage && (
+                  <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--clr-primary)', fontSize: '0.85rem' }}>
+                    <Loader2 size={16} className="spinner" /> La IA está analizando los rasgos de la foto...
+                  </div>
+                )}
+
+                {clothingQuestion && (
+                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--surface-hover)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                      <Sparkles size={18} style={{ color: 'var(--clr-amber)', flexShrink: 0, marginTop: '2px' }} />
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Pregunta del Asistente</strong>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          {clothingQuestion}
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                          <button type="button" onClick={() => { setText(prev => prev + '\nLlevaba esa misma ropa al momento de desaparecer.'); setClothingQuestion(''); }} style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--clr-primary)', backgroundColor: 'transparent', color: 'var(--clr-primary)', cursor: 'pointer' }}>Sí, llevaba esa ropa</button>
+                          <button type="button" onClick={() => { setText(prev => prev + '\nNO llevaba esa ropa al momento de desaparecer.'); setClothingQuestion(''); }} style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}>No llevaba eso</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
                   Sube una imagen clara para ayudar a la inteligencia artificial en futuras coincidencias.
                 </small>
