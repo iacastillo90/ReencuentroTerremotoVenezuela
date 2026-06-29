@@ -3,12 +3,29 @@ import App from '../App';
 import { api } from '../services/api';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
+// Mock de useAuth para que App no necesite AuthProvider
+vi.mock('../store/AuthContext', () => ({
+  useAuth: vi.fn().mockReturnValue({
+    user: null,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 // Mock del API
 vi.mock('../services/api', () => ({
   api: {
     get: vi.fn()
   }
 }));
+
+// Mock de IntersectionObserver porque jsdom no lo soporta
+class MockIntersectionObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
 // Mock de React Leaflet porque no se puede renderizar en JSDOM sin errores
 vi.mock('react-leaflet', () => ({
@@ -25,9 +42,9 @@ describe('App Component', () => {
   });
 
   it('renders loading state initially', () => {
-    (api.get as any).mockReturnValue(new Promise(() => {})); // Promesa sin resolver
+    (api.get as any).mockReturnValue(new Promise(() => {}));
     render(<App />);
-    expect(screen.getByText(/Cargando datos geoespaciales/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cargando registros/i)).toBeInTheDocument();
   });
 
   it('renders persons and disasters successfully', async () => {
@@ -39,8 +56,10 @@ describe('App Component', () => {
     ];
 
     (api.get as any).mockImplementation((url: string) => {
-      if (url === '/persons') return Promise.resolve({ data: mockPersons });
+      if (url === '/persons/counts') return Promise.resolve({ data: { missing: 1, found: 0, total: 1 } });
+      if (url.startsWith('/persons')) return Promise.resolve({ data: { total: mockPersons.length, persons: mockPersons } });
       if (url === '/disasters/active') return Promise.resolve({ data: mockDisasters });
+      if (url.startsWith('/localizados')) return Promise.resolve({ data: { data: [], total: 0 } });
       return Promise.resolve({ data: [] });
     });
 
@@ -48,7 +67,7 @@ describe('App Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Juan Perez')).toBeInTheDocument();
-      expect(screen.getAllByText('1').length).toBeGreaterThan(0); // Alertas activas y desaparecidos
+      expect(screen.getAllByText('1').length).toBeGreaterThan(0);
     });
   });
 });
