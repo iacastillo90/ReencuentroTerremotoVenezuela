@@ -48,6 +48,7 @@ export interface UnifiedPerson extends Document {
     auditStatus: 'clean' | 'pending_review' | 'merged' | 'dismissed';
     reportedBy?: Types.ObjectId | string;
   };
+  embedding?: number[];
 }
 
 const UnifiedPersonSchema = new Schema<UnifiedPerson>({
@@ -91,6 +92,7 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     auditStatus: { type: String, enum: ['clean', 'pending_review', 'merged', 'dismissed'], default: 'clean' },
     reportedBy: { type: Schema.Types.ObjectId, ref: 'User' }
   },
+  embedding: { type: [Number], select: false } // Vector embedding para IA
 });
 
 UnifiedPersonSchema.index({ normalizedName: 1, 'lastSeen.state': 1 });
