@@ -41,9 +41,9 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 
 # Usuario no-root para mayor seguridad (evita correr como root en el VPS)
-RUN addgroup -g 1001 -S ayudave && \
-    adduser -S ayudave -u 1001
-USER ayudave
+RUN addgroup -g 1001 -S reencuentro && \
+    adduser -S reencuentro -u 1001
+USER reencuentro
 
 # Exponer puerto de la API
 EXPOSE 4000

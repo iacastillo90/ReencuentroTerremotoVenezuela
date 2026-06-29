@@ -125,9 +125,9 @@ function renderProgress(done, total, inserted, updated, errors, elapsed) {
 
 // ─── Main ─────────────────────────────────────────────────────
 async function main() {
-  console.log('\n╔══════════════════════════════════════════════════════════╗');
-  console.log('║   🇻🇪  Scraper Venezuela Reporta → AyudaVE MongoDB       ║');
-  console.log('╚══════════════════════════════════════════════════════════╝');
+  console.log('╚═════════════════════════════════════════════════════════════╝');
+  console.log('║   🇻🇪  Scraper Venezuela Reporta → Reencuentro Terremoto Venezuela MongoDB       ║');
+  console.log('╚═════════════════════════════════════════════════════════════╝\n');
   console.log(`  📡  API:        ${API_BASE}`);
   console.log(`  🗄️   MongoDB:    ${MONGO_URI}`);
   console.log(`  ⏱️   Ritmo:      ${REQ_PER_MIN} req/min (${DELAY_MS}ms entre páginas)`);
@@ -140,7 +140,7 @@ async function main() {
   // 1. Sondeo inicial — obtener total
   const probeParams = new URLSearchParams({ limit: '1', ...(STATUS && { status: STATUS }), ...(SINCE && { since: SINCE }) });
   const probeRes    = await fetch(`${API_BASE}?${probeParams}`, {
-    headers: { 'User-Agent': 'AyudaVE-Scraper/1.0 (ayudave.org)' }
+    headers: { 'User-Agent': 'Reencuentro-Scraper/1.0 (reencuentro.org)' }
   });
 
   if (!probeRes.ok) {
@@ -189,7 +189,7 @@ async function main() {
 
     try {
       const res = await fetch(`${API_BASE}?${params}`, {
-        headers: { 'User-Agent': 'AyudaVE-Scraper/1.0 (ayudave.org)' }
+        headers: { 'User-Agent': 'Reencuentro-Scraper/1.0 (reencuentro.org)' }
       });
 
       if (!res.ok) {

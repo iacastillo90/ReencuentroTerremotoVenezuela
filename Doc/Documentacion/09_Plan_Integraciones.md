@@ -1,6 +1,6 @@
 # Plan de Integración de Fuentes Oficiales (Fase D)
 
-Este documento traza la hoja de ruta técnica para conectar AyudaVE con 6 fuentes institucionales venezolanas (FUNVISIS, INAMEH, Protección Civil, CNE/SAIME, Cruz Roja y Corpoelec). El objetivo es centralizar alertas vitales y mostrar datos referenciales con soporte **offline** y protección **anti-duplicación**.
+Este documento traza la hoja de ruta técnica para conectar Reencuentro Terremoto Venezuela con 6 fuentes institucionales venezolanas (FUNVISIS, INAMEH, Protección Civil, CNE/SAIME, Cruz Roja y Corpoelec). El objetivo es centralizar alertas vitales y mostrar datos referenciales con soporte **offline** y protección **anti-duplicación**.
 
 ## 🏗 Arquitectura de las Soluciones (Scraping y APIs)
 

@@ -152,7 +152,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid #1e293b' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}><Lock size={16} color="var(--clr-amber)" /> Comunicación Segura</h4>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de AyudaVE intermediará si es necesario.
+                Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de Reencuentro Terremoto Venezuela intermediará si es necesario.
               </p>
               <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <textarea 

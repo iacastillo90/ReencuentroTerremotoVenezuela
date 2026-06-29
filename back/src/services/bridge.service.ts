@@ -12,7 +12,7 @@ const iaProcessQueue = new Queue('ia-process', redisConfig);
 
 /**
  * Patrón de Escritura Dual (Dual Write) para la persistencia.
- * Mantiene compatibilidad con AyudaVE v2.0 (SQL/legacy) y emite eventos
+ * Mantiene compatibilidad con Reencuentro Terremoto Venezuela v2.0 (SQL/legacy) y emite eventos
  * hacia el hub de IA de MongoDB para el ecosistema TDD actual.
  */
 export async function ingestDualWrite(records: any[]): Promise<void> {
@@ -21,7 +21,7 @@ export async function ingestDualWrite(records: any[]): Promise<void> {
   // 1. Escritura síncrona en PostgreSQL (Tablas Originales - Legacy)
   try {
     await legacyStore.upsertMediaBatch(records);
-    console.log(`[bridge] Persistidos ${records.length} registros en SQL (Legacy AyudaVE)`);
+    console.log(`[bridge] Persistidos ${records.length} registros en SQL (Legacy Reencuentro Terremoto Venezuela)`);
   } catch (error: any) {
     console.error('[bridge] Fallo crítico de persistencia en SQL legacy:', error.message);
     throw error; // Falla rápido para asegurar integridad relacional
