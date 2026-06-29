@@ -53,5 +53,16 @@ export async function setupDisasterSyncJobs() {
   await disasterSyncQueue.add('sync-funvisis', {}, {
     repeat: { pattern: '*/5 * * * *' }
   });
+
+  // INAMEH Lluvias cada 15 minutos
+  await disasterSyncQueue.add('sync-inameh', {}, {
+    repeat: { pattern: '*/15 * * * *' }
+  });
+
+  // CORPOELEC Electricidad cada 15 minutos
+  await disasterSyncQueue.add('sync-corpoelec', {}, {
+    repeat: { pattern: '*/15 * * * *' }
+  });
+
   console.log('[DisasterSync] Cron jobs registered.');
 }
