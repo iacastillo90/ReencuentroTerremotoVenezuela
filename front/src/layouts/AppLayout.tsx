@@ -29,6 +29,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { view: 'feed',   icon: <Home size={22} />,     label: 'Inicio' },
     { view: 'map',    icon: <Map size={22} />,      label: 'Mapa' },
     { view: 'report', icon: <PlusCircle size={32} color="var(--clr-primary)" fill="rgba(59,130,246,0.2)" />, label: '', center: true },
+    { view: 'library',icon: <BookOpen size={22} />, label: 'Guías' },
     { view: 'logistics', icon: <Truck size={22} />, label: 'Ayuda' },
   ];
 
@@ -75,6 +76,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           >
             <Map size={14} style={{ display: 'inline', marginRight: 6 }} />
             Mapa
+          </button>
+          <button
+            className={`toggle-pill ${activeView === 'library' ? 'active' : ''}`}
+            onClick={() => onViewChange('library')}
+          >
+            <BookOpen size={14} style={{ display: 'inline', marginRight: 6 }} />
+            Guías
           </button>
           <button
             className={`toggle-pill ${activeView === 'logistics' ? 'active' : ''}`}
