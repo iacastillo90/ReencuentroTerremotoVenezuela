@@ -33,6 +33,7 @@ export const MapPage: React.FC<MapPageProps> = ({ persons, disasters, onSelectPe
           persons={persons}
           disasters={disasters}
           layers={layers}
+          onToggleLayer={toggleLayer}
           onSelectPerson={onSelectPerson}
         />
       </div>

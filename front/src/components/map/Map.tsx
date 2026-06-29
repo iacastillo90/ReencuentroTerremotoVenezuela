@@ -51,10 +51,11 @@ interface MapProps {
   persons: Person[];
   disasters: Disaster[];
   layers: MapLayers;
+  onToggleLayer: (layer: keyof MapLayers) => void;
   onSelectPerson?: (person: Person) => void;
 }
 
-export function InteractiveMap({ persons, disasters, layers, onSelectPerson }: MapProps) {
+export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSelectPerson }: MapProps) {
   const [center] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
 
   return (
@@ -135,7 +136,7 @@ export function InteractiveMap({ persons, disasters, layers, onSelectPerson }: M
           );
         })}
       </MapContainer>
-      <MapLegend />
+      <MapLegend layers={layers} onToggleLayer={onToggleLayer} />
     </div>
   );
 }
