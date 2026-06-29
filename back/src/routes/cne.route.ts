@@ -7,7 +7,8 @@ export const cneRouter = Router();
 // Ejemplo: /api/cne/V/25000001
 cneRouter.get('/:nationality/:cedula', async (req: Request, res: Response) => {
   try {
-    const { nationality, cedula } = req.params;
+    const nationality = req.params.nationality as string;
+    const cedula = req.params.cedula as string;
     
     if (!['V', 'E'].includes(nationality.toUpperCase())) {
       return res.status(400).json({ error: 'Nacionalidad debe ser V o E' });
