@@ -28,4 +28,26 @@ export class GeminiProvider implements IAIProvider {
       throw error;
     }
   }
+
+  async transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
+    try {
+      const response = await this.client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            inlineData: {
+              data: audioBuffer.toString('base64'),
+              mimeType: mimeType
+            }
+          },
+          { text: "Transcribe exactamente el siguiente audio. No agregues comentarios, solo la transcripción." }
+        ]
+      });
+
+      return response.text || '';
+    } catch (error) {
+      console.error('Gemini Transcription Error:', error);
+      throw new Error('No se pudo transcribir el audio usando Gemini.');
+    }
+  }
 }

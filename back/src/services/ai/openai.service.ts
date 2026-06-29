@@ -26,4 +26,22 @@ export class OpenAIProvider implements IAIProvider {
       throw error;
     }
   }
+
+  async transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
+    // OpenAI requiere un stream o un objeto con path/name para su API.
+    // Usaremos un File object simulado mediante form-data o fetch nativo,
+    // o simplemente usando su SDK oficial con un buffer.
+    const file = new File([new Uint8Array(audioBuffer)], "audio.webm", { type: mimeType });
+    try {
+      const response = await this.client.audio.transcriptions.create({
+        file: file,
+        model: 'whisper-1',
+        language: 'es'
+      });
+      return response.text;
+    } catch (error) {
+      console.error('OpenAI Transcription Error:', error);
+      throw new Error('No se pudo transcribir el audio usando OpenAI Whisper.');
+    }
+  }
 }
