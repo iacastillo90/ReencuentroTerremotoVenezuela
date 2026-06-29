@@ -5,6 +5,7 @@ import { fetchFIRMSFires } from '../jobs/firms.job';
 import { fetchGDACS } from '../jobs/gdacs.job';
 import { fetchReencuentroPersons } from '../jobs/reencuentro.job';
 import { fetchVenezuelaReporta } from '../jobs/venezuelareporta.job';
+import { runFunvisisJob } from '../jobs/funvisis.job';
 
 
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
@@ -23,5 +24,8 @@ export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) =
   } else if (job.name === 'sync-venezuelareporta') {
     console.log(`[Worker] Starting VenezuelaReporta Sync Job ${job.id}`);
     await fetchVenezuelaReporta();
+  } else if (job.name === 'sync-funvisis') {
+    console.log(`[Worker] Starting FUNVISIS Sync Job ${job.id}`);
+    await runFunvisisJob();
   }
 }, { connection: connection as any });
