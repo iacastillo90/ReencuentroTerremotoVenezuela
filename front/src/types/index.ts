@@ -31,10 +31,13 @@ export interface Person {
 export interface Disaster {
   _id: string;
   title: string;
+  description: string;
+  source: string;
   type: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   coordinates: {
     coordinates: [number, number];
   };
   occurredAt: string;
+  metadata?: any;
 }

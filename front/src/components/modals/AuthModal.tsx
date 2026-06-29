@@ -46,7 +46,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
   const handleBypassLogin = async () => {
     try {
-      const inputEmail = window.prompt("Ingresa un correo para la sesión de prueba (reutiliza el mismo para mantener tu perfil):", "dev@ayudave.com");
+      const inputEmail = window.prompt("Ingresa un correo para la sesión de prueba (reutiliza el mismo para mantener tu perfil):", "dev@reencuentro.com");
       if (!inputEmail) return; // El usuario canceló
       
       const safeEmail = inputEmail.trim().toLowerCase();

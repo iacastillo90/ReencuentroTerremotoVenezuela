@@ -38,6 +38,7 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
     const safeProjection = {
+      idHash: 1,
       name: 1,
       status: 1,
       'lastSeen.state': 1,
@@ -96,6 +97,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Proyección segura: excluir PII, contactPerson, externalIds
     const safeProjection = {
+      idHash: 1,
       name: 1,
       status: 1,
       'lastSeen.state': 1,
