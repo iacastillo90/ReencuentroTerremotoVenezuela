@@ -40,8 +40,8 @@ router.use(authLimiter);
 router.get('/csrf-token', (req: Request, res: Response) => {
   const token = generateCsrfToken();
   res.cookie('csrf-token', token, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    secure: true,
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24h
   });
@@ -76,6 +76,16 @@ router.post('/google', async (req: Request, res: Response) => {
     } catch (e) {
       // DEV_MODE bypass: skip Google verification
       if (process.env.DEV_MODE === 'true') {
+        if (process.env.NODE_ENV === 'production') {
+          auditLog({
+            eventType: 'security_violation',
+            severity: 'critical',
+            actor: req.ip || 'unknown',
+            action: 'Attempted DEV_MODE bypass in production',
+            req,
+          });
+          return res.status(403).json({ error: 'DEV_MODE disabled in production' });
+        }
         console.warn('[DEV_MODE] Skipping Google token verification');
         const decoded = jwt.decode(token) as any;
         payload = decoded;

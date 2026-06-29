@@ -8,8 +8,9 @@ export interface IAuditLog {
     | 'admin_action'
     | 'ingestion_webhook'
     | 'ingestion_partner'
-    | 'validation_failure';
-  severity: 'info' | 'warning' | 'error';
+    | 'validation_failure'
+    | 'security_violation';
+  severity: 'info' | 'warning' | 'error' | 'critical';
   actor: string;
   action: string;
   resource?: string;
@@ -30,12 +31,13 @@ const AuditLogSchema = new Schema<IAuditLog>({
       'ingestion_webhook',
       'ingestion_partner',
       'validation_failure',
+      'security_violation',
     ],
     required: true,
   },
   severity: {
     type: String,
-    enum: ['info', 'warning', 'error'],
+    enum: ['info', 'warning', 'error', 'critical'],
     required: true,
   },
   actor: { type: String, required: true },
