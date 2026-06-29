@@ -1,6 +1,9 @@
 import Parser from 'rss-parser';
+import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox, isPointInsideBBox } from '../utils/geo.util';
+
+const rawDataSchema = z.record(z.string(), z.unknown());
 
 const parser = new Parser({
   customFields: {
@@ -71,7 +74,7 @@ export async function fetchGDACS() {
               source: 'gdacs',
               occurredAt: item.pubDate ? new Date(item.pubDate) : new Date(),
               metadata: {
-                rawData: item
+                rawData: rawDataSchema.parse(item)
               }
             }
           },

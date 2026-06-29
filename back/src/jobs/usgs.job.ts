@@ -1,5 +1,8 @@
+import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox } from '../utils/geo.util';
+
+const rawDataSchema = z.record(z.string(), z.unknown());
 
 export async function fetchUSGSEarthquakes() {
   const bbox = getTargetBoundingBox();
@@ -46,7 +49,7 @@ export async function fetchUSGSEarthquakes() {
               metadata: {
                 magnitude,
                 depth_km: depth,
-                rawData: properties
+                rawData: rawDataSchema.parse(properties)
               }
             }
           },
