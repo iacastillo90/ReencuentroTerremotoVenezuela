@@ -20,6 +20,7 @@ export interface IDisasterEvent extends Document {
     depth_km?: number;
     windSpeed_kmh?: number;
     rainfallMm?: number;
+    // WARNING: Schema.Types.Mixed below — must be validated with Zod before persisting.
     rawData: any;
   };
 }
@@ -59,6 +60,7 @@ const disasterEventSchema = new Schema<IDisasterEvent>({
     depth_km: { type: Number },
     windSpeed_kmh: { type: Number },
     rainfallMm: { type: Number },
+    // WARNING: Must be validated with Zod before persisting — raw external API data.
     rawData: { type: Schema.Types.Mixed, default: {} }
   }
 }, { timestamps: true });
