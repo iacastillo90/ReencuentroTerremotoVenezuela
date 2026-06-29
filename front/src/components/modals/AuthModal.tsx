@@ -11,7 +11,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
-  const { login, user, token } = useAuth();
+  const { login, user } = useAuth();
   
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
   const isDevMode = GOOGLE_CLIENT_ID === 'dummy-client-id';
@@ -31,7 +31,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       setIsSubmitting(true);
       setError('');
       const res = await api.post('/auth/google', { token: credentialResponse.credential });
-      login(res.data.token, res.data.user);
+      login(res.data.user);
       
       if (res.data.user.isProfileComplete) {
         onSuccess();
@@ -45,17 +45,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   };
 
   const handleBypassLogin = async () => {
+    if (!import.meta.env.DEV) return;
+
     try {
       const inputEmail = window.prompt("Ingresa un correo para la sesión de prueba (reutiliza el mismo para mantener tu perfil):", "dev@ayudave.com");
-      if (!inputEmail) return; // El usuario canceló
-      
+      if (!inputEmail) return;
+
       const safeEmail = inputEmail.trim().toLowerCase();
-      const mockId = btoa(safeEmail).replace(/=/g, ''); // Generar un ID estable por correo
-      
+      const mockId = btoa(safeEmail).replace(/=/g, '');
+
       setIsSubmitting(true);
       setError('');
-      
-      // Generar un JWT falso para el backend en entorno local
+
       const mockPayload = {
         sub: `dev-${mockId}`,
         email: safeEmail,
@@ -63,10 +64,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${mockId}`
       };
       const mockToken = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })) + '.' + btoa(JSON.stringify(mockPayload)) + '.signature';
-      
+
       const res = await api.post('/auth/google', { token: mockToken });
-      login(res.data.token, res.data.user);
-      
+      login(res.data.user);
+
       if (res.data.user.isProfileComplete) {
         onSuccess();
       }
@@ -88,11 +89,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     try {
       setIsSubmitting(true);
       setError('');
-      // Update profile
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const res = await api.post('/auth/profile', { sector, contactNumber });
-      
-      login(res.data.token, res.data.user); // updates token and user
+
+      login(res.data.user);
       onSuccess();
     } catch (err) {
       console.error(err);
