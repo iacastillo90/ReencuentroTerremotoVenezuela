@@ -149,6 +149,30 @@
   cursor: not-allowed;
 }
 
+.btn-verify-cne {
+  padding: 0 1rem;
+  background-color: var(--clr-surface);
+  color: var(--clr-text);
+  border: 1px solid var(--clr-border);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-verify-cne:hover:not(:disabled) {
+  background-color: var(--clr-hover);
+  border-color: var(--clr-primary);
+}
+
+.btn-verify-cne:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-submit:hover:not(:disabled) {
   background-color: #2563eb;
 }

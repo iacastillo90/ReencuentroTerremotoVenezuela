@@ -4,6 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import type { Person, Disaster } from '../../types';
+import { MapLegend } from './MapLegend';
 import './Map.css';
 
 // Fix para los iconos de leaflet en react
@@ -123,6 +124,7 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
           );
         })}
       </MapContainer>
+      <MapLegend />
     </div>
   );
 }
