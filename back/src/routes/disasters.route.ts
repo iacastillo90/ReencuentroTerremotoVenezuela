@@ -1,12 +1,27 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 
 const router = Router();
 
+const disasterQuerySchema = z.object({
+  type: z.enum(['earthquake', 'flood', 'fire', 'hurricane', 'landslide', 'social']).optional(),
+  from: z.string().datetime({ offset: true }).optional(),
+  to: z.string().datetime({ offset: true }).optional(),
+  lat: z.string().regex(/^-?\d+(\.\d+)?$/).optional(),
+  lng: z.string().regex(/^-?\d+(\.\d+)?$/).optional(),
+  radius: z.string().regex(/^\d+(\.\d+)?$/).optional(),
+});
+
 // GET /api/disasters
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { lat, lng, radius, type, from, to } = req.query;
+    const queryValidation = disasterQuerySchema.safeParse(req.query);
+    if (!queryValidation.success) {
+      return res.status(400).json({ error: 'Invalid query parameters', details: queryValidation.error.issues });
+    }
+
+    const { lat, lng, radius, type, from, to } = queryValidation.data;
     
     const filter: any = {};
     
