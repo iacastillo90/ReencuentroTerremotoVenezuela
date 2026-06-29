@@ -3,6 +3,7 @@ import { personPayloadSchema } from '../validators/person.validator';
 import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { PersonModel } from '../models/unified-person.model';
+import { AuditLogModel } from '../models/audit-log.model';
 import { connection as redis } from '../config/redis.config';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
 
@@ -187,6 +188,58 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
 
   } catch (error: any) {
     console.error('[PersonRoute] POST Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ── POST /:idHash/close — Cerrar caso (Fase 4 Auditoría Legal) ───────────────
+router.post('/:idHash/close', requireUser, async (req: Request, res: Response) => {
+  try {
+    const { idHash } = req.params;
+    const { resolution, notes } = req.body;
+    const userId = (req as any).user.userId;
+    const userRole = (req as any).user.role;
+
+    if (!['found', 'deceased', 'erroneous'].includes(resolution)) {
+      return res.status(400).json({ error: 'Resolución inválida.' });
+    }
+
+    const person = await PersonModel.findOne({ idHash });
+    if (!person) return res.status(404).json({ error: 'Reporte no encontrado.' });
+
+    // Validar propiedad del reporte o rol admin
+    const isOwner = person.metadata?.reportedBy?.toString() === userId;
+    if (!isOwner && userRole !== 'admin') {
+      return res.status(403).json({ error: 'No tienes permiso para cerrar este caso.' });
+    }
+
+    const prevStatus = person.status;
+    person.status = resolution === 'erroneous' ? 'unknown' : resolution;
+    
+    if (resolution === 'erroneous') {
+      person.metadata.auditStatus = 'dismissed';
+    }
+
+    await person.save();
+
+    // Crear el log de auditoría (Base Legal)
+    await AuditLogModel.create({
+      personIdHash: idHash,
+      action: 'case_closed',
+      previousStatus: prevStatus,
+      newStatus: person.status,
+      resolutionNotes: notes,
+      performedBy: userId,
+      ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+      userAgent: req.headers['user-agent'] || 'unknown',
+    });
+
+    // Invalidar caché
+    await redis.del('persons:counts');
+
+    return res.status(200).json({ message: 'Caso cerrado exitosamente.', status: person.status });
+  } catch (error: any) {
+    console.error('[PersonRoute] POST /:idHash/close Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });

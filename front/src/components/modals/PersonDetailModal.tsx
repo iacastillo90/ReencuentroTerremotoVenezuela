@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Person } from '../../types';
 import { 
   X, MapPin, User, CheckCircle, Heart, 
-  MessageCircle, AlertCircle, Share2, Info, Lock
+  MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
@@ -29,6 +29,15 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  // Close Case (Phase 4)
+  const [showCloseCase, setShowCloseCase] = useState(false);
+  const [closeResolution, setCloseResolution] = useState<'found' | 'deceased' | 'erroneous'>('found');
+  const [closeNotes, setCloseNotes] = useState('');
+  const [closing, setClosing] = useState(false);
+  
+  // Is Owner logic (we compare IDs if available, or just allow if admin)
+  const isOwner = user?.role === 'admin' || (person.metadata?.reportedBy?._id === user?.id) || (person.metadata?.reportedBy === user?.id);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -45,6 +54,24 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
       alert(e.response?.data?.error || "Error al enviar mensaje");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleCloseCase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      setClosing(true);
+      await api.post(`/persons/${person.idHash}/close`, {
+        resolution: closeResolution,
+        notes: closeNotes
+      });
+      alert('Caso cerrado y sellado exitosamente bajo la Ley de Protección de Datos.');
+      window.location.reload(); // Quick refresh to show new status
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error al cerrar el caso');
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -146,7 +173,51 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 Tengo información adicional
               </button>
             )}
+            {isMissing && isOwner && (
+              <button className="btn-main-action" style={{ backgroundColor: 'var(--clr-success)' }} onClick={() => setShowCloseCase(!showCloseCase)}>
+                <ShieldCheck size={18} />
+                Cerrar Caso (Auditoría Legal)
+              </button>
+            )}
           </div>
+
+          {showCloseCase && (
+            <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', color: 'var(--clr-success)' }}>
+                <ShieldCheck size={16} /> Auditoría y Cierre de Caso
+              </h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                Al cerrar este caso, tu dirección IP y marca de tiempo quedarán selladas criptográficamente para cumplir con el artículo 43 de la LOPNNA y la Ley de Protección de Datos.
+              </p>
+              <form onSubmit={handleCloseCase} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <select 
+                  value={closeResolution} 
+                  onChange={e => setCloseResolution(e.target.value as any)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff' }}
+                >
+                  <option value="found">La persona ha sido Localizada (Viva)</option>
+                  <option value="deceased">La persona ha sido hallada sin vida</option>
+                  <option value="erroneous">El reporte original era falso o duplicado</option>
+                </select>
+                
+                <textarea 
+                  placeholder="Detalles del reencuentro o resolución (Opcional)..."
+                  value={closeNotes}
+                  onChange={e => setCloseNotes(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', minHeight: '60px' }}
+                />
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" disabled={closing} style={{ background: 'var(--clr-success)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                    {closing ? 'Sellando...' : 'Sellar y Cerrar Caso'}
+                  </button>
+                  <button type="button" onClick={() => setShowCloseCase(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {showContactForm && (
             <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid #1e293b' }}>
