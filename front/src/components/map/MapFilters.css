@@ -1,17 +1,10 @@
 .map-filters-container {
   position: absolute;
   top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   z-index: 1000;
-  width: calc(100% - 1rem);
-  max-width: 800px;
-  background-color: rgba(17, 17, 24, 0.85);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius-full);
-  padding: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  pointer-events: none;
 }
 
 .filters-scroll {
@@ -19,10 +12,12 @@
   gap: 0.5rem;
   overflow-x: auto;
   align-items: center;
+  padding: 0 1rem;
   /* Ocultar barra de scroll para estética en móviles */
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
 }
 .filters-scroll::-webkit-scrollbar {
   display: none;
@@ -35,7 +30,8 @@
   padding: 0.5rem 1rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--clr-border);
-  background: var(--clr-surface);
+  background: rgba(17, 17, 24, 0.9);
+  backdrop-filter: blur(8px);
   color: var(--clr-text-muted);
   font-family: var(--font-family, 'Work Sans'), sans-serif;
   font-size: 0.8rem;
@@ -43,6 +39,7 @@
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .filter-chip:hover {
@@ -86,8 +83,9 @@
 @media (min-width: 768px) {
   .map-filters-container {
     top: 1.5rem;
-    padding: 0.75rem;
-    width: 90%;
+  }
+  .filters-scroll {
+    padding: 0 1.5rem;
   }
   .filter-chip {
     padding: 0.6rem 1.25rem;
@@ -96,11 +94,6 @@
 }
 
 @media (min-width: 1440px) {
-  .map-filters-container {
-    max-width: 1200px;
-    padding: 1rem;
-    border-radius: var(--radius-xl);
-  }
   .filters-scroll {
     justify-content: center; /* Centrar los chips en pantallas gigantes */
   }
