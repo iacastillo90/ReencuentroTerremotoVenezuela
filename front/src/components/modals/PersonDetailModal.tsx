@@ -36,7 +36,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
   const [closing, setClosing] = useState(false);
   
   // Is Owner logic (we compare IDs if available, or just allow if admin)
-  const isOwner = user?.role === 'admin' || (person.metadata?.reportedBy?._id === user?.id) || (person.metadata?.reportedBy === user?.id);
+  const isOwner = user?.role === 'admin' || ((person.metadata?.reportedBy as any)?._id === user?._id) || ((person.metadata?.reportedBy as any) === user?._id);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
