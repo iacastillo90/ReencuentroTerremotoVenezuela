@@ -7,9 +7,15 @@ export interface AIProcessResult {
   urgencyScore: number;
 }
 
+export interface ImageDraftAnalysis {
+  permanentFeatures: string;
+  clothingQuestion?: string;
+}
+
 export interface IAIProvider {
   processRecord(rawData: string): Promise<AIProcessResult>;
   transcribeAudio?(audioBuffer: Buffer, mimeType: string): Promise<string>;
+  analyzeImageDraft?(imageBuffer: Buffer, mimeType: string): Promise<ImageDraftAnalysis>;
 }
 
 export const SYSTEM_PROMPT = `

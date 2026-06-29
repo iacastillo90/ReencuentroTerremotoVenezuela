@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { IAIProvider, AIProcessResult, SYSTEM_PROMPT } from './ai.interface';
+import { IAIProvider, AIProcessResult, ImageDraftAnalysis, SYSTEM_PROMPT } from './ai.interface';
 
 export class GeminiProvider implements IAIProvider {
   private client: GoogleGenAI;
@@ -48,6 +48,42 @@ export class GeminiProvider implements IAIProvider {
     } catch (error) {
       console.error('Gemini Transcription Error:', error);
       throw new Error('No se pudo transcribir el audio usando Gemini.');
+    }
+  }
+
+  async analyzeImageDraft(imageBuffer: Buffer, mimeType: string): Promise<ImageDraftAnalysis> {
+    try {
+      const prompt = `
+Analiza la siguiente imagen de una persona desaparecida. Tu objetivo es separar los rasgos PERMANENTES de los PASAJEROS (ropa).
+Devuelve estrictamente un JSON con esta estructura:
+{
+  "permanentFeatures": "Descripción física (edad aproximada, sexo, color de piel, color de cabello, marcas, lentes médicos si parece usarlos siempre)",
+  "clothingQuestion": "Si detectas ropa o accesorios evidentes, formula una pregunta amigable corta. Ejemplo: 'He notado que en la foto lleva una chaqueta roja. ¿Llevaba esta misma ropa al momento de desaparecer?' Si no se ve ropa clara, devuelve null."
+}
+No agregues comentarios ni markdown fuera del JSON.
+      `;
+
+      const response = await this.client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            inlineData: {
+              data: imageBuffer.toString('base64'),
+              mimeType: mimeType
+            }
+          },
+          { text: prompt }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+        }
+      });
+
+      const text = response.text || '{}';
+      return JSON.parse(text) as ImageDraftAnalysis;
+    } catch (error) {
+      console.error('Gemini Image Analysis Error:', error);
+      throw new Error('No se pudo analizar la imagen usando Gemini.');
     }
   }
 }

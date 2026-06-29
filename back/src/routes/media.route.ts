@@ -61,4 +61,24 @@ router.post('/audio-transcribe', upload.single('audio'), async (req: Request, re
   }
 });
 
+// Endpoint para análisis interactivo de imágenes al vuelo (Fase 2 Asistente)
+router.post('/analyze-image', upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file || !req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'No se envió ninguna imagen válida.' });
+    }
+
+    const ai = getAIProvider();
+    if (!ai.analyzeImageDraft) {
+      return res.status(501).json({ error: 'El proveedor de IA actual no soporta análisis visual.' });
+    }
+
+    const analysis = await ai.analyzeImageDraft(req.file.buffer, req.file.mimetype);
+    return res.status(200).json(analysis);
+  } catch (error: any) {
+    console.error('[MediaRoute] Error analizando imagen:', error);
+    return res.status(500).json({ error: error.message || 'Error interno analizando la imagen' });
+  }
+});
+
 export const mediaRouter = router;
