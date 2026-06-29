@@ -11,6 +11,9 @@ interface ReportModalProps {
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType = 'person' }) => {
   const [reportAction, setReportAction] = useState<'busco' | 'vi'>('busco');
   const [type, setType] = useState<'person' | 'animal'>(defaultType);
+  const [cedulaNac, setCedulaNac] = useState<'V' | 'E'>('V');
+  const [cedula, setCedula] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
   const [text, setText] = useState('');
@@ -24,6 +27,25 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isSubmitting) {
       onClose();
+    }
+  };
+
+  const handleVerifyCedula = async () => {
+    if (!cedula.trim()) return;
+    setIsVerifying(true);
+    setError('');
+    try {
+      const res = await api.get(`/cne/${cedulaNac}/${cedula.trim()}`);
+      if (res.data.valid && res.data.fullName) {
+        setName(res.data.fullName);
+      } else {
+        setError(res.data.error || 'Cédula no encontrada. Puede ingresar el nombre manualmente.');
+      }
+    } catch (err: any) {
+      // Fallback
+      setError('No se pudo verificar con el CNE (Modo Offline/Desconectado). Ingrese el nombre manualmente.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -130,6 +152,39 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                   </select>
                 </div>
               </div>
+
+              {type === 'person' && (
+                <div className="form-group">
+                  <label>Verificar Identidad (CNE) <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8em' }}>- Opcional</span></label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select 
+                      value={cedulaNac} 
+                      onChange={(e) => setCedulaNac(e.target.value as 'V'|'E')}
+                      style={{ width: '80px' }}
+                      disabled={isSubmitting || isVerifying}
+                    >
+                      <option value="V">V-</option>
+                      <option value="E">E-</option>
+                    </select>
+                    <input 
+                      type="text" 
+                      value={cedula} 
+                      onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))} 
+                      placeholder="Número de Cédula" 
+                      disabled={isSubmitting || isVerifying}
+                      maxLength={9}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn-verify-cne" 
+                      onClick={handleVerifyCedula}
+                      disabled={isSubmitting || isVerifying || !cedula}
+                    >
+                      {isVerifying ? <Loader2 size={16} className="spinner" /> : 'Verificar'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Nombre Completo {type === 'animal' && '(o alias de la mascota)'}</label>
