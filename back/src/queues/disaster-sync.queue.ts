@@ -49,6 +49,9 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '*/10 * * * *' }
   });
   
-  
+  // FUNVISIS Sismos cada 5 minutos
+  await disasterSyncQueue.add('sync-funvisis', {}, {
+    repeat: { pattern: '*/5 * * * *' }
+  });
   console.log('[DisasterSync] Cron jobs registered.');
 }
