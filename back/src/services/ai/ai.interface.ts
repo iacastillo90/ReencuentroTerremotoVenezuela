@@ -9,6 +9,7 @@ export interface AIProcessResult {
 
 export interface IAIProvider {
   processRecord(rawData: string): Promise<AIProcessResult>;
+  transcribeAudio?(audioBuffer: Buffer, mimeType: string): Promise<string>;
 }
 
 export const SYSTEM_PROMPT = `

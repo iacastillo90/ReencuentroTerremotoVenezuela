@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Send, Loader2, CheckCircle } from 'lucide-react';
 import { api } from '../../services/api';
+import { AudioRecorder } from './AudioRecorder';
 import './ReportModal.css';
 
 interface ReportModalProps {
@@ -210,6 +211,13 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
 
               <div className="form-group">
                 <label>Dinos todo lo que sepas (Descripción libre)</label>
+                
+                <AudioRecorder 
+                  onTranscription={(transcribedText) => {
+                    setText((prev) => prev ? `${prev}\n${transcribedText}` : transcribedText);
+                  }} 
+                />
+
                 <textarea 
                   value={text} 
                   onChange={(e) => setText(e.target.value)} 

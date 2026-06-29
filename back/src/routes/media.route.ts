@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { uploadMedia } from '../services/storage.service';
+import { getAIProvider } from '../services/ai/ai.factory';
 
 const router = Router();
 
@@ -12,11 +13,11 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Only accept images and mp4 videos
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'video/mp4') {
+    // Accept images, videos, and audio (for voice notes)
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
       cb(null, true);
     } else {
-      cb(new Error('Formato no permitido. Solo imágenes y videos (MP4).'));
+      cb(new Error('Formato no permitido. Solo imágenes, videos y notas de voz.'));
     }
   }
 });
@@ -37,6 +38,26 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[MediaRoute] Error subiendo archivo:', error);
     return res.status(500).json({ error: error.message || 'Error interno subiendo archivo' });
+  }
+});
+
+// Endpoint para transcripción de notas de voz al vuelo (Fase 1 Asistente)
+router.post('/audio-transcribe', upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ningún audio.' });
+    }
+
+    const ai = getAIProvider();
+    if (!ai.transcribeAudio) {
+      return res.status(501).json({ error: 'El proveedor de IA actual no soporta transcripción.' });
+    }
+
+    const text = await ai.transcribeAudio(req.file.buffer, req.file.mimetype);
+    return res.status(200).json({ text });
+  } catch (error: any) {
+    console.error('[MediaRoute] Error transcribiendo audio:', error);
+    return res.status(500).json({ error: error.message || 'Error interno transcribiendo audio' });
   }
 });
 

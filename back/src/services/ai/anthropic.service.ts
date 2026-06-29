@@ -30,4 +30,8 @@ export class AnthropicProvider implements IAIProvider {
       throw error;
     }
   }
+
+  async transcribeAudio(audioBuffer: Buffer, mimeType: string): Promise<string> {
+    throw new Error('Anthropic no soporta transcripción de audio nativa. Por favor cambia AI_PROVIDER a gemini o openai en el .env');
+  }
 }
