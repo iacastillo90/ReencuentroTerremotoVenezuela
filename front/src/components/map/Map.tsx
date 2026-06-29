@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -59,7 +59,8 @@ export function InteractiveMap({ persons, disasters, layers, onSelectPerson }: M
 
   return (
     <div className="map-container">
-      <MapContainer center={center} zoom={6} scrollWheelZoom={true} className="leaflet-map">
+      <MapContainer center={center} zoom={6} scrollWheelZoom={true} className="leaflet-map" zoomControl={false}>
+        <ZoomControl position="bottomright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"

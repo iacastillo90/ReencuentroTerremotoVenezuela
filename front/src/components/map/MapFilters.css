@@ -4,7 +4,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  width: 90%;
+  width: calc(100% - 1rem);
   max-width: 800px;
   background-color: rgba(17, 17, 24, 0.85);
   backdrop-filter: blur(8px);
@@ -22,6 +22,7 @@
   /* Ocultar barra de scroll para estética en móviles */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 .filters-scroll::-webkit-scrollbar {
   display: none;
@@ -37,7 +38,7 @@
   background: var(--clr-surface);
   color: var(--clr-text-muted);
   font-family: var(--font-family, 'Work Sans'), sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -86,6 +87,7 @@
   .map-filters-container {
     top: 1.5rem;
     padding: 0.75rem;
+    width: 90%;
   }
   .filter-chip {
     padding: 0.6rem 1.25rem;
