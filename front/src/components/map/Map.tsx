@@ -45,14 +45,16 @@ const getDisasterName = (type: string) => {
   return map[type] || type;
 };
 
+import type { MapLayers } from './MapFilters';
+
 interface MapProps {
   persons: Person[];
   disasters: Disaster[];
-  activeFilter: 'all' | 'disasters' | 'persons';
+  layers: MapLayers;
   onSelectPerson?: (person: Person) => void;
 }
 
-export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerson }: MapProps) {
+export function InteractiveMap({ persons, disasters, layers, onSelectPerson }: MapProps) {
   const [center] = useState<[number, number]>([8.5, -66.0]); // Centro de Venezuela
 
   return (
@@ -64,7 +66,7 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
         />
         
         {/* Marcadores de Personas agrupados */}
-        {(activeFilter === 'all' || activeFilter === 'persons') && (
+        {layers.persons && (
           <MarkerClusterGroup chunkedLoading>
             {persons.map((person) => {
               if (!person.lastSeen?.coordinates) return null;
@@ -97,8 +99,16 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
           </MarkerClusterGroup>
         )}
 
-        {/* Marcadores de Desastres */}
-        {(activeFilter === 'all' || activeFilter === 'disasters') && disasters.map((disaster) => {
+        {/* Marcadores de Desastres filtrados por capa activa */}
+        {disasters.filter(d => {
+          if (d.type === 'earthquake' && layers.earthquake) return true;
+          if (d.type === 'flood' && layers.flood) return true;
+          if (d.type === 'fire' && layers.fire) return true;
+          if (d.type === 'social' && layers.social) return true;
+          // default para otros que no se mapearon explícitamente en capas
+          if (!['earthquake', 'flood', 'fire', 'social'].includes(d.type)) return true;
+          return false;
+        }).map((disaster) => {
           const [lng, lat] = disaster.coordinates.coordinates;
           const color = disaster.severity === 'critical' ? '#ef4444' :
                         disaster.severity === 'high' ? '#f97316' :
