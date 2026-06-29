@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq';
 import { processAndReconcilePerson } from '../services/reconciliation.service';
 import { connection } from '../config/redis.config';
 import { getAIProvider } from '../services/ai/ai.factory';
+import { upsertVectorToPinecone } from '../services/pinecone.service';
 
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
@@ -64,6 +65,15 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       }
     }
   );
+
+  // 4. Guardar en Pinecone si está activo y hay embedding
+  if (embedding && result.idHash && process.env.USE_PINECONE_VECTOR_SEARCH === 'true') {
+    await upsertVectorToPinecone(result.idHash, embedding, {
+      name: personName,
+      status: 'missing',
+      state: personState
+    });
+  }
 
   console.log(`[ia-processor] Registro reconciliado (${result.status}). idHash: ${result.idHash || 'pendiente'}`);
 }, { connection: connection as any });

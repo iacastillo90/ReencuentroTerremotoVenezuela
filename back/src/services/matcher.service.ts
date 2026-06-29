@@ -1,6 +1,7 @@
 import { PersonModel } from '../models/unified-person.model';
 import { SearchRequestModel } from '../models/search-request.model';
 import { MatchModel } from '../models/match.model';
+import { queryPinecone } from './pinecone.service';
 import { getAIProvider } from './ai/ai.factory';
 
 // Helper de similitud del coseno para cálculo local
@@ -42,10 +43,18 @@ export async function runMatchingForSearchRequest(searchRequestId: string) {
 
     // 2. Determinar el entorno de ejecución
     const useAtlas = process.env.USE_ATLAS_VECTOR_SEARCH === 'true';
+    const usePinecone = process.env.USE_PINECONE_VECTOR_SEARCH === 'true';
 
     let candidates: any[] = [];
 
-    if (useAtlas) {
+    if (usePinecone) {
+      // Pinecone Vector Search
+      const pcMatches = await queryPinecone(queryEmbedding, 10);
+      candidates = pcMatches.map(m => ({
+        idHash: m.id,
+        score: m.score || 0
+      }));
+    } else if (useAtlas) {
       // Atlas Vector Search Pipeline
       candidates = await PersonModel.aggregate([
         {
@@ -113,9 +122,21 @@ export async function runMatchingForNewPerson(personIdHash: string) {
     if (!personEmbedding || personEmbedding.length === 0) return;
 
     const useAtlas = process.env.USE_ATLAS_VECTOR_SEARCH === 'true';
+    const usePinecone = process.env.USE_PINECONE_VECTOR_SEARCH === 'true';
+    
     let matchingRequests: any[] = [];
 
-    if (useAtlas) {
+    if (usePinecone) {
+      // Nota: Si los SearchRequests también se guardan en el index de Pinecone con un prefijo 'req_'
+      // se pueden buscar, pero generalmente buscamos Personas vs Requests.
+      // Aquí, si 'person' busca a sus 'requests' asume que están guardados.
+      // Por simplicidad, si es Pinecone podemos usarlo igual:
+      const pcMatches = await queryPinecone(personEmbedding, 10);
+      matchingRequests = pcMatches.map(m => ({
+        _id: m.id, // Suponiendo que guardamos el id del request
+        score: m.score || 0
+      }));
+    } else if (useAtlas) {
       matchingRequests = await SearchRequestModel.aggregate([
         {
           $vectorSearch: {
