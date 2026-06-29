@@ -6,6 +6,8 @@ import { fetchGDACS } from '../jobs/gdacs.job';
 import { fetchReencuentroPersons } from '../jobs/reencuentro.job';
 import { fetchVenezuelaReporta } from '../jobs/venezuelareporta.job';
 import { runFunvisisJob } from '../jobs/funvisis.job';
+import { runInamehJob } from '../jobs/inameh.job';
+import { runCorpoelecJob } from '../jobs/corpoelec.job';
 
 
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
@@ -27,5 +29,11 @@ export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) =
   } else if (job.name === 'sync-funvisis') {
     console.log(`[Worker] Starting FUNVISIS Sync Job ${job.id}`);
     await runFunvisisJob();
+  } else if (job.name === 'sync-inameh') {
+    console.log(`[Worker] Starting INAMEH Sync Job ${job.id}`);
+    await runInamehJob();
+  } else if (job.name === 'sync-corpoelec') {
+    console.log(`[Worker] Starting CORPOELEC Sync Job ${job.id}`);
+    await runCorpoelecJob();
   }
 }, { connection: connection as any });
