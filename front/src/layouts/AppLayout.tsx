@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart } from 'lucide-react';
+import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart, Truck } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -29,7 +29,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { view: 'feed',   icon: <Home size={22} />,     label: 'Inicio' },
     { view: 'map',    icon: <Map size={22} />,      label: 'Mapa' },
     { view: 'report', icon: <PlusCircle size={32} color="var(--clr-primary)" fill="rgba(59,130,246,0.2)" />, label: '', center: true },
-    { view: 'library',icon: <BookOpen size={22} />, label: 'Guías' },
+    { view: 'logistics', icon: <Truck size={22} />, label: 'Ayuda' },
   ];
 
   const handleBottomNav = (view: View) => {
@@ -77,11 +77,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             Mapa
           </button>
           <button
-            className={`toggle-pill ${activeView === 'library' ? 'active' : ''}`}
-            onClick={() => onViewChange('library')}
+            className={`toggle-pill ${activeView === 'logistics' ? 'active' : ''}`}
+            onClick={() => onViewChange('logistics')}
           >
-            <BookOpen size={14} style={{ display: 'inline', marginRight: 6 }} />
-            Biblioteca
+            <Truck size={14} style={{ display: 'inline', marginRight: 6 }} />
+            Ayuda
           </button>
         </div>
 

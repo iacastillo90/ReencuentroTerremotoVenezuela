@@ -64,5 +64,15 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '*/15 * * * *' }
   });
 
+  // PROTECCIÓN CIVIL cada 20 minutos
+  await disasterSyncQueue.add('sync-proteccion-civil', {}, {
+    repeat: { pattern: '*/20 * * * *' }
+  });
+
+  // CRUZ ROJA cada 20 minutos
+  await disasterSyncQueue.add('sync-cruz-roja', {}, {
+    repeat: { pattern: '*/20 * * * *' }
+  });
+
   console.log('[DisasterSync] Cron jobs registered.');
 }
