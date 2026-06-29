@@ -54,11 +54,20 @@ partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Res
     const insertedIds = [];
     
     for (const c of cases) {
-      // Forzamos que la metadata indique que viene de un Partner API
+      const { name, status, age, gender, description, lastSeen, photoUrl, aliases, contactPerson } = c;
       const newCase = new PersonModel({
-        ...c,
+        name,
+        status,
+        age,
+        gender,
+        description,
+        lastSeen,
+        photoUrl,
+        aliases,
+        contactPerson,
+        type: 'person',
         metadata: {
-          ...(c as any).metadata,
+          ...((c as any).metadata || {}),
           source: 'partner_api',
           auditStatus: 'pending_review',
           createdAt: new Date(),
