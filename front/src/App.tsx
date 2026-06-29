@@ -12,8 +12,9 @@ import type { Person, Disaster } from './types';
 
 import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
+import { LogisticsPage } from './pages/Logistics/LogisticsPage';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
+type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -177,6 +178,10 @@ function App() {
             disasters={disasters}
             onSelectPerson={setSelectedPerson}
           />
+        )}
+        
+        {activeView === 'logistics' && (
+          <LogisticsPage disasters={disasters} />
         )}
       </AppLayout>
 

@@ -1,0 +1,135 @@
+.logistics-page {
+  padding: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  color: var(--clr-text);
+  /* Fondo negro puro para pantallas OLED en móviles ahorra batería */
+  background-color: var(--clr-background); 
+}
+
+.logistics-header {
+  margin-bottom: 2rem;
+}
+
+.logistics-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.logistics-header p {
+  color: var(--clr-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.logistics-empty {
+  text-align: center;
+  padding: 3rem;
+  background-color: var(--clr-surface);
+  border-radius: var(--radius-md);
+  color: var(--clr-text-muted);
+}
+
+.logistics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.logistics-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background-color: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  transition: transform 0.2s;
+}
+
+.logistics-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--clr-primary);
+}
+
+/* Colores condicionales según fuente */
+.logistics-card.source-proteccion-civil-gov {
+  border-left: 4px solid var(--clr-amber);
+}
+
+.logistics-card.source-cruz-roja-ve {
+  border-left: 4px solid var(--clr-danger);
+}
+
+.card-icon {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  color: var(--clr-text-muted);
+  padding-top: 0.25rem;
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-title-row h3 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--clr-text);
+  font-weight: 600;
+}
+
+.severity-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+}
+.severity-badge.sev-high, .severity-badge.sev-critical {
+  background-color: var(--clr-danger-bg);
+  color: var(--clr-danger);
+}
+.severity-badge.sev-medium {
+  background-color: var(--clr-amber-bg);
+  color: var(--clr-amber);
+}
+.severity-badge.sev-low {
+  background-color: var(--clr-success-bg);
+  color: var(--clr-success);
+}
+
+.card-desc {
+  font-size: 0.95rem;
+  color: var(--clr-text-dim);
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  border-top: 1px solid var(--clr-border);
+  padding-top: 0.5rem;
+}
+
+.card-source {
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .logistics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+}

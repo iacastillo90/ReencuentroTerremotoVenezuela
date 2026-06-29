@@ -8,6 +8,8 @@ import { fetchVenezuelaReporta } from '../jobs/venezuelareporta.job';
 import { runFunvisisJob } from '../jobs/funvisis.job';
 import { runInamehJob } from '../jobs/inameh.job';
 import { runCorpoelecJob } from '../jobs/corpoelec.job';
+import { runProteccionCivilJob } from '../jobs/proteccion-civil.job';
+import { runCruzRojaJob } from '../jobs/cruz-roja.job';
 
 
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
@@ -35,5 +37,11 @@ export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) =
   } else if (job.name === 'sync-corpoelec') {
     console.log(`[Worker] Starting CORPOELEC Sync Job ${job.id}`);
     await runCorpoelecJob();
+  } else if (job.name === 'sync-proteccion-civil') {
+    console.log(`[Worker] Starting PROTECCION CIVIL Sync Job ${job.id}`);
+    await runProteccionCivilJob();
+  } else if (job.name === 'sync-cruz-roja') {
+    console.log(`[Worker] Starting CRUZ ROJA Sync Job ${job.id}`);
+    await runCruzRojaJob();
   }
 }, { connection: connection as any });
