@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { PersonModel } from '../models/unified-person.model';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';
 import { connection as redis } from '../config/redis.config';
+import { partnerCasesPayloadSchema } from '../validators/partner.validator';
+import { auditLog } from '../middlewares/audit.middleware';
 
 export const partnerRouter = Router();
 
@@ -35,19 +37,37 @@ partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Resp
 // Endpoint exclusivo para Partners: Inyectar datos al sistema (Bidireccional)
 partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Response) => {
   try {
-    const { cases } = req.body;
-    if (!cases || !Array.isArray(cases)) {
-      return res.status(400).json({ error: 'Payload must contain an array of "cases"' });
+    const validation = partnerCasesPayloadSchema.safeParse(req.body);
+    if (!validation.success) {
+      auditLog({
+        eventType: 'validation_failure',
+        severity: 'warning',
+        actor: 'system',
+        action: 'POST /partner/cases validation failed',
+        detail: { issues: validation.error.issues },
+        req,
+      });
+      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
     }
 
+    const { cases } = validation.data;
     const insertedIds = [];
     
     for (const c of cases) {
-      // Forzamos que la metadata indique que viene de un Partner API
+      const { name, status, age, gender, description, lastSeen, photoUrl, aliases, contactPerson } = c;
       const newCase = new PersonModel({
-        ...c,
+        name,
+        status,
+        age,
+        gender,
+        description,
+        lastSeen,
+        photoUrl,
+        aliases,
+        contactPerson,
+        type: 'person',
         metadata: {
-          ...c.metadata,
+          ...((c as any).metadata || {}),
           source: 'partner_api',
           auditStatus: 'pending_review',
           createdAt: new Date(),
@@ -61,6 +81,15 @@ partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Res
     // Invalida la cache pública al inyectar nuevos casos
     await redis.keys('persons:*').then(keys => {
       if (keys.length > 0) return redis.del(...keys);
+    });
+
+    auditLog({
+      eventType: 'ingestion_partner',
+      severity: 'info',
+      actor: 'system',
+      action: 'POST /partner/cases',
+      detail: { count: insertedIds.length },
+      req,
     });
 
     return res.status(201).json({ message: 'Cases successfully ingested', insertedIds });

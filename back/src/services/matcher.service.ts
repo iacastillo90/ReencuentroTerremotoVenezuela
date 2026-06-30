@@ -50,7 +50,7 @@ export async function runMatchingForSearchRequest(searchRequestId: string) {
     if (usePinecone) {
       // Pinecone Vector Search
       const pcMatches = await queryPinecone(queryEmbedding, 10);
-      candidates = pcMatches.map(m => ({
+      candidates = pcMatches.map((m: any) => ({
         idHash: m.id,
         score: m.score || 0
       }));
@@ -132,7 +132,7 @@ export async function runMatchingForNewPerson(personIdHash: string) {
       // Aquí, si 'person' busca a sus 'requests' asume que están guardados.
       // Por simplicidad, si es Pinecone podemos usarlo igual:
       const pcMatches = await queryPinecone(personEmbedding, 10);
-      matchingRequests = pcMatches.map(m => ({
+      matchingRequests = pcMatches.map((m: any) => ({
         _id: m.id, // Suponiendo que guardamos el id del request
         score: m.score || 0
       }));
