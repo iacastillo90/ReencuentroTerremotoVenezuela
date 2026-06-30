@@ -6,6 +6,7 @@ import { PersonModel } from '../models/unified-person.model';
 import { AuditLogModel } from '../models/audit-log.model';
 import { connection as redis } from '../config/redis.config';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
+import { safeRegexQuery } from '../utils/regex-escape.util';
 
 const router = Router();
 
@@ -82,8 +83,10 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     if (q && typeof q === 'string') {
-      const normalizedQuery = q.trim().toLowerCase();
-      filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
+      const sanitizedQuery = safeRegexQuery(q);
+      if (sanitizedQuery) {
+        filter.normalizedName = { $regex: sanitizedQuery, $options: 'i' };
+      }
     }
 
     const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
@@ -224,14 +227,19 @@ router.post('/:idHash/close', requireUser, async (req: Request, res: Response) =
 
     // Crear el log de auditoría (Base Legal)
     await AuditLogModel.create({
-      personIdHash: idHash,
-      action: 'case_closed',
-      previousStatus: prevStatus,
-      newStatus: person.status,
-      resolutionNotes: notes,
-      performedBy: userId,
-      ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
-      userAgent: req.headers['user-agent'] || 'unknown',
+      eventType: 'admin_action' as const,
+      severity: 'info' as const,
+      actor: userId as string,
+      action: 'case_closed' as string,
+      resource: idHash as string,
+      detail: {
+        previousStatus: prevStatus,
+        newStatus: person.status,
+        resolutionNotes: notes,
+      },
+      ip: (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown',
+      userAgent: typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : 'unknown',
+      timestamp: new Date(),
     });
 
     // Invalidar caché
