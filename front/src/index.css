@@ -33,27 +33,28 @@
   --gray-900: #191919;
   --gray-950: #131313;
 
-  /* App Mapping */
-  --clr-bg:         var(--gray-950);
-  --clr-surface:    var(--gray-900);
-  --clr-card:       var(--gray-800);
-  --clr-border:     var(--gray-700);
-  --clr-hover:      var(--gray-700);
+  /* App Mapping — TEMA CLARO (mockups 29/06/2026) */
+  --white:          #FFFFFF;
+  --clr-bg:         #F4F6F9;
+  --clr-surface:    #FFFFFF;
+  --clr-card:       #FFFFFF;
+  --clr-border:     var(--gray-100);
+  --clr-hover:      var(--gray-50);
 
-  --clr-text:       var(--gray-50);
-  --clr-text-muted: var(--gray-300);
+  --clr-text:       var(--gray-950);
+  --clr-text-muted: var(--gray-500);
   --clr-text-dim:   var(--gray-400);
 
   --clr-primary:    var(--blue-500);
-  --clr-primary-glow: rgba(29, 101, 226, 0.25);
-  
-  /* Figma - Secondary Palettes */
+  --clr-primary-glow: rgba(29, 101, 226, 0.18);
+
+  /* Figma - Secondary Palettes (estado, fondos claros) */
   --clr-danger:     #EF4444;
-  --clr-danger-bg:  #B91C1C;
+  --clr-danger-bg:  #FEE2E2;
   --clr-success:    #10B981;
-  --clr-success-bg: #047857;
+  --clr-success-bg: #D1FAE5;
   --clr-amber:      #F59E0B;
-  --clr-amber-bg:   #B45309;
+  --clr-amber-bg:   #FEF3C7;
 
   /* Spacing */
   --nav-h: 60px;
@@ -67,15 +68,15 @@
   --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Shadows */
-  --shadow-card: 0 2px 8px rgba(0,0,0,0.4);
-  --shadow-modal: 0 24px 48px rgba(0,0,0,0.6);
+  /* Shadows (suaves para tema claro) */
+  --shadow-card: 0 1px 3px rgba(16,24,40,0.08), 0 1px 2px rgba(16,24,40,0.06);
+  --shadow-modal: 0 20px 40px rgba(16,24,40,0.16);
 
   /* Typography */
   font-family: 'Work Sans', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.4;
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -128,8 +129,8 @@ a { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.badge.missing { background: var(--clr-danger-bg); color: #fb7185; }
-.badge.found   { background: var(--clr-success-bg); color: #34d399; }
+.badge.missing { background: var(--clr-danger-bg); color: #B91C1C; }
+.badge.found   { background: var(--clr-success-bg); color: #047857; }
 
 /* ─── Typography (Figma) ─────────────────────────────────── */
 h1, .text-h1 {
