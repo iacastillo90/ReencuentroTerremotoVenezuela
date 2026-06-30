@@ -10,6 +10,7 @@ interface User {
   isProfileComplete: boolean;
   sector?: string;
   contactNumber?: string;
+  role?: string;
 }
 
 interface AuthContextType {

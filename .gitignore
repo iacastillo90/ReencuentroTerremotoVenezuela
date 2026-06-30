@@ -10,3 +10,6 @@ back/screenshot.png
 doc.txt
 *.log
 AGENTS.md
+
+# Datos crudos con PII — NO versionar (repo público)
+Doc/*.csv

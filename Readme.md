@@ -1,114 +1,132 @@
 # Reencuentro Terremoto Venezuela 🇻🇪
 
-> **Misión:** Proporcionar una plataforma tecnológica robusta, segura y abierta para centralizar la búsqueda de personas desaparecidas, alertas de emergencias y facilitar el reencuentro de familias venezolanas tras desastres naturales.
+> **Misión:** Proporcionar una plataforma tecnológica robusta, segura y abierta para centralizar la búsqueda de personas desaparecidas, las alertas de emergencia y el reencuentro de familias venezolanas tras desastres naturales.
 
-Frente a la adversidad, la tecnología debe ser un puente hacia la esperanza. **Reencuentro Terremoto Venezuela** es una iniciativa de código abierto que nace para dar respuesta a la fragmentación de información en momentos críticos. Nuestro sistema ingesta, limpia, deduplica y centraliza cientos de miles de reportes de múltiples fuentes para ofrecer una única fuente de verdad, protegiendo en todo momento la privacidad de los afectados.
+**Reencuentro Terremoto Venezuela** es una iniciativa de **código abierto**. El sistema ingesta, limpia, deduplica y centraliza cientos de miles de reportes de múltiples fuentes para ofrecer una **única fuente de verdad**, con asistencia de inteligencia artificial y **privacidad por diseño**, manteniendo siempre a una persona en el bucle de decisión para los reencuentros.
 
----
-
-## 🏗️ Arquitectura del Sistema
-
-La plataforma está construida bajo una arquitectura de microservicios moderna, desplegada en la nube y diseñada para resistir picos extremos de tráfico, garantizando que nunca se caiga cuando la gente más la necesita.
-
-### 1. Frontend (Aplicación Web)
-- **Tecnologías:** React, Vite, TypeScript.
-- **Diseño:** Enfoque *Mobile-first* con un tema oscuro tipo "Instagram" para ahorrar batería en dispositivos móviles (vital durante cortes de energía eléctrica) y ofrecer un alto contraste.
-- **Vistas Principales:**
-  - **Feed de Reencuentro:** Lista infinita y aleatoria de personas reportadas con filtros rápidos (desaparecidos, encontrados).
-  - **Mapa Interactivo:** Geolocalización de última vez vistos usando Leaflet.
-  - **Reporte con IA:** Formulario donde los familiares pueden escribir libremente; nuestra Inteligencia Artificial se encarga de extraer los datos estructurados.
-  - **Dashboard Administrativo:** Panel de control de reconciliación y estadísticas en tiempo real.
-
-### 2. Backend (API y Procesamiento)
-- **Tecnologías:** Node.js, Express, TypeScript.
-- **Procesamiento Asíncrono:** Uso intensivo de **BullMQ** y **Redis (Upstash)** para encolar trabajos pesados (IA, envío de notificaciones, scraping) sin bloquear el servidor principal.
-- **Almacenamiento de Archivos:** Integración S3-compatible (Supabase Storage / MinIO) para alojar fotografías de manera segura y escalable.
-
-### 3. Base de Datos y Deduplicación (MongoDB Atlas)
-El corazón de la plataforma es nuestra colección `UnifiedPerson`. Debido a que en emergencias las personas suelen ser reportadas múltiples veces en distintas páginas, implementamos un algoritmo estricto de deduplicación:
-- Se genera un **`idHash` criptográfico** único por persona usando su fuente y sus datos.
-- Las bases de datos externas se sincronizan mediante operaciones `upsert`. Si una persona ya existe, se actualiza su registro en lugar de duplicarlo.
-- De esta manera, garantizamos información limpia. (Ej: 53,000 registros sucios de una fuente se consolidan automáticamente en 42,000 personas únicas).
-
-### 4. Automatización y Scraping
-El sistema cuenta con **Cron Jobs** integrados que se ejecutan cada 10 minutos (o según corresponda) para consumir fuentes externas oficiales y ciudadanas (como *VenezuelaReporta*). Estos procesos extraen información, normalizan los estados (e.g. `buscando` -> `missing`) y los inyectan en nuestra base de datos.
+> 📖 **Documentación completa:** abre [`Doc/index.html`](Doc/index.html) (arquitectura, modelo de datos, seguridad, UX/UI).
+>
+> 🔓 **Este repositorio es público.** **Nunca** se versionan secretos, claves ni datos personales (PII). El archivo `.env` está en `.gitignore`; solo se versiona `back/.env.example` con los **nombres** de las variables.
 
 ---
 
-## 🚀 Despliegue en Producción
+## 🧩 ¿Qué hace?
 
-El proyecto está diseñado para funcionar en un entorno *Serverless / PaaS* completamente gratuito y escalable:
-
-- **Frontend:** Alojado en [Vercel](https://vercel.com).
-- **Backend:** Alojado como Web Service en [Render](https://render.com).
-- **Base de Datos:** MongoDB Atlas (Cluster 0).
-- **Caché y Colas:** Upstash Redis.
-- **Imágenes:** Supabase Storage.
-
-### Variables de Entorno Requeridas (Backend)
-
-Para desplegar tu propia instancia, necesitarás configurar las siguientes variables:
-
-```env
-# Conexión a Base de Datos y Caché
-MONGO_URI=mongodb+srv://<usuario>:<password>@cluster.mongodb.net/reencuentro?retryWrites=true&w=majority
-REDIS_URL=redis://default:<password>@<upstash-url>
-
-# Configuración de Almacenamiento (Supabase S3)
-MINIO_ENDPOINT=tu-proyecto.supabase.co
-MINIO_PORT=443
-MINIO_USE_SSL=true
-MINIO_ACCESS_KEY=tu_access_key
-MINIO_SECRET_KEY=tu_secret_key
-MINIO_BUCKET=reencuentro-media
-PUBLIC_STORAGE_URL=https://tu-proyecto.supabase.co/storage/v1/object/public/reencuentro-media
-
-# IA e Integraciones
-AI_PROVIDER=anthropic # o openai, gemini
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Seguridad
-ADMIN_API_KEY=tu_clave_secreta_para_dashboard
-```
+- **Centraliza** reportes de personas (y mascotas) desaparecidas/encontradas desde varias fuentes.
+- **Deduplica** automáticamente con una huella criptográfica (`idHash`).
+- **Estructura** texto libre con IA (un reporte caótico → datos limpios).
+- **Empareja** búsquedas con registros (con confirmación humana, nunca auto-notifica).
+- **Protege** la privacidad: datos de contacto fuera de las APIs públicas y **protección especial de menores (LOPNNA)**.
 
 ---
 
-## 🛠️ Desarrollo Local
+## 🏗️ Arquitectura
 
-Si deseas contribuir al código y correr el proyecto en tu máquina:
+Arquitectura de **microservicios sobre la nube (PaaS/Serverless)**, diseñada para resistir picos de tráfico.
 
-1. **Clona el repositorio:**
+### 1. Frontend (`front/`)
+- **Stack:** React 19 · Vite · TypeScript · PWA · Leaflet (mapas) · Axios · Lucide.
+- **Diseño:** *mobile-first* en **tema claro** (paleta de Figma, tipografía Work Sans), pensado para conectividad intermitente (SPA + payloads JSON pequeños).
+- **Vistas:** landing público, Inicio, Buscar (con categorías de edad y protección de menores), Mapa, Biblioteca, Administración, Perfil, Login y Registro.
+- **Autenticación:** Google OAuth **y** correo/contraseña; control de acceso por roles (`user` / `verifier` / `admin`).
+
+### 2. Backend (`back/`)
+- **Stack:** Node.js · Express 5 · TypeScript · Mongoose · BullMQ + Redis · Zod.
+- **Procesamiento asíncrono:** trabajos pesados (IA, scraping, sincronización) en *workers* BullMQ para no bloquear la API.
+- **IA:** fábrica de proveedores intercambiables (Anthropic, OpenAI, Gemini).
+- **Almacenamiento:** S3-compatible (MinIO en local / Supabase Storage en producción).
+
+### 3. Base de datos y deduplicación (MongoDB)
+El núcleo es la colección **`UnifiedPerson`**. Como en emergencias una persona se reporta múltiples veces:
+- Se genera un **`idHash` (SHA-256)** único por persona a partir de su fuente e identificador.
+- Las fuentes se sincronizan con `upsert`: si la persona ya existe, se **actualiza** en vez de duplicar.
+- Resultado: información limpia (p. ej. ~53.000 registros sucios → ~42.000 personas únicas).
+- Índices geoespaciales (`2dsphere`) para consultas por proximidad.
+
+### 4. Ingesta automática
+**Cron jobs** consumen fuentes oficiales y ciudadanas (USGS, GDACS, FIRMS, VenezuelaReporta, etc.) y canales de mensajería vía **n8n** (WhatsApp/Telegram). Normalizan estados (p. ej. `buscando` → `missing`) y aplican el patrón idempotente *fetch → transform → idHash → upsert*.
+
+---
+
+## 🛠️ Desarrollo local
+
+> ⚠️ **Docker es manual:** ejecuta tú los comandos `docker ...` en tu terminal.
+>
+> **Recomendado:** infraestructura en Docker + back/front en local (así `NODE_ENV` no es `production` y el login de desarrollo funciona).
+
+1. **Clona el repositorio**
    ```bash
    git clone https://github.com/iacastillo90/ReencuentroTerremotoVenezuela.git
    ```
 
-2. **Levanta la infraestructura local (Mongo, Redis, MinIO):**
+2. **Crea tu `.env`** del backend a partir del ejemplo y complétalo (ver más abajo):
    ```bash
-   docker compose up -d
+   cp back/.env.example back/.env
    ```
 
-3. **Inicia el Backend:**
+3. **Levanta la infraestructura** (MongoDB, Redis, MinIO):
    ```bash
-   cd back
-   npm install
-   npm run dev
+   docker compose up -d mongodb redis minio
    ```
 
-4. **Inicia el Frontend:**
+4. **Backend** → http://localhost:4000
    ```bash
-   cd front
-   npm install
-   npm run dev
+   cd back && npm install && npm run dev
    ```
+
+5. **Frontend** → http://localhost:5173
+   ```bash
+   cd front && npm install && npm run dev    # el front usa pnpm-lock; también puedes: pnpm install && pnpm dev
+   ```
+
+La forma más rápida de probar es **crear una cuenta con correo/contraseña** desde la pantalla de Registro (no requiere Google).
 
 ---
 
-## 🛡️ Privacidad y Seguridad
+## 🔑 Variables de entorno (backend)
 
-Entendemos la sensibilidad de los datos que manejamos. La plataforma está diseñada bajo el principio de *Privacy by Design*:
-- **No se exponen datos de contacto directo** (teléfonos o direcciones exactas de familiares) en las APIs públicas.
-- Las consultas al backend omiten (proyectan fuera) cualquier información de identificación personal (PII) innecesaria.
-- Los reportes manuales son filtrados y analizados para asegurar que no se difunda información que comprometa la integridad física de las personas.
+Configúralas en `back/.env` (basado en `back/.env.example`). **Usa tus propios valores y nunca los subas al repositorio.**
+
+| Variable | Descripción |
+|---|---|
+| `MONGO_URI` | Conexión a MongoDB. |
+| `REDIS_URL` | Conexión a Redis (colas/caché). |
+| `MINIO_ENDPOINT` · `MINIO_PORT` · `MINIO_USE_SSL` · `MINIO_ACCESS_KEY` · `MINIO_SECRET_KEY` · `MINIO_BUCKET` · `PUBLIC_STORAGE_URL` | Almacenamiento S3-compatible. |
+| `AI_PROVIDER` (+ clave del proveedor: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`) | Motor de IA. |
+| `JWT_SECRET` | Secreto para firmar tokens. **Obligatorio en producción** (el servidor aborta si falta). Genera uno con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. |
+| `ADMIN_API_KEY` · `PARTNER_API_KEY` | Claves de endpoints protegidos. |
+| `FRONTEND_URL` | Origen permitido por CORS en producción. |
+| `N8N_WEBHOOK_SECRET` | Secreto compartido para validar los webhooks de n8n. |
+| `ALLOW_DEV_LOGIN` *(solo dev)* | Habilita el login de desarrollo sin Google (no en producción). |
+| `ALLOW_MOCK_DATA` *(solo dev)* | Permite datos de ejemplo (marcados `isSimulated`) cuando una fuente no responde. |
+
+---
+
+## 🚀 Despliegue (producción)
+
+| Componente | Servicio |
+|---|---|
+| Frontend (SPA) | **Vercel** (CDN, deploy automático desde GitHub) |
+| API + Worker | **Render** (Web Service + Background Worker) |
+| Base de datos | **MongoDB Atlas** |
+| Caché y colas | **Upstash Redis** |
+| Medios | **Supabase Storage** |
+
+Las variables de entorno se configuran en el panel de cada servicio (**nunca** en el código).
+
+---
+
+## 🛡️ Privacidad y seguridad
+
+Diseñado bajo **Privacy by Design**:
+
+- **No se exponen datos de contacto directo** (teléfonos, direcciones exactas) en las APIs públicas; la PII se proyecta fuera en el servidor.
+- **Protección de menores (LOPNNA):** los casos de niños/adolescentes se enmascaran en público y solo organizaciones verificadas acceden a sus datos.
+- **Ubicación pública aproximada** (nivel de zona, no dirección exacta); cédula almacenada como **hash**.
+- **Contraseñas** con `scrypt`; **JWT** obligatorio en producción; **CORS** restringido por dominio; **rate-limit**, **Helmet** y validación con **Zod**.
+- **Webhooks** y **subida de medios** autenticados.
+
+> 🔎 La plataforma pasó por una auditoría externa de divulgación responsable (Build4Venezuela). El estado de remediación se documenta en `Doc/index.html` (§12). Por ser un repositorio público, **cualquier dato sensible se trata como expuesto** y se mantiene fuera del control de versiones.
 
 ---
 

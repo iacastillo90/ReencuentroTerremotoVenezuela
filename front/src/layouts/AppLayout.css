@@ -16,7 +16,7 @@
 .navbar {
   height: var(--nav-h);
   flex-shrink: 0;
-  background: rgba(10,10,15,0.92);
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--clr-border);
   display: flex;
@@ -62,7 +62,7 @@
 /* View Toggle Pills — hidden on mobile, shown tablet+ */
 .nav-toggle-pills {
   display: none;
-  background: rgba(255,255,255,0.05);
+  background: var(--clr-hover);
   padding: 3px;
   border-radius: var(--radius-md);
   gap: 2px;
@@ -85,7 +85,7 @@
   background: var(--clr-card);
   color: var(--clr-text);
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 3px rgba(16,24,40,0.12);
 }
 
 .nav-actions {
@@ -150,9 +150,10 @@
 .bottom-nav {
   height: var(--bottom-nav-h);
   flex-shrink: 0;
-  background: rgba(10,10,15,0.95);
+  background: rgba(255,255,255,0.97);
   backdrop-filter: blur(16px);
   border-top: 1px solid var(--clr-border);
+  box-shadow: 0 -2px 12px rgba(16,24,40,0.06);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -186,12 +187,14 @@
 
 .nav-item-center {
   transform: translateY(-15px);
-  background: var(--clr-surface);
+  background: var(--clr-danger);
+  color: #fff;
   border-radius: 50%;
   padding: 8px;
-  border: 1px solid var(--clr-border);
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+  border: 3px solid var(--white);
+  box-shadow: 0 4px 12px rgba(239,68,68,0.35);
 }
+.bottom-nav-item.nav-item-center span { color: #fff; }
 
 /* ─── Hamburger Menu button (tablet) ─ */
 .hamburger-btn {
