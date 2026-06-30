@@ -4,7 +4,8 @@ import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { PersonModel } from '../models/unified-person.model';
 import { connection as redis } from '../config/redis.config';
-import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
+import { requireProfileComplete, requireUser, attachUserIfPresent } from '../middlewares/auth.middleware';
+import { toPublicPerson } from '../utils/person-view.util';
 
 const router = Router();
 
@@ -49,7 +50,6 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
       gender: 1,
       description: 1,
       photoUrl: 1,
-      'data.cedula': 1,
       'metadata.createdAt': 1,
       'metadata.urgencyScore': 1
     };
@@ -66,9 +66,13 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', attachUserIfPresent, async (req: Request, res: Response) => {
   try {
     const { q, status } = req.query;
+
+    // Rol del solicitante: define vista PÚBLICA vs AMPLIADA (verifier/admin)
+    const viewerRole = (req as any).user?.role as string | undefined;
+    const expanded = viewerRole === 'admin' || viewerRole === 'verifier';
 
     // Paginación — máx 200 por página
     const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
@@ -84,18 +88,19 @@ router.get('/', async (req: Request, res: Response) => {
       filter.normalizedName = { $regex: normalizedQuery, $options: 'i' };
     }
 
-    const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
-
-    // Solo cachear primera página sin búsqueda activa
-    if (!q && offset === 0) {
+    // Cache SOLO de la vista pública (nunca cachear la vista ampliada de verifier/admin)
+    const cacheKey = `persons:pub:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
+    if (!expanded && !q && offset === 0) {
       const cachedData = await redis.get(cacheKey);
       if (cachedData) {
         return res.status(200).json(JSON.parse(cachedData));
       }
     }
 
-    // Proyección segura: excluir PII, contactPerson, externalIds
-    const safeProjection = {
+    // Proyección de BD: NUNCA traer cédula/cedula_hash ni contactPerson/externalIds.
+    // Sí traemos coords/ficha/reportedBy para que toPublicPerson decida según el rol.
+    const dbProjection = {
+      idHash: 1,
       name: 1,
       status: 1,
       'lastSeen.state': 1,
@@ -107,7 +112,6 @@ router.get('/', async (req: Request, res: Response) => {
       gender: 1,
       description: 1,
       photoUrl: 1,
-      'data.cedula': 1,
       'data.origen': 1,
       'data.ficha_url': 1,
       'data.verificado_por': 1,
@@ -117,21 +121,29 @@ router.get('/', async (req: Request, res: Response) => {
     };
 
     // Prioridad: con foto primero, luego por urgencia
-    const [persons, total] = await Promise.all([
-      PersonModel.find(filter)
-        .select(safeProjection)
-        .populate('metadata.reportedBy', 'name')
-        .sort({ photoUrl: -1, 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
-        .skip(offset)
-        .limit(limit)
-        .lean(),
+    let query: any = PersonModel.find(filter)
+      .select(dbProjection)
+      .sort({ photoUrl: -1, 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
+      .skip(offset)
+      .limit(limit);
+
+    // La identidad del reportante solo se puebla para vista ampliada
+    if (expanded) {
+      query = query.populate('metadata.reportedBy', 'name');
+    }
+
+    const [rawPersons, total] = await Promise.all([
+      query.lean(),
       PersonModel.countDocuments(filter)
     ]);
 
+    // Serialización segura por rol (oculta PII, enmascara menores)
+    const persons = rawPersons.map((p: any) => toPublicPerson(p, viewerRole));
+
     const responsePayload = { total, limit, offset, persons };
 
-    // Cachear solo primera página sin búsqueda (30s)
-    if (!q && offset === 0) {
+    // Cachear solo la vista pública, primera página sin búsqueda (30s)
+    if (!expanded && !q && offset === 0) {
       await redis.setex(cacheKey, 30, JSON.stringify(responsePayload));
     }
 

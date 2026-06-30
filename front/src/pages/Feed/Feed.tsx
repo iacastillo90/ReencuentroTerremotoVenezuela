@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
+import { Search, AlertTriangle, Users, MapPin, Loader2, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
 import type { Person, Disaster } from '../../types';
 import { useAuth } from '../../store/AuthContext';
@@ -23,27 +23,51 @@ interface FeedPageProps {
 }
 
 type Filter = 'all' | 'missing' | 'found' | 'disasters';
+type AgeCat = 'adulto' | 'adulto_mayor' | 'adolescente' | 'menor';
+
+// Mapea las 4 opciones visuales a lo que entiende el backend (category + isMinor).
+const CAT_TO_BACKEND: Record<AgeCat, { category: string; isMinor: boolean }> = {
+  adulto:       { category: 'adulto',       isMinor: false },
+  adulto_mayor: { category: 'adulto_mayor', isMinor: false },
+  adolescente:  { category: 'menor',        isMinor: true  }, // adolescente = menor (LOPNNA)
+  menor:        { category: 'menor',        isMinor: true  },
+};
+
+const AGE_CATS: { key: AgeCat; icon: React.ReactNode; label: string }[] = [
+  { key: 'adulto',       icon: <User size={18} />,       label: 'Adulto' },
+  { key: 'adulto_mayor', icon: <UserRound size={18} />,  label: 'Adulto mayor' },
+  { key: 'adolescente',  icon: <User size={18} />,       label: 'Adolescente' },
+  { key: 'menor',        icon: <Baby size={18} />,       label: 'Niño/a' },
+];
 
 export const FeedPage: React.FC<FeedPageProps> = ({
   persons, disasters, loading, loadingMore, hasMore, total, counts, searchQuery, onSearchChange, onSelectPerson, onLoadMore
 }) => {
   const [filter, setFilter] = useState<Filter>('missing');
+  const [ageCategory, setAgeCategory] = useState<AgeCat>('adulto');
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const [creatingAlert, setCreatingAlert] = useState(false);
 
+  // Por protección (LOPNNA) los menores no se listan: se gestiona por solicitud.
+  const isMinorCat = ageCategory === 'menor' || ageCategory === 'adolescente';
+
   const handleCreateSearchRequest = async () => {
-    if (!searchQuery) return;
+    if (!searchQuery.trim()) {
+      alert('Escribe el nombre de la persona que buscas.');
+      return;
+    }
     try {
       setCreatingAlert(true);
-      await api.post('/search-requests', {
-        searchName: searchQuery,
-        category: 'adulto', // Default category
-        isMinor: false
-      });
-      alert('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.');
+      const { category, isMinor } = CAT_TO_BACKEND[ageCategory];
+      await api.post('/search-requests', { searchName: searchQuery, category, isMinor });
+      alert(
+        isMinor
+          ? 'Solicitud enviada. Por protección de menores, nuestro equipo revisará la información y te contactará por correo si existe un caso relacionado.'
+          : 'Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.'
+      );
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al crear alerta de búsqueda');
+      alert(e.response?.data?.error || 'Error al crear la solicitud de búsqueda');
     } finally {
       setCreatingAlert(false);
     }
@@ -94,20 +118,97 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             onChange={e => onSearchChange(e.target.value)}
           />
         </div>
-        <div className="feed-chips">
-          {chips.map(c => (
-            <button
-              key={c.key}
-              className={`chip ${filter === c.key ? 'active' : ''}`}
-              onClick={() => setFilter(c.key)}
-            >
-              {c.icon} {c.label}
-              {c.count !== undefined && (
-                <span className="chip-count">{c.count.toLocaleString()}</span>
-              )}
-            </button>
-          ))}
+
+        {/* ¿A quién buscas? — categorías de edad */}
+        <div className="feed-agecats">
+          <span className="feed-agecats__label">¿A quién buscas?</span>
+          <div className="agecat-row">
+            {AGE_CATS.map(c => {
+              const minor = c.key === 'menor' || c.key === 'adolescente';
+              return (
+                <button
+                  key={c.key}
+                  className={`agecat ${minor ? 'minor' : ''} ${ageCategory === c.key ? 'active' : ''}`}
+                  onClick={() => setAgeCategory(c.key)}
+                >
+                  {c.icon} {c.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {!isMinorCat && (
+          <div className="feed-chips">
+            {chips.map(c => (
+              <button
+                key={c.key}
+                className={`chip ${filter === c.key ? 'active' : ''}`}
+                onClick={() => setFilter(c.key)}
+              >
+                {c.icon} {c.label}
+                {c.count !== undefined && (
+                  <span className="chip-count">{c.count.toLocaleString()}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Contenido: aviso de protección (menores) o búsqueda normal */}
+      {isMinorCat ? (
+        <div className="minor-notice">
+          <div className="minor-notice__shield"><ShieldCheck size={40} /></div>
+          <h2>Búsqueda de niños y adolescentes</h2>
+          <div className="minor-notice__alert">
+            Por protección legal y ética (LOPNNA), la información de niños, niñas y adolescentes no se muestra
+            directamente en los resultados de búsqueda.
+          </div>
+          <p className="minor-notice__lead">
+            Si estás buscando a un menor de edad, podemos ayudarte a verificar si existe un reporte relacionado.
+          </p>
+          <h4>¿Cómo funciona?</h4>
+          <div className="minor-steps">
+            <div className="minor-step">
+              <div className="minor-step__icon"><ClipboardList size={16} /></div>
+              <span>1. Completa el formulario de solicitud con el nombre del menor.</span>
+            </div>
+            <div className="minor-step">
+              <div className="minor-step__icon"><ShieldCheck size={16} /></div>
+              <span>2. Nuestro equipo revisará la información de forma protegida.</span>
+            </div>
+            <div className="minor-step">
+              <div className="minor-step__icon"><Mail size={16} /></div>
+              <span>3. Si existe un posible caso, te contactaremos por correo electrónico.</span>
+            </div>
+          </div>
+          <input
+            className="minor-notice__input"
+            placeholder="Nombre del niño, niña o adolescente"
+            value={searchQuery}
+            onChange={e => onSearchChange(e.target.value)}
+          />
+          {user ? (
+            <button className="minor-notice__btn" onClick={handleCreateSearchRequest} disabled={creatingAlert}>
+              {creatingAlert ? 'Enviando…' : 'Solicitar búsqueda'}
+            </button>
+          ) : (
+            <p style={{ fontSize: '0.82rem', color: 'var(--clr-amber)', marginTop: '0.5rem' }}>
+              Inicia sesión para enviar una solicitud de búsqueda protegida.
+            </p>
+          )}
+          <a className="minor-notice__link" href="#" onClick={e => e.preventDefault()}>
+            Conoce más sobre nuestra política de protección infantil
+          </a>
+        </div>
+      ) : (
+      <>
+      {/* Nota de solicitud de contacto (adultos) */}
+      <div className="feed-contact-note">
+        <ShieldCheck size={16} />
+        Para ver información de contacto detallada es necesario realizar una solicitud. Así protegemos la
+        privacidad de las personas y evitamos el mal uso de los datos.
       </div>
 
       {/* Feed list */}
@@ -191,6 +292,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             </div>
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart } from 'lucide-react';
+import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart, Search } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
+type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -26,10 +26,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const { user, logout } = useAuth();
 
   const navItems: { view: View; icon: React.ReactNode; label: string; center?: boolean }[] = [
-    { view: 'feed',   icon: <Home size={22} />,     label: 'Inicio' },
-    { view: 'map',    icon: <Map size={22} />,      label: 'Mapa' },
+    { view: 'home',   icon: <Home size={22} />,   label: 'Inicio' },
+    { view: 'feed',   icon: <Search size={22} />, label: 'Buscar' },
     { view: 'report', icon: <PlusCircle size={32} color="var(--clr-primary)" fill="rgba(59,130,246,0.2)" />, label: '', center: true },
-    { view: 'library',icon: <BookOpen size={22} />, label: 'Guías' },
+    { view: 'map',    icon: <Map size={22} />,    label: 'Mapa' },
   ];
 
   const handleBottomNav = (view: View) => {
@@ -62,6 +62,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
         {/* View toggle pills — desktop only */}
         <div className="nav-toggle-pills">
+          <button
+            className={`toggle-pill ${activeView === 'home' ? 'active' : ''}`}
+            onClick={() => onViewChange('home')}
+          >
+            <Home size={14} style={{ display: 'inline', marginRight: 6 }} />
+            Inicio
+          </button>
           <button
             className={`toggle-pill ${activeView === 'feed' ? 'active' : ''}`}
             onClick={() => onViewChange('feed')}

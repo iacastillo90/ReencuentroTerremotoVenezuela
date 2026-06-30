@@ -30,8 +30,28 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// --- 3. Body Parsers y Prevención de Contaminación de Parámetros ---
-app.use(cors());
+// --- 3. CORS restringido, Body Parsers y Prevención de Contaminación de Parámetros ---
+// Lista blanca desde FRONTEND_URL (admite varios orígenes separados por coma) + orígenes de desarrollo.
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+const devOrigins = ['http://localhost:5173', 'http://localhost:4173', 'http://127.0.0.1:5173'];
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Permitir peticiones sin Origin (curl, apps móviles, health checks).
+      if (!origin) return callback(null, true);
+      if ([...allowedOrigins, ...devOrigins].includes(origin)) return callback(null, true);
+      // En desarrollo, si no se configuró FRONTEND_URL, no bloquear (con aviso).
+      if (process.env.NODE_ENV !== 'production' && allowedOrigins.length === 0) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin no permitido por CORS: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '1mb' })); // Limitar el peso de los payloads para prevenir ataques
 app.use(hpp()); // Protege contra HTTP Parameter Pollution
 

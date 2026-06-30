@@ -14,11 +14,18 @@ async function bootstrap() {
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
 
-    await initializeStorage();
-    await setupDisasterSyncJobs();
-
+    // El servidor abre el puerto de inmediato; las tareas pesadas (storage e
+    // ingesta/sincronización) corren en segundo plano para NO bloquear el arranque.
     app.listen(PORT, () => {
       console.log(`[Server] Backend de Reencuentro Terremoto Venezuela corriendo en http://localhost:${PORT}`);
+
+      initializeStorage()
+        .then(() => console.log('[Server] Almacenamiento inicializado.'))
+        .catch((err) => console.error('[Server] Error inicializando almacenamiento:', err));
+
+      setupDisasterSyncJobs()
+        .then(() => console.log('[Server] Jobs de sincronización registrados (segundo plano).'))
+        .catch((err) => console.error('[Server] Error registrando jobs de sync:', err));
     });
   } catch (error) {
     console.error('[Server] Error crítico durante el inicio:', error);

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 export function requireAdminOrVerifier(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers['x-api-key'];
@@ -44,7 +45,17 @@ export function requirePartnerApiKey(req: Request, res: Response, next: NextFunc
   next();
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-reencuentro-2024';
+export const JWT_SECRET = (() => {
+  const s = process.env.JWT_SECRET;
+  if (s) return s;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[Security] JWT_SECRET no está definido. El servidor aborta en producción.');
+  }
+  // Desarrollo: secreto ALEATORIO por proceso (no se hardcodea ningún secreto en el código).
+  // Las sesiones se invalidan al reiniciar; define JWT_SECRET en .env para sesiones estables.
+  console.warn('[Security] JWT_SECRET no definido: generando un secreto aleatorio temporal para desarrollo. Define JWT_SECRET en .env.');
+  return crypto.randomBytes(48).toString('hex');
+})();
 
 export function requireUser(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -60,6 +71,20 @@ export function requireUser(req: Request, res: Response, next: NextFunction) {
   } catch (error) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
+}
+
+// Adjunta req.user si hay un token válido, pero NO bloquea si no hay (vista pública vs ampliada)
+export function attachUserIfPresent(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      (req as any).user = jwt.verify(token, JWT_SECRET);
+    } catch {
+      /* token inválido → continuar como anónimo */
+    }
+  }
+  next();
 }
 
 export function requireProfileComplete(req: Request, res: Response, next: NextFunction) {

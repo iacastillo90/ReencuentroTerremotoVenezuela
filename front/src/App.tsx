@@ -12,8 +12,9 @@ import type { Person, Disaster } from './types';
 
 import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
+import { HomePage } from './pages/Home/HomePage';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
+type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -28,7 +29,7 @@ function App() {
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
-  const [activeView, setActiveView]   = useState<View>('feed');
+  const [activeView, setActiveView]   = useState<View>('home');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -123,9 +124,18 @@ function App() {
     }
   }, [offset, hasMore, loadingMore]);
 
+  // Abrir reporte (con verificación de sesión/perfil) — usado por el nav y el Home
+  const handleReport = () => {
+    if (!user || !user.isProfileComplete) {
+      setIsAuthenticating(true);
+    } else {
+      setIsReporting(true);
+    }
+  };
+
   // Admin view — full screen takeover
   if (activeView === 'admin') {
-    return <AdminDashboard onBack={() => setActiveView('feed')} />;
+    return <AdminDashboard onBack={() => setActiveView('home')} />;
   }
 
   return (
@@ -139,13 +149,7 @@ function App() {
           }
           setActiveView(v);
         }}
-        onReport={() => {
-          if (!user || !user.isProfileComplete) {
-            setIsAuthenticating(true);
-          } else {
-            setIsReporting(true);
-          }
-        }}
+        onReport={handleReport}
         onAdmin={() => setActiveView('admin')}
         sidebar={
           activeView === 'feed'
@@ -153,6 +157,16 @@ function App() {
             : undefined
         }
       >
+        {activeView === 'home' && (
+          <HomePage
+            counts={counts}
+            persons={persons}
+            onBuscar={() => setActiveView('feed')}
+            onReportar={handleReport}
+            onMapa={() => setActiveView('map')}
+            onSelectPerson={setSelectedPerson}
+          />
+        )}
         {activeView === 'profile' && <ProfilePage onSelectPerson={setSelectedPerson} />}
         {activeView === 'library' && <LibraryPage />}
         {activeView === 'feed' && (

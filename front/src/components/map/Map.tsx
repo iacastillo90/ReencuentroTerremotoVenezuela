@@ -66,8 +66,14 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
         {(activeFilter === 'all' || activeFilter === 'persons') && (
           <MarkerClusterGroup chunkedLoading>
             {persons.map((person) => {
-              if (!person.lastSeen?.coordinates) return null;
-              const [lng, lat] = person.lastSeen.coordinates.coordinates;
+              // Menores enmascarados: no se plotean individualmente (LOPNNA)
+              if ((person as any).protected) return null;
+              // Ubicación APROXIMADA por defecto; exacta solo si el backend la envía (rol ampliado)
+              const approx = person.approxLocation;
+              const exact = person.lastSeen?.coordinates?.coordinates;
+              const coords = approx || exact;
+              if (!coords) return null;
+              const [lng, lat] = coords;
               return (
                 <Marker key={person.idHash} position={[lat, lng]} icon={personIcon}>
                   <Popup>
@@ -77,8 +83,8 @@ export function InteractiveMap({ persons, disasters, activeFilter, onSelectPerso
                       <p className="status-badge" data-status={person.status}>
                         {person.status === 'missing' ? 'Desaparecido' : person.status === 'found' ? 'Encontrado' : person.status}
                       </p>
-                      <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
-                      <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
+                      {person.lastSeen?.description && <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>}
+                      <p><strong>Urgencia:</strong> {person.metadata?.urgencyScore}</p>
                       {onSelectPerson && (
                         <button 
                           className="btn-primary" 
