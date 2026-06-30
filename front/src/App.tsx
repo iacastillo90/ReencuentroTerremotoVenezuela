@@ -13,8 +13,12 @@ import type { Person, Disaster } from './types';
 import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { LogisticsPage } from './pages/Logistics/LogisticsPage';
+import { HomePage } from './pages/Home/HomePage';
+import { PublicLanding } from './pages/Home/PublicLanding';
+import { LoginPage } from './pages/Auth/LoginPage';
+import { RegisterPage } from './pages/Auth/RegisterPage';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics';
+type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -29,7 +33,7 @@ function App() {
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
-  const [activeView, setActiveView]   = useState<View>('feed');
+  const [activeView, setActiveView]   = useState<View>('home');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -124,29 +128,52 @@ function App() {
     }
   }, [offset, hasMore, loadingMore]);
 
+  // Reporte (con verificación de sesión/perfil) — usado por el nav, el Home y el landing
+  const handleReport = () => {
+    if (!user) { setActiveView('login'); return; }
+    if (!user.isProfileComplete) { setIsAuthenticating(true); return; }
+    setIsReporting(true);
+  };
+
   // Admin view — full screen takeover
   if (activeView === 'admin') {
-    return <AdminDashboard onBack={() => setActiveView('feed')} />;
+    return <AdminDashboard onBack={() => setActiveView('home')} />;
   }
+
+  // Landing público (mockup "home public") para usuarios no autenticados
+  const showPublicLanding = activeView === 'home' && !user;
 
   return (
     <>
+      {activeView === 'login' ? (
+        <LoginPage
+          onSuccess={() => setActiveView('home')}
+          onGoRegister={() => setActiveView('register')}
+          onGoogle={() => setIsAuthenticating(true)}
+          onBack={() => setActiveView('home')}
+        />
+      ) : activeView === 'register' ? (
+        <RegisterPage
+          onSuccess={() => setActiveView('home')}
+          onGoLogin={() => setActiveView('login')}
+          onBack={() => setActiveView('login')}
+        />
+      ) : showPublicLanding ? (
+        <PublicLanding
+          onBuscar={() => setActiveView('feed')}
+          onAyuda={handleReport}
+        />
+      ) : (
       <AppLayout
         activeView={activeView}
         onViewChange={v => {
           if (v === 'profile' && !user) {
-            setIsAuthenticating(true);
+            setActiveView('login');
             return;
           }
           setActiveView(v);
         }}
-        onReport={() => {
-          if (!user || !user.isProfileComplete) {
-            setIsAuthenticating(true);
-          } else {
-            setIsReporting(true);
-          }
-        }}
+        onReport={handleReport}
         onAdmin={() => setActiveView('admin')}
         sidebar={
           activeView === 'feed'
@@ -154,6 +181,16 @@ function App() {
             : undefined
         }
       >
+        {activeView === 'home' && (
+          <HomePage
+            counts={counts}
+            persons={persons}
+            onBuscar={() => setActiveView('feed')}
+            onReportar={handleReport}
+            onMapa={() => setActiveView('map')}
+            onSelectPerson={setSelectedPerson}
+          />
+        )}
         {activeView === 'profile' && <ProfilePage onSelectPerson={setSelectedPerson} />}
         {activeView === 'library' && <LibraryPage />}
         {activeView === 'feed' && (
@@ -184,6 +221,7 @@ function App() {
           <LogisticsPage disasters={disasters} />
         )}
       </AppLayout>
+      )}
 
       {selectedPerson && (
         <PersonDetailModal

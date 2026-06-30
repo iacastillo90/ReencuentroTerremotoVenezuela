@@ -10,5 +10,25 @@ export const profileUpdateSchema = z.object({
   contactNumber: sanitizedString.pipe(z.string().min(7).max(20)),
 });
 
+// Registro con correo/contraseña. La contraseña NO se sanitiza (alteraría el valor);
+// solo se valida longitud. El correo se valida como email y se normaliza en el modelo.
+export const registerSchema = z.object({
+  name: sanitizedString.pipe(z.string().min(2).max(100)),
+  lastName: sanitizedString.pipe(z.string().min(1).max(100)).optional(),
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  contactNumber: sanitizedString.pipe(z.string().min(7).max(20)).optional(),
+  country: sanitizedString.pipe(z.string().max(100)).optional(),
+  state: sanitizedString.pipe(z.string().max(100)).optional(),
+  municipality: sanitizedString.pipe(z.string().max(100)).optional(),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(1).max(128),
+});
+
 export type GoogleAuthPayload = z.infer<typeof googleAuthSchema>;
 export type ProfileUpdatePayload = z.infer<typeof profileUpdateSchema>;
+export type RegisterPayload = z.infer<typeof registerSchema>;
+export type LoginPayload = z.infer<typeof loginSchema>;

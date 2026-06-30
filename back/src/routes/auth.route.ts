@@ -5,8 +5,9 @@ import rateLimit from 'express-rate-limit';
 import { UserModel } from '../models/user.model';
 import { requireUser } from '../middlewares/auth.middleware';
 import { generateCsrfToken } from '../middlewares/csrf.middleware';
-import { googleAuthSchema, profileUpdateSchema } from '../validators/auth.validator';
+import { googleAuthSchema, profileUpdateSchema, registerSchema, loginSchema } from '../validators/auth.validator';
 import { auditLog } from '../middlewares/audit.middleware';
+import { hashPassword, verifyPassword } from '../utils/password.util';
 
 const router = Router();
 
@@ -136,6 +137,103 @@ router.post('/google', async (req: Request, res: Response) => {
     return res.status(200).json({ token: authToken, user });
   } catch (error: any) {
     console.error('[AuthRoute] Google Auth Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Firma el JWT (con tokenVersion) y fija la cookie httpOnly, igual que el flujo de Google.
+function issueSession(res: Response, user: any): string {
+  const authToken = jwt.sign(
+    { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
+      role: user.role, tokenVersion: user.tokenVersion },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  res.cookie('token', authToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+  });
+  return authToken;
+}
+
+// ── Registro con correo/contraseña ───────────────────────────────────────────
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const validation = registerSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
+    }
+    const { name, lastName, email, password, contactNumber, country, state, municipality } = validation.data;
+    const normEmail = email.toLowerCase().trim();
+
+    const existing = await UserModel.findOne({ email: normEmail });
+    if (existing) {
+      return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
+    }
+
+    const user = await UserModel.create({
+      email: normEmail,
+      name,
+      lastName,
+      passwordHash: hashPassword(password),
+      contactNumber,
+      country,
+      state,
+      municipality,
+      isProfileComplete: Boolean(contactNumber),
+    });
+
+    const authToken = issueSession(res, user);
+    auditLog({
+      eventType: 'auth_login_success',
+      severity: 'info',
+      actor: user._id.toString(),
+      action: 'POST /auth/register',
+      detail: { email: user.email },
+      req,
+    });
+    return res.status(201).json({ token: authToken, user });
+  } catch (error) {
+    console.error('[AuthRoute] POST /register Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ── Login con correo/contraseña ──────────────────────────────────────────────
+router.post('/login', async (req: Request, res: Response) => {
+  try {
+    const validation = loginSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
+    }
+    const { email, password } = validation.data;
+    const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      auditLog({
+        eventType: 'auth_login_failure',
+        severity: 'warning',
+        actor: req.ip || 'unknown',
+        action: 'POST /auth/login failed',
+        detail: { email },
+        req,
+      });
+      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+    }
+
+    const authToken = issueSession(res, user);
+    auditLog({
+      eventType: 'auth_login_success',
+      severity: 'info',
+      actor: user._id.toString(),
+      action: 'POST /auth/login',
+      detail: { email: user.email },
+      req,
+    });
+    return res.status(200).json({ token: authToken, user });
+  } catch (error) {
+    console.error('[AuthRoute] POST /login Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
