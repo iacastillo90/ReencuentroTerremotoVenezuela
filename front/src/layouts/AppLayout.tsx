@@ -3,7 +3,7 @@ import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, 
 import { useAuth } from '../store/AuthContext';
 import './AppLayout.css';
 
-type View = 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics';
+type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
 
 interface AppLayoutProps {
   children: React.ReactNode;
