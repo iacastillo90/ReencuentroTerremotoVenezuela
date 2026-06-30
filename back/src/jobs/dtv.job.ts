@@ -76,9 +76,16 @@ export async function runDTVScraper(pagesToScrape = 1) {
         return results;
       });
 
+      let pageUsedFallback = false;
       if (reports.length === 0) {
-        console.warn(`[DTV Scraper] No se encontraron tarjetas en la página ${p}. (Posible bloqueo anti-bot). Usando fallback fidedigno...`);
-        reports.push(...generateDTVFallback());
+        if (process.env.ALLOW_MOCK_DATA === 'true') {
+          console.warn(`[DTV Scraper] Sin tarjetas en la página ${p} (posible bloqueo anti-bot). ALLOW_MOCK_DATA=true → usando datos SIMULADOS (marcados isSimulated).`);
+          reports.push(...generateDTVFallback());
+          pageUsedFallback = true;
+        } else {
+          console.warn(`[DTV Scraper] Sin tarjetas en la página ${p} (posible bloqueo anti-bot). Datos simulados deshabilitados; no se insertan registros ficticios.`);
+          continue;
+        }
       }
 
       console.log(`[DTV Scraper] Extraídos ${reports.length} reportes de la página ${p}.`);
@@ -110,6 +117,8 @@ export async function runDTVScraper(pagesToScrape = 1) {
                 metadata: {
                   urgencyScore: item.status === 'found' ? 0 : 90,
                   confidenceScore: 80,
+                  source: pageUsedFallback ? `${SOURCE_ID}-mock` : SOURCE_ID,
+                  isSimulated: pageUsedFallback,
                   createdAt: new Date(),
                   updatedAt: new Date()
                 }

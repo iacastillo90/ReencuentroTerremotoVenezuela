@@ -14,13 +14,20 @@ export async function fetchReencuentroPersons() {
     });
 
     let items: any[] = [];
+    let usingMock = false;
 
     if (response.ok) {
       const data = await response.json();
       items = Array.isArray(data) ? data : (data.items || []);
-    } else {
-      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. Usando fallback de datos fidedignos simulados para desarrollo...`);
+    } else if (process.env.ALLOW_MOCK_DATA === 'true') {
+      // Solo en desarrollo y de forma EXPLÍCITA. Los registros se marcan como simulados.
+      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. ALLOW_MOCK_DATA=true → usando datos SIMULADOS (marcados isSimulated).`);
       items = generateMockReencuentroData();
+      usingMock = true;
+    } else {
+      // Por defecto NO se insertan datos ficticios (evita mostrar personas falsas como reales).
+      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. Datos simulados deshabilitados (defina ALLOW_MOCK_DATA=true solo en desarrollo). No se insertan registros.`);
+      return 0;
     }
 
     let processed = 0;
@@ -56,6 +63,8 @@ export async function fetchReencuentroPersons() {
               metadata: {
                 urgencyScore: item.urgencyScore || 80,
                 confidenceScore: 90,
+                source: usingMock ? `${SOURCE_ID}-mock` : SOURCE_ID,
+                isSimulated: usingMock,
                 createdAt: new Date(),
                 updatedAt: new Date()
               }
