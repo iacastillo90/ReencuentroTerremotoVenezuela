@@ -227,14 +227,19 @@ router.post('/:idHash/close', requireUser, async (req: Request, res: Response) =
 
     // Crear el log de auditoría (Base Legal)
     await AuditLogModel.create({
-      personIdHash: idHash,
-      action: 'case_closed',
-      previousStatus: prevStatus,
-      newStatus: person.status,
-      resolutionNotes: notes,
-      performedBy: userId,
-      ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
-      userAgent: req.headers['user-agent'] || 'unknown',
+      eventType: 'admin_action' as const,
+      severity: 'info' as const,
+      actor: userId as string,
+      action: 'case_closed' as string,
+      resource: idHash as string,
+      detail: {
+        previousStatus: prevStatus,
+        newStatus: person.status,
+        resolutionNotes: notes,
+      },
+      ip: (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown',
+      userAgent: typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : 'unknown',
+      timestamp: new Date(),
     });
 
     // Invalidar caché
