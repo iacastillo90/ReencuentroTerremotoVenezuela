@@ -14,8 +14,10 @@ import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { HomePage } from './pages/Home/HomePage';
 import { PublicLanding } from './pages/Home/PublicLanding';
+import { LoginPage } from './pages/Auth/LoginPage';
+import { RegisterPage } from './pages/Auth/RegisterPage';
 
-type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
+type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'login' | 'register';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -144,7 +146,20 @@ function App() {
 
   return (
     <>
-      {showPublicLanding ? (
+      {activeView === 'login' ? (
+        <LoginPage
+          onSuccess={() => setActiveView('home')}
+          onGoRegister={() => setActiveView('register')}
+          onGoogle={() => setIsAuthenticating(true)}
+          onBack={() => setActiveView('home')}
+        />
+      ) : activeView === 'register' ? (
+        <RegisterPage
+          onSuccess={() => setActiveView('home')}
+          onGoLogin={() => setActiveView('login')}
+          onBack={() => setActiveView('login')}
+        />
+      ) : showPublicLanding ? (
         <PublicLanding
           onBuscar={() => setActiveView('feed')}
           onAyuda={handleReport}
@@ -154,7 +169,7 @@ function App() {
         activeView={activeView}
         onViewChange={v => {
           if (v === 'profile' && !user) {
-            setIsAuthenticating(true);
+            setActiveView('login');
             return;
           }
           setActiveView(v);
