@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reencuentros Terremoto Venezuela · Documentación del Proyecto</title>
+<meta name="description" content="Documentación técnica integral (arquitectura, seguridad, datos, ciencia de computación y UX/UI) de la plataforma Reencuentros Terremoto Venezuela. Sin datos sensibles: repositorio público." />
+<style>
+  :root{
+    --bg:#f4f6f9; --surface:#fff; --border:#e4e7ec; --text:#131313; --muted:#5b5b5b; --dim:#8e8e8e;
+    --blue:#1d65e2; --blue-d:#1751b5; --red:#ef4444; --green:#10b981; --amber:#b45309; --purple:#6d4aec;
+    --code-bg:#f2f4f7; --radius:12px; --shadow:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
+    --sidebar:300px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Work Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;font-size:15px}
+  a{color:var(--blue);text-decoration:none}
+  .layout{display:flex;min-height:100vh}
+  /* Sidebar */
+  .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;padding:1.5rem 1rem}
+  .brand{display:flex;align-items:center;gap:.6rem;margin-bottom:1.4rem;padding:0 .4rem}
+  .brand .heart{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--purple));display:grid;place-items:center;color:#fff;font-size:1.2rem}
+  .brand h1{font-size:1rem;line-height:1.1;font-weight:800}
+  .brand small{color:var(--dim);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .nav a{display:block;padding:.42rem .6rem;border-radius:8px;color:var(--muted);font-size:.86rem;font-weight:500}
+  .nav a:hover{background:var(--bg);color:var(--text)}
+  .nav .grp{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:1rem .6rem .3rem}
+  /* Main */
+  .main{flex:1;min-width:0}
+  .content{max-width:920px;margin:0 auto;padding:2.5rem 2rem 5rem}
+  .hero{background:linear-gradient(160deg,#fff,#f7f9fc);border:1px solid var(--border);border-radius:18px;padding:2rem;box-shadow:var(--shadow);margin-bottom:2rem;position:relative;overflow:hidden}
+  .hero .bar{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--blue) 0 33%,#f5c518 33% 66%,var(--red) 66%)}
+  .kicker{color:var(--blue);font-weight:800;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase}
+  .hero h1{font-size:clamp(26px,4vw,38px);margin:.4rem 0 .6rem;letter-spacing:-.02em}
+  .hero p{color:var(--muted);max-width:680px}
+  .meta{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;margin-top:1rem;font-size:.82rem;color:var(--muted)}
+  .meta b{color:var(--text)}
+  section{margin:2.6rem 0;scroll-margin-top:1rem}
+  h2{font-size:1.5rem;letter-spacing:-.02em;padding-bottom:.5rem;border-bottom:2px solid var(--border);margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
+  h2 .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--blue);color:#fff;font-size:.85rem;font-weight:800}
+  h3{font-size:1.12rem;margin:1.5rem 0 .6rem}
+  h4{font-size:.98rem;margin:1.1rem 0 .4rem}
+  p{margin:.5rem 0}
+  ul,ol{margin:.5rem 0 .5rem 1.3rem}
+  li{margin:.25rem 0}
+  code{font-family:Consolas,Monaco,monospace;font-size:.86em;background:var(--code-bg);padding:.1rem .35rem;border-radius:5px;color:#c0392b}
+  pre{background:#0d1117;color:#e6edf3;border-radius:var(--radius);padding:1rem;overflow-x:auto;margin:.8rem 0;font-size:.82rem;line-height:1.5}
+  pre code{background:none;color:inherit;padding:0}
+  table{width:100%;border-collapse:collapse;margin:.8rem 0;font-size:.86rem;background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  th,td{text-align:left;padding:.6rem .8rem;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:#eef2f8;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  .callout{border-left:4px solid var(--blue);background:#eef4ff;border-radius:8px;padding:.85rem 1rem;margin:1rem 0;font-size:.9rem}
+  .callout.warn{border-color:#e0a500;background:#fff7e6}
+  .callout.danger{border-color:var(--red);background:#fee2e2}
+  .callout.ok{border-color:var(--green);background:#d1fae5}
+  .callout b{color:var(--text)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin:1rem 0}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
+  .card h4{margin:0 0 .3rem}
+  .card p{font-size:.84rem;color:var(--muted);margin:0}
+  .pill{display:inline-block;font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .pill.red{background:#fee2e2;color:#b91c1c}.pill.amber{background:#fef3c7;color:#92400e}.pill.green{background:#d1fae5;color:#047857}.pill.blue{background:#dbeafe;color:#1e40af}
+  .foot{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--border);color:var(--dim);font-size:.82rem;text-align:center}
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    .sidebar{position:fixed;left:0;top:0;z-index:50;transform:translateX(-100%);transition:.25s;box-shadow:0 0 40px rgba(0,0,0,.2)}
+    .sidebar.open{transform:translateX(0)}
+    .menu-btn{display:inline-grid;place-items:center;position:fixed;top:1rem;left:1rem;z-index:40;width:44px;height:44px;border-radius:10px;background:var(--blue);color:#fff;border:none;font-size:1.3rem;cursor:pointer;box-shadow:var(--shadow)}
+    .content{padding:4rem 1.1rem 4rem}
+  }
+</style>
+</head>
+<body>
+<button class="menu-btn" onclick="document.getElementById('sb').classList.toggle('open')">☰</button>
+<div class="layout">
+  <aside class="sidebar" id="sb">
+    <div class="brand">
+      <div class="heart">❤</div>
+      <div><h1>Reencuentros<br>Terremoto Venezuela</h1><small>Documentación</small></div>
+    </div>
+    <nav class="nav" onclick="document.getElementById('sb').classList.remove('open')">
+      <div class="grp">Visión</div>
+      <a href="#intro">1 · Introducción y contexto</a>
+      <a href="#arquitectura">2 · Arquitectura (arquitecto)</a>
+      <a href="#stack">3 · Stack tecnológico</a>
+      <div class="grp">Datos y backend</div>
+      <a href="#datos">4 · Modelo de datos (DBA)</a>
+      <a href="#backend">5 · Componentes del backend</a>
+      <a href="#procesos">6 · Procesos y algoritmos (CS)</a>
+      <a href="#api">7 · API REST</a>
+      <div class="grp">Producto</div>
+      <a href="#frontend">8 · Frontend y UX/UI</a>
+      <a href="#buscar">9 · Módulo Buscar</a>
+      <a href="#auth">10 · Autenticación y roles</a>
+      <a href="#privacidad">11 · Privacidad y menores (LOPNNA)</a>
+      <div class="grp">Operación</div>
+      <a href="#seguridad">12 · Seguridad (ciberseguridad)</a>
+      <a href="#infra">13 · Infraestructura y despliegue</a>
+      <a href="#local">14 · Entorno local</a>
+      <a href="#glosario">15 · Glosario</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+  <div class="content">
+    <header class="hero">
+      <div class="bar"></div>
+      <div class="kicker">⬢ Documento técnico integral</div>
+      <h1>Reencuentros Terremoto Venezuela</h1>
+      <p>Plataforma de código abierto que centraliza, depura y unifica reportes de personas
+      desaparecidas y encontradas tras desastres naturales en Venezuela, con asistencia de
+      inteligencia artificial y un enfoque de privacidad y seguridad por diseño.</p>
+      <div class="meta">
+        <span>📅 <b>Actualizado: 29 de junio de 2026</b></span>
+        <span>🧩 <b>Monorepo (front + back)</b></span>
+        <span>⚖️ <b>Código abierto · repositorio público</b></span>
+        <span>🔒 <b>Sin datos sensibles ni claves</b></span>
+      </div>
+    </header>
+
+    <div class="callout"><b>Nota de seguridad.</b> Este repositorio es <b>público</b>. Esta documentación
+    describe nombres de variables, rutas y decisiones, pero <b>nunca contiene secretos, claves ni PII</b>
+    (datos personales de víctimas). Los valores reales se gestionan fuera del repositorio.</div>
+
+    <!-- 1 -->
+    <section id="intro">
+      <h2><span class="n">1</span> Introducción y contexto</h2>
+      <p>Durante un desastre, la información de personas desaparecidas se fragmenta entre redes sociales,
+      mensajería y bases improvisadas, lo que genera <b>duplicación, desinformación y pérdida de tiempo</b>.
+      La plataforma actúa como <b>fuente única de verdad</b>: consolida reportes de múltiples orígenes en un
+      registro limpio por persona, y asiste la búsqueda con IA, manteniendo siempre a una persona en el
+      bucle de decisión para los reencuentros.</p>
+      <h3>Objetivos</h3>
+      <ul>
+        <li><b>Centralizar</b> los reportes de personas y mascotas para que no se pierdan en el ruido.</li>
+        <li><b>Acelerar reencuentros</b> con coincidencias asistidas por IA y verificación humana.</li>
+        <li><b>Vencer la baja conectividad</b> (app ligera, offline-friendly).</li>
+        <li><b>Soportar alta demanda</b> con infraestructura gestionada que escala sola.</li>
+      </ul>
+      <h3>Tipos de usuario</h3>
+      <table>
+        <tr><th>Rol</th><th>Qué puede hacer</th></tr>
+        <tr><td><b>Ciudadano / familiar</b> (<code>user</code>)</td><td>Buscar, reportar, crear alertas, contactar de forma enmascarada.</td></tr>
+        <tr><td><b>Organización verificada</b> (<code>verifier</code>)</td><td>Acceder a datos sensibles (ubicación exacta, casos de menores) con registro de acceso.</td></tr>
+        <tr><td><b>Administrador</b> (<code>admin</code>)</td><td>Moderar, gestionar roles, aprobar verificaciones, confirmar coincidencias.</td></tr>
+      </table>
+    </section>
+
+    <!-- 2 -->
+    <section id="arquitectura">
+      <h2><span class="n">2</span> Arquitectura del sistema <span class="pill blue">Arquitecto</span></h2>
+      <p>Modelo de <b>servicios desacoplados en la nube</b> (PaaS / Serverless). No se mantienen servidores
+      físicos propios: los proveedores gestionan parcheo, alta disponibilidad y <b>escalado automático</b>
+      —clave en una emergencia donde el tráfico puede multiplicarse 10× en minutos—. La contrapartida es que
+      la seguridad depende de <b>configurar bien esos servicios</b> (ver §12).</p>
+      <h3>Capas</h3>
+      <ul>
+        <li><b>Presentación:</b> SPA (React + Vite) servida por CDN, con soporte PWA.</li>
+        <li><b>API:</b> servicio HTTP (Express) sin estado, escalable horizontalmente.</li>
+        <li><b>Procesamiento asíncrono:</b> <i>workers</i> BullMQ para IA, scraping y sincronización.</li>
+        <li><b>Datos:</b> base documental (MongoDB), caché/colas (Redis) y almacenamiento de objetos (S3).</li>
+      </ul>
+      <h3>Diagrama de componentes</h3>
+<pre><code>                          ┌─────────────────────────┐
+                          │   Navegador (PWA)        │
+                          │   React + Vite (SPA)     │
+                          └────────────┬────────────┘
+                                       │ HTTPS (REST)
+                                       ▼
+   Fuentes externas          ┌─────────────────────────┐
+   (USGS, GDACS, FIRMS,      │   API · Express (TS)     │
+    VenezuelaReporta,        │   Render · Web Service   │
+    n8n: WhatsApp/Telegram)  └───┬───────────────┬─────┘
+            │ cron / webhooks    │               │
+            ▼                    ▼               ▼
+   ┌──────────────┐      ┌──────────────┐  ┌──────────────┐
+   │  Worker      │◄────►│  MongoDB     │  │  Storage S3  │
+   │  BullMQ      │      │  (Atlas)     │  │ (Supabase/   │
+   │  (IA, sync)  │      │ UnifiedPerson│  │  MinIO)      │
+   └──────┬───────┘      └──────────────┘  └──────────────┘
+          │ colas
+          ▼
+   ┌──────────────┐
+   │  Redis        │
+   │  (Upstash)    │
+   └──────────────┘</code></pre>
+      <h3>Principios de diseño</h3>
+      <ul>
+        <li><b>Desacople de tareas pesadas:</b> la IA y el scraping corren en workers, no bloquean la API.</li>
+        <li><b>Idempotencia en la ingesta:</b> <code>upsert</code> por identificador único (<code>idHash</code>).</li>
+        <li><b>Abstracción de IA:</b> una fábrica permite cambiar de proveedor por configuración.</li>
+        <li><b>Privacidad por diseño:</b> la proyección de PII está centralizada (ver §11).</li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section id="stack">
+      <h2><span class="n">3</span> Stack tecnológico</h2>
+      <div class="grid">
+        <div class="card"><h4>Frontend</h4><p>React 19 · TypeScript · Vite · PWA · Leaflet (mapas) · Axios · Lucide · Google OAuth.</p></div>
+        <div class="card"><h4>Backend</h4><p>Node · Express 5 · TypeScript · Mongoose · ioredis · BullMQ · Zod · Multer.</p></div>
+        <div class="card"><h4>Datos</h4><p>MongoDB (Atlas) · Redis (Upstash) · Almacenamiento S3-compatible (MinIO/Supabase).</p></div>
+        <div class="card"><h4>IA</h4><p>Fábrica con Anthropic (Anthropic), OpenAI y Google (Gemini) tras una interfaz común.</p></div>
+        <div class="card"><h4>Seguridad</h4><p>Helmet · express-rate-limit · hpp · JWT · scrypt (contraseñas).</p></div>
+        <div class="card"><h4>Ingesta</h4><p>Puppeteer · Cheerio · csv-parse · rss-parser · n8n (WhatsApp/Telegram).</p></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="datos">
+      <h2><span class="n">4</span> Modelo de datos <span class="pill blue">DBA</span></h2>
+      <p>Base <b>NoSQL documental</b> (MongoDB). Se eligió por sus <b>esquemas flexibles</b> (campos anidados
+      como coordenadas dentro de <code>lastSeen</code> sin <i>joins</i>) y su soporte de <b>índices geoespaciales</b>.</p>
+      <h3>Entidad central: <code>UnifiedPerson</code></h3>
+      <p>Cada documento representa a <b>una persona</b> consolidada a partir de uno o varios reportes.</p>
+<pre><code>{
+  name, normalizedName,           // nombre y forma normalizada (búsqueda)
+  idHash,                         // huella SHA-256 única → deduplicación
+  externalIds: [{ source, id }],  // orígenes que reportaron a la persona
+  status: missing|found|deceased|unknown,
+  lastSeen: { state, municipality, description, date,
+              coordinates: [lng,lat] },  // GeoJSON Point, índice 2dsphere
+  age, gender, description, photoUrl,
+  data:     { cedula_hash, ficha_url, origen, verificado_por },  // PII protegida
+  metadata: { urgencyScore, confidenceScore, aiProcessed,
+              auditStatus, source, reportedBy, createdAt, updatedAt }
+}</code></pre>
+      <p><b>Índices:</b> <code>idHash</code> (único) · <code>normalizedName + lastSeen.state</code> ·
+      <code>status + urgencyScore</code> · <code>lastSeen.coordinates</code> (2dsphere) ·
+      <code>externalIds.source + externalIds.id</code>.</p>
+      <h3>Otros modelos</h3>
+      <table>
+        <tr><th>Modelo</th><th>Propósito</th><th>Campos / estados clave</th></tr>
+        <tr><td><code>User</code></td><td>Usuarios autenticados.</td><td><code>role</code> (user/verifier/admin), <code>email</code>, <code>googleId?</code>, <code>passwordHash?</code>, país/estado/municipio.</td></tr>
+        <tr><td><code>VerificationRequest</code></td><td>Solicitud de organización verificada.</td><td><code>requestedRole</code>, <code>evidenceUrl</code>, status pending/approved/rejected.</td></tr>
+        <tr><td><code>SearchRequest</code></td><td>Alerta de búsqueda.</td><td><code>category</code> (menor/adulto/adulto_mayor/mascota), <code>isMinor</code>, status activa/resuelta.</td></tr>
+        <tr><td><code>Match</code></td><td>Coincidencia alerta↔registro.</td><td><code>score</code>, status posible/probable/revisar/descartado/confirmado.</td></tr>
+        <tr><td><code>CaseContact</code></td><td>Mensajería segura sobre un caso.</td><td>sender/receiver, message, isRead, status.</td></tr>
+        <tr><td><code>Localizado</code></td><td>Personas en hospitales/refugios.</td><td>cédula no expuesta en claro, location, isVerified.</td></tr>
+        <tr><td><code>StateHistory</code></td><td>Trazabilidad de estados.</td><td>previousState, newState, changedBy.</td></tr>
+        <tr><td><code>SyncState</code></td><td>Estado de sincronización por fuente.</td><td>checksum, processCount (idempotencia).</td></tr>
+        <tr><td><code>DisasterEvent</code></td><td>Eventos de desastre.</td><td>type, severity, coordinates (2dsphere), radius_km.</td></tr>
+      </table>
+      <div class="callout warn"><b>DBA · rendimiento.</b> El conteo total (<code>/persons/counts</code>) se cachea en
+      Redis 5 min para no ejecutar <code>countDocuments</code> sobre 50k+ documentos en cada visita
+      (latencia ~5 ms). La paginación pública está acotada (máx. 200) para prevenir <i>scraping</i> masivo.</div>
+    </section>
+
+    <!-- 5 -->
+    <section id="backend">
+      <h2><span class="n">5</span> Componentes del backend</h2>
+      <h3>Servicios (lógica de negocio)</h3>
+      <table>
+        <tr><th>Servicio</th><th>Responsabilidad</th></tr>
+        <tr><td><code>person.service</code></td><td>Alta/consulta/consolidación; <code>upsert</code> por <code>idHash</code>; vincula desastres cercanos.</td></tr>
+        <tr><td><code>matcher.service</code></td><td>Emparejamiento bidireccional alerta↔registro (similitud de nombre; geo/tiempo previstos).</td></tr>
+        <tr><td><code>reconciliation.service</code></td><td>Detección de duplicados: auto-fusión &gt;95 %, auditoría manual 85–95 %.</td></tr>
+        <tr><td><code>storage.service</code></td><td>Carga de medios al bucket S3-compatible.</td></tr>
+        <tr><td><code>ai/</code></td><td>Fábrica de IA + proveedores (Anthropic, OpenAI, Gemini).</td></tr>
+      </table>
+      <h3>Utilidades</h3>
+      <ul>
+        <li><b><code>person-view.util</code></b> — proyección de PII por rol (única fuente de verdad; ver §11).</li>
+        <li><code>hash.util</code> (idHash SHA-256) · <code>fuzzy-match.util</code> · <code>geo.util</code> · <code>normalize.util</code> · <b><code>password.util</code></b> (scrypt).</li>
+      </ul>
+      <h3>Jobs (cron de ingesta) y colas</h3>
+      <ul>
+        <li><b>Personas:</b> <code>venezuelareporta</code>, <code>reencuentro</code>, <code>dtv</code>.</li>
+        <li><b>Desastres:</b> <code>usgs</code> (sismos), <code>gdacs</code> (alertas), <code>firms</code> (focos de calor).</li>
+        <li><b>Colas BullMQ:</b> <code>ia-process</code> (estructuración IA), <code>disaster-sync</code> (cron), <code>manual-audit</code> (duplicados a revisión).</li>
+      </ul>
+      <div class="callout"><b>Calidad de datos.</b> El <i>fallback</i> a datos <b>simulados</b> de algunos jobs se
+      desactivó por defecto; si se habilita en desarrollo, los registros quedan marcados <code>isSimulated</code>
+      para no mostrarse nunca como reales.</div>
+    </section>
+
+    <!-- 6 -->
+    <section id="procesos">
+      <h2><span class="n">6</span> Procesos y algoritmos <span class="pill blue">CS</span></h2>
+      <h3>Ingesta y deduplicación — <i>Bulk Upsert</i> con firma de identidad</h3>
+      <ol>
+        <li><b>idHash:</b> firma <b>SHA-256</b> de <code>fuente + id externo</code> → identificador único y reproducible.</li>
+        <li><b>Bulk upsert:</b> <code>bulkWrite([...], {upsert:true})</code> en lotes; si el <code>idHash</code> existe, actualiza; si no, crea.</li>
+        <li><b>Resultado:</b> decenas de miles de duplicados se consolidan sin sobrecargar la base.</li>
+      </ol>
+      <h3>Procesamiento con IA (asíncrono)</h3>
+<pre><code>Texto libre (formulario o n8n WhatsApp/Telegram)
+   → API responde 202 Accepted y encola (cola ia-process)
+   → Worker → LLM extrae { nombre, edad, ubicación, ... }
+   → reconciliation (>95% fusiona · 85–95% a auditoría)
+   → upsert UnifiedPerson · metadata.aiProcessed = true</code></pre>
+      <div class="callout danger"><b>Regla (LOPNNA).</b> No se envían datos de menores a APIs de IA externas.</div>
+      <h3>Búsqueda y emparejamiento — humano en el bucle</h3>
+      <p>Una alerta (<code>SearchRequest</code>) genera coincidencias (<code>Match</code>) por similitud de nombre
+      (<code>fastest-levenshtein</code>). El sistema <b>propone</b>; una persona verificada <b>confirma</b>
+      (<code>posible/probable → confirmado</code>) antes de avisar a la familia. <b>Nunca se auto-notifica.</b></p>
+    </section>
+
+    <!-- 7 -->
+    <section id="api">
+      <h2><span class="n">7</span> API REST</h2>
+      <p>Prefijo <code>/api</code>, códigos HTTP estándar; las operaciones largas responden <code>202 Accepted</code> + encolado.</p>
+      <table>
+        <tr><th>Prefijo</th><th>Propósito</th><th>Acceso</th></tr>
+        <tr><td><code>/persons</code></td><td>Listado con búsqueda difusa, vista adaptativa por rol, counts, alta, estado.</td><td>Público adaptativo / user / admin</td></tr>
+        <tr><td><code>/auth</code></td><td>Google, <b>registro y login (correo/contraseña)</b>, perfil, solicitud de verificación.</td><td>Público / user</td></tr>
+        <tr><td><code>/search-requests</code></td><td>Alertas de búsqueda (con <code>isMinor</code>).</td><td>requireUser</td></tr>
+        <tr><td><code>/contacts</code></td><td>Mensajería segura (enviar, recibidos).</td><td>requireUser</td></tr>
+        <tr><td><code>/media</code></td><td>Carga de imágenes/videos (≤10 MB).</td><td><b>requireUser + rate-limit</b></td></tr>
+        <tr><td><code>/partners</code></td><td>Intercambio bidireccional con socios.</td><td>x-partner-api-key</td></tr>
+        <tr><td><code>/webhooks/n8n</code></td><td>Ingesta WhatsApp/Telegram.</td><td><b>x-webhook-secret</b></td></tr>
+        <tr><td><code>/admin</code></td><td>Usuarios/roles, verificaciones, matches, auditoría.</td><td>requireAdminOrVerifier</td></tr>
+        <tr><td><code>/disasters</code>, <code>/localizados</code></td><td>Desastres activos; personas en refugios.</td><td>Público</td></tr>
+      </table>
+    </section>
+
+    <!-- 8 -->
+    <section id="frontend">
+      <h2><span class="n">8</span> Frontend y experiencia <span class="pill blue">UX/UI</span></h2>
+      <p>SPA + PWA (React 19 + Vite). <b>Tema claro</b> con la paleta de Figma (azul <code>#1D65E2</code>, rojo y verde
+      de estado) y tipografía <b>Work Sans</b>. <b>Mobile-first</b> con navegación inferior y barra superior en escritorio.</p>
+      <h3>Vistas</h3>
+      <table>
+        <tr><th>Vista</th><th>Descripción</th></tr>
+        <tr><td><b>Landing público</b></td><td>Bienvenida emotiva para visitantes ("Cada historia importa"); responsive móvil/desktop.</td></tr>
+        <tr><td><b>Inicio</b></td><td>"Juntos te encontramos", accesos Buscar/Reportar/Mapa, comunicados y organizaciones aliadas.</td></tr>
+        <tr><td><b>Buscar</b></td><td>Búsqueda con categorías de edad y protección de menores (ver §9).</td></tr>
+        <tr><td><b>Mapa</b></td><td>Leaflet con agrupación por clústeres; los menores no se plotean.</td></tr>
+        <tr><td><b>Biblioteca</b></td><td>Directorio de emergencias y recursos.</td></tr>
+        <tr><td><b>Administración</b></td><td>Moderación, reconciliación, matches y gestión de roles.</td></tr>
+        <tr><td><b>Perfil / Login / Registro</b></td><td>Perfil, inicio de sesión y alta de cuenta.</td></tr>
+      </table>
+      <div class="callout"><b>UX/UI · accesibilidad.</b> No depender solo del color (icono + texto en estados),
+      objetivos táctiles ≥44 px, microcopy sereno en español sin falsas promesas, y diseño pensado para
+      conectividad intermitente (SPA + payloads JSON pequeños + compresión de imágenes).</div>
+    </section>
+
+    <!-- 9 -->
+    <section id="buscar">
+      <h2><span class="n">9</span> Módulo Buscar</h2>
+      <p><b>Definición:</b> permite localizar a una persona o mascota y, si no aparece, crear una alerta para que
+      el sistema avise ante una coincidencia.</p>
+      <h3>Flujo</h3>
+<pre><code>Familiar → Buscar (nombre/zona/categoría de edad)
+   ├─ ¿Aparece? → ficha pública → (adulto) contactar enmascarado
+   │                            → (menor) comunicado: gestión por organización
+   └─ ¿No aparece? → crear alerta (category, isMinor)
+                      → matcher → Match → revisión humana → contacto seguro</code></pre>
+      <h3>Categorías y protección</h3>
+      <p>La pantalla ofrece <b>Adulto · Adulto mayor · Adolescente · Niño/a</b>. Al elegir un menor
+      (adolescente/niño), no se muestran resultados directos: aparece un <b>aviso de protección</b> y un flujo de
+      <b>"Solicitar búsqueda"</b> gestionado por el equipo (ver §11).</p>
+    </section>
+
+    <!-- 10 -->
+    <section id="auth">
+      <h2><span class="n">10</span> Autenticación y control de acceso (RBAC)</h2>
+      <h3>Métodos</h3>
+      <ul>
+        <li><b>Google OAuth</b> — verificación del <i>id token</i> en el servidor.</li>
+        <li><b>Correo / contraseña</b> — registro e inicio de sesión; las contraseñas se almacenan con
+        <b>scrypt</b> (sal aleatoria por usuario); el hash <b>nunca</b> se devuelve al cliente.</li>
+      </ul>
+      <h3>Roles</h3>
+      <p>Middlewares <code>requireUser</code>, <code>requireRoles([...])</code>, <code>requireAdminOrVerifier</code> y
+      <code>requirePartnerApiKey</code>. La interfaz refuerza la política como defensa en profundidad; la fuente de
+      verdad es el backend.</p>
+      <h3>Verificación de organizaciones</h3>
+<pre><code>user  → POST /api/auth/verification-request (evidencia)  → 'pending'
+admin → aprueba/rechaza → si aprueba: rol = 'verifier'</code></pre>
+    </section>
+
+    <!-- 11 -->
+    <section id="privacidad">
+      <h2><span class="n">11</span> Privacidad y protección de menores <span class="pill green">LOPNNA</span></h2>
+      <p>Enfoque <b>Privacy by Design</b>: la privacidad está integrada en cada decisión.</p>
+      <ul>
+        <li><b>Proyección de PII centralizada</b> (<code>person-view.util</code>): decide qué ve cada rol. Teléfonos,
+        correos, cédula y ubicación exacta <b>no</b> se envían al público.</li>
+        <li><b>Ofuscación geográfica:</b> coordenadas públicas a nivel de zona (~1 km), nunca dirección exacta.</li>
+        <li><b>Cédula como hash</b> (<code>cedula_hash</code>), nunca en claro.</li>
+      </ul>
+      <h3>Protección de menores</h3>
+      <table>
+        <tr><th>Elemento</th><th>Público</th><th>Organización verificada</th></tr>
+        <tr><td>Que el caso existe</td><td>Sí (conteos/mapa)</td><td>Sí</td></tr>
+        <tr><td>Nombre / foto / ubicación / contacto</td><td><b>No</b> (caso protegido)</td><td>Sí (con registro)</td></tr>
+        <tr><td>Acción</td><td>Comunicado de gestión</td><td>Buscar, verificar, contactar</td></tr>
+      </table>
+      <p>Implementación: <code>toPublicPerson()</code> devuelve un "caso protegido" cuando <code>age &lt; 18</code>;
+      el cliente lo replica con <code>isProtectedMinor()</code>.</p>
+    </section>
+
+    <!-- 12 -->
+    <section id="seguridad">
+      <h2><span class="n">12</span> Seguridad <span class="pill red">Ciberseguridad</span></h2>
+      <h3>Controles de aplicación</h3>
+      <ul>
+        <li><b>Helmet</b> (cabeceras), <b>rate-limit</b> global y de subida, <b>hpp</b>, límite de <i>payload</i> (1 MB).</li>
+        <li><b>CORS</b> restringido por dominio (<code>FRONTEND_URL</code>).</li>
+        <li><b>JWT</b> obligatorio: el servidor <b>aborta en producción si falta el secreto</b>; en desarrollo usa uno aleatorio por proceso (sin secreto hardcodeado).</li>
+        <li><b>Webhooks n8n</b> validados con secreto compartido antes de encolar.</li>
+        <li><b>Subida de medios</b> con autenticación y límite de tasa.</li>
+        <li><b>Validación de entrada</b> con Zod; <b>contraseñas</b> con scrypt.</li>
+      </ul>
+      <h3>Auditoría externa (Build4Venezuela · issue #2) y remediación</h3>
+      <table>
+        <tr><th>Hallazgo</th><th>Severidad</th><th>Estado</th></tr>
+        <tr><td>CSV con PII de víctimas versionado</td><td><span class="pill red">Crítico</span></td><td>Quitado del versionado + <code>.gitignore</code>; purga de historial coordinada pendiente</td></tr>
+        <tr><td>Secreto JWT por defecto</td><td><span class="pill amber">Alto</span></td><td><span class="pill green">Corregido</span></td></tr>
+        <tr><td>Subida de medios sin auth</td><td><span class="pill amber">Medio</span></td><td><span class="pill green">Corregido</span> (lectura pública del bucket: pendiente migrar a URL firmada)</td></tr>
+        <tr><td>Webhooks de ingesta sin auth</td><td><span class="pill amber">Medio</span></td><td><span class="pill green">Corregido</span></td></tr>
+      </table>
+      <div class="callout warn"><b>Pendientes coordinados (operación):</b> purgar el CSV del historial git, rotar
+      secretos y migrar la lectura de medios a URLs firmadas. <b>Este documento no contiene ningún secreto.</b></div>
+    </section>
+
+    <!-- 13 -->
+    <section id="infra">
+      <h2><span class="n">13</span> Infraestructura y despliegue <span class="pill blue">DevOps</span></h2>
+      <table>
+        <tr><th>Componente</th><th>Servicio</th></tr>
+        <tr><td>Frontend (SPA)</td><td><b>Vercel</b> (CDN, despliegue automático desde GitHub)</td></tr>
+        <tr><td>API + Worker</td><td><b>Render</b> (Web Service + Background Worker)</td></tr>
+        <tr><td>Base de datos</td><td><b>MongoDB Atlas</b></td></tr>
+        <tr><td>Caché y colas</td><td><b>Upstash Redis</b></td></tr>
+        <tr><td>Medios</td><td><b>Supabase Storage</b> (MinIO en local)</td></tr>
+      </table>
+      <h3>Variables de entorno (solo nombres)</h3>
+      <p><code>MONGO_URI</code> · <code>REDIS_URL</code> · <code>MINIO_*</code> / <code>PUBLIC_STORAGE_URL</code> ·
+      <code>AI_PROVIDER</code> (+ clave del proveedor) · <code>JWT_SECRET</code> · <code>ADMIN_API_KEY</code> ·
+      <code>PARTNER_API_KEY</code> · <code>FRONTEND_URL</code> · <code>N8N_WEBHOOK_SECRET</code> ·
+      banderas de desarrollo <code>ALLOW_DEV_LOGIN</code> / <code>ALLOW_MOCK_DATA</code>.</p>
+      <div class="callout danger"><b>Nunca</b> versionar <code>.env</code> ni valores reales de estas variables. El repositorio incluye <code>.env.example</code> solo con nombres y descripciones.</div>
+    </section>
+
+    <!-- 14 -->
+    <section id="local">
+      <h2><span class="n">14</span> Entorno de desarrollo local</h2>
+<pre><code># Infraestructura (Docker): MongoDB, Redis, MinIO
+docker compose up -d
+
+# Backend  → http://localhost:4000
+cd back && npm install && npm run dev
+
+# Frontend → http://localhost:5173
+cd front && npm install && npm run dev</code></pre>
+      <p>Configuración mediante <code>.env</code> (basado en <code>.env.example</code>). Para el "login de desarrollo"
+      sin Google real se usa <code>ALLOW_DEV_LOGIN=true</code> (solo fuera de producción).</p>
+    </section>
+
+    <!-- 15 -->
+    <section id="glosario">
+      <h2><span class="n">15</span> Glosario</h2>
+      <table>
+        <tr><th>Término</th><th>Definición</th></tr>
+        <tr><td>SPA / PWA</td><td>App web de una página / instalable y con capacidades offline.</td></tr>
+        <tr><td>idHash</td><td>Huella SHA-256 única por persona para deduplicar.</td></tr>
+        <tr><td>Upsert</td><td>Inserta o actualiza según si el registro ya existe.</td></tr>
+        <tr><td>2dsphere</td><td>Índice geográfico para consultas por proximidad.</td></tr>
+        <tr><td>BullMQ</td><td>Colas de trabajos sobre Redis para procesamiento asíncrono.</td></tr>
+        <tr><td>PII</td><td>Información personal identificable (teléfono, cédula, correo).</td></tr>
+        <tr><td>RBAC</td><td>Control de acceso por roles (user/verifier/admin).</td></tr>
+        <tr><td>LOPNNA</td><td>Marco legal de protección de niños, niñas y adolescentes.</td></tr>
+        <tr><td>scrypt</td><td>Función de derivación de claves usada para hashear contraseñas.</td></tr>
+      </table>
+    </section>
+
+    <div class="foot">
+      Documentación · Reencuentros Terremoto Venezuela · Actualizado 29/06/2026 · Repositorio público — sin datos sensibles.
+    </div>
+  </div>
+  </main>
+</div>
+</body>
+</html>
