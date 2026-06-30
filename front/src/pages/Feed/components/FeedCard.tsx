@@ -1,6 +1,7 @@
 import React from 'react';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, ShieldCheck } from 'lucide-react';
 import type { Person } from '../../../types';
+import { isProtectedMinor } from '../../../utils/personPolicy';
 import '../Feed.css';
 
 interface FeedCardProps {
@@ -19,6 +20,29 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
     if (diff < 86400) return `hace ${Math.round(diff / 3600)} h`;
     return `hace ${Math.round(diff / 86400)} d`;
   };
+
+  // Menor de edad → tarjeta enmascarada (LOPNNA), sin datos identificables
+  if (isProtectedMinor(person)) {
+    return (
+      <article className="feed-card" onClick={onClick} role="button" tabIndex={0}>
+        <div className="feed-card-header">
+          <div className="feed-avatar"><ShieldCheck size={22} /></div>
+          <div className="feed-card-meta">
+            <div className="feed-card-name">Caso protegido</div>
+            <div className="feed-card-sub">
+              <MapPin size={11} /> {person.lastSeen?.state || 'Zona reservada'}
+            </div>
+          </div>
+          <span className={`badge ${person.status}`}>
+            {person.status === 'missing' ? 'Buscado' : 'Encontrado'}
+          </span>
+        </div>
+        <div className="feed-card-footer">
+          <p className="feed-card-desc">Menor de edad — gestionado por una organización autorizada (LOPNNA).</p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="feed-card" onClick={onClick} role="button" tabIndex={0}>
@@ -61,9 +85,6 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
           <div className="feed-card-location">
             <MapPin size={12} /> {person.lastSeen?.state || '—'}
             {person.age && <>&nbsp;·&nbsp;{person.age}&nbsp;años</>}
-            {(person as any)['data.cedula'] || (person as any).data?.cedula
-              ? <>&nbsp;·&nbsp;CI: {(person as any).data.cedula}</>
-              : null}
           </div>
           <small style={{ color: 'var(--clr-text-dim)', fontSize: '0.72rem' }}>
             Urgencia {urgency}/100

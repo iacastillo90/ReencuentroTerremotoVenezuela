@@ -5,6 +5,7 @@ import {
   MessageCircle, AlertCircle, Share2, Info, Lock
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
+import { canViewSensitive as canViewSensitiveByRole, isProtectedMinor } from '../../utils/personPolicy';
 import { api } from '../../services/api';
 import './PersonDetailModal.css';
 
@@ -16,13 +17,11 @@ interface PersonDetailModalProps {
 
 export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport }) => {
   const isMissing = person.status === 'missing';
-  
-  // Security
-  const { user } = useAuth();
-  const [cedulaInput, setCedulaInput] = useState('');
-  const [cedulaMatched, setCedulaMatched] = useState(false);
 
-  const canViewSensitive = isMissing || cedulaMatched || user?.role === 'admin' || user?.role === 'verifier';
+  // Seguridad: SOLO organizaciones verificadas/admin ven datos sensibles
+  const { user } = useAuth();
+  const canViewSensitive = canViewSensitiveByRole(user);
+  const protectedMinor = isProtectedMinor(person);
 
   // Contact
   const [showContactForm, setShowContactForm] = useState(false);
@@ -45,15 +44,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
       alert(e.response?.data?.error || "Error al enviar mensaje");
     } finally {
       setSending(false);
-    }
-  };
-
-  const handleCedulaMatch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (person.data?.cedula && cedulaInput.trim() === person.data.cedula) {
-      setCedulaMatched(true);
-    } else {
-      alert("Cédula incorrecta. Si eres familiar, verifica el documento. De lo contrario, solicita acceso a un moderador.");
     }
   };
 
@@ -90,6 +80,11 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         </header>
 
         <div className="modal-body">
+          {protectedMinor && (
+            <div style={{ margin: '15px', padding: '12px', borderRadius: '8px', background: 'rgba(124,92,255,.12)', border: '1px solid rgba(124,92,255,.35)', color: 'var(--text-secondary)', fontSize: '.9rem' }}>
+              🛡️ <strong>Caso protegido (menor de edad).</strong> Por la LOPNNA, los datos no se muestran públicamente. Si eres familiar o representante, usa “Contactar” y una organización autorizada te ayudará.
+            </div>
+          )}
           <div className="person-hero">
             <div className="hero-image-wrapper">
               {person.photoUrl ? (
@@ -122,7 +117,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   </span>
                 )}
 
-                {person.data?.ficha_url && (
+                {canViewSensitive && person.data?.ficha_url && (
                   <span style={{ color: 'var(--blue)', fontWeight: 600 }}>
                     <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <AlertCircle size={14} /> Ver ficha original
@@ -130,7 +125,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   </span>
                 )}
 
-                {person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {person.metadata.reportedBy.name}</span>}
+                {canViewSensitive && person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {(person.metadata.reportedBy as any).name}</span>}
               </div>
             </div>
           </div>
@@ -177,12 +172,6 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           <div className="info-section">
             <h3><Info size={18} /> Información y Señas</h3>
             <div className="info-grid">
-              {person.data?.cedula && (
-                <div className="info-item">
-                  <label>Cédula / documento</label>
-                  <p>{person.data.cedula}</p>
-                </div>
-              )}
               <div className="info-item">
                 <label>Género</label>
                 <p>{getGenderText(person.gender)}</p>
@@ -197,22 +186,10 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
                 ) : (
                   <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px dashed #334155' }}>
-                    <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                       <Lock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
-                      Esta persona fue localizada. Por su seguridad, la ubicación exacta y el detalle del refugio están protegidos. Si eres familiar, introduce su cédula para ver los datos:
+                      Por la seguridad de las personas, la ubicación exacta y los detalles sensibles están protegidos. Si eres familiar o representante, usa <strong>“Contactar”</strong> para solicitar acceso; una organización autorizada validará tu vínculo.
                     </p>
-                    <form onSubmit={handleCedulaMatch} style={{ display: 'flex', gap: '8px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Cédula de Identidad" 
-                        value={cedulaInput}
-                        onChange={e => setCedulaInput(e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #475569', background: '#1e293b', color: '#fff', flex: 1 }}
-                      />
-                      <button type="submit" style={{ padding: '6px 14px', borderRadius: '4px', background: 'var(--blue)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                        Verificar
-                      </button>
-                    </form>
                   </div>
                 )}
               </div>

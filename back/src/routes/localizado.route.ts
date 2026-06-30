@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { LocalizadoModel } from '../models/localizado.model';
-import { requirePartnerApiKey } from '../middlewares/auth.middleware';
+import { requirePartnerApiKey, attachUserIfPresent } from '../middlewares/auth.middleware';
+import { toPublicLocalizado } from '../utils/person-view.util';
 
 export const localizadoRouter = Router();
 
 // GET /api/localizados - Búsqueda de personas localizadas en hospitales (abierto al público)
-localizadoRouter.get('/', async (req: Request, res: Response) => {
+localizadoRouter.get('/', attachUserIfPresent, async (req: Request, res: Response) => {
   try {
     const { q, location, limit = '100', offset = '0' } = req.query;
     
@@ -26,13 +27,18 @@ localizadoRouter.get('/', async (req: Request, res: Response) => {
     const maxLimit = Math.min(parseInt(limit as string) || 100, 500);
     const skip = parseInt(offset as string) || 0;
 
-    const data = await LocalizadoModel.find(filter)
+    const rows = await LocalizadoModel.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(maxLimit)
       .lean();
 
     const total = await LocalizadoModel.countDocuments(filter);
+
+    // Serialización segura: la cédula NO se devuelve en claro al público
+    // (sí se puede BUSCAR por ella mediante el filtro `q` de arriba).
+    const viewerRole = (req as any).user?.role as string | undefined;
+    const data = rows.map((row) => toPublicLocalizado(row, viewerRole));
 
     return res.status(200).json({ ok: true, total, offset: skip, limit: maxLimit, data });
   } catch (error) {

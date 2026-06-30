@@ -12,13 +12,16 @@ export interface Person {
     }
   };
   age?: number;
+  ageBand?: 'menor' | 'adulto' | null;
   gender?: string;
   description?: string;
   photoUrl?: string;
+  approxLocation?: [number, number];   // [lng, lat] aproximado (mapa público)
+  protected?: boolean;                 // menor enmascarado por el backend
   metadata: {
     urgencyScore: number;
     createdAt?: string;
-    reportedBy?: { name: string };
+    reportedBy?: { name: string } | string;
   };
   data?: {
     cedula?: string;

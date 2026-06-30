@@ -3,12 +3,11 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/user.model';
 import { VerificationRequestModel } from '../models/verification-request.model';
-import { requireUser } from '../middlewares/auth.middleware';
+import { requireUser, JWT_SECRET } from '../middlewares/auth.middleware';
 
 const router = Router();
 // Provide a default for local dev, but in prod should be env variable
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-reencuentro-2024';
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -26,10 +25,15 @@ router.post('/google', async (req: Request, res: Response) => {
       });
       payload = ticket.getPayload();
     } catch (e) {
-      // Fallback for local development if Google Client ID is not real
-      if (GOOGLE_CLIENT_ID === 'dummy-client-id') {
-        const decoded = jwt.decode(token) as any;
-        payload = decoded;
+      // Login de DESARROLLO sin verificación de firma: SOLO fuera de producción y de
+      // forma explícita (ALLOW_DEV_LOGIN=true). En producción nunca se acepta.
+      const devLoginAllowed =
+        process.env.NODE_ENV !== 'production' &&
+        process.env.ALLOW_DEV_LOGIN === 'true' &&
+        GOOGLE_CLIENT_ID === 'dummy-client-id';
+      if (devLoginAllowed) {
+        console.warn('[AuthRoute] ⚠️ Login de DESARROLLO sin verificación de firma (ALLOW_DEV_LOGIN=true). No usar en producción.');
+        payload = jwt.decode(token) as any;
       } else {
         throw e;
       }
