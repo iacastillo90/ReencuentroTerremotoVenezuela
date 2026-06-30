@@ -416,3 +416,35 @@
 .minor-notice__btn:hover { background: #000; }
 .minor-notice__btn:disabled { opacity: 0.6; cursor: default; }
 .minor-notice__link { margin-top: 0.85rem; color: var(--clr-primary); font-size: 0.82rem; font-weight: 600; }
+
+/* ─── Pantalla-formulario de Buscar (mockup #4) ─── */
+.search-form {
+  width: 100%; max-width: 600px; margin: 0 auto;
+  padding: 1.25rem 1.1rem calc(var(--bottom-nav-h) + 2rem);
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.search-form__title { font-size: 1.4rem; color: var(--clr-text); margin: 0; }
+.search-form .feed-contact-note { margin: 0; }
+.search-form .feed-agecats { gap: 0.6rem; }
+.search-filters { display: flex; flex-direction: column; gap: 0.7rem; }
+.search-form__label { font-size: 0.82rem; font-weight: 700; color: var(--clr-text); }
+.search-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.search-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.search-field label { font-size: 0.72rem; font-weight: 600; color: var(--clr-text-muted); }
+.search-field select, .search-field input {
+  width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--clr-border); border-radius: var(--radius-md);
+  background: var(--clr-surface); color: var(--clr-text); font-size: 0.9rem; font-family: inherit;
+}
+.search-field select:focus, .search-field input:focus { outline: none; border-color: var(--clr-primary); }
+.search-form__btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;
+  padding: 0.95rem 1rem; border: none; border-radius: var(--radius-md);
+  background: var(--clr-primary); color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.15s;
+}
+.search-form__btn:hover { background: var(--blue-600); }
+.search-form__btn:disabled { opacity: 0.6; cursor: default; }
+
+.modify-search-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem; align-self: flex-start;
+  background: none; border: none; color: var(--clr-primary); font-weight: 700; font-size: 0.82rem; cursor: pointer; padding: 0;
+}
