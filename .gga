@@ -7,7 +7,7 @@
 #   PROVIDER="claude"
 #   PROVIDER="gemini"
 #   PROVIDER="codex"
-#   PROVIDER="opencode"
+PROVIDER="opencode"
 #   PROVIDER="opencode:anthropic/claude-opus-4-5"
 #   PROVIDER="ollama:llama3.2"
 #   PROVIDER="ollama:codellama"
