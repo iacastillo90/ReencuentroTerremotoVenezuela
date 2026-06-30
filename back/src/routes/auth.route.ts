@@ -3,7 +3,6 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { UserModel } from '../models/user.model';
-import { VerificationRequestModel } from '../models/verification-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
 import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import { googleAuthSchema, profileUpdateSchema } from '../validators/auth.validator';
@@ -41,8 +40,8 @@ router.use(authLimiter);
 router.get('/csrf-token', (req: Request, res: Response) => {
   const token = generateCsrfToken();
   res.cookie('csrf-token', token, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    secure: true,
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24h
   });
@@ -77,6 +76,16 @@ router.post('/google', async (req: Request, res: Response) => {
     } catch (e) {
       // DEV_MODE bypass: skip Google verification
       if (process.env.DEV_MODE === 'true') {
+        if (process.env.NODE_ENV === 'production') {
+          auditLog({
+            eventType: 'security_violation',
+            severity: 'critical',
+            actor: req.ip || 'unknown',
+            action: 'Attempted DEV_MODE bypass in production',
+            req,
+          });
+          return res.status(403).json({ error: 'DEV_MODE disabled in production' });
+        }
         console.warn('[DEV_MODE] Skipping Google token verification');
         const decoded = jwt.decode(token) as any;
         payload = decoded;
@@ -179,29 +188,6 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
   }
 });
 
-router.post('/verification-request', requireUser, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.userId;
-    const { notes, evidenceUrl } = req.body;
-
-    const existing = await VerificationRequestModel.findOne({ user: userId, status: 'pending' });
-    if (existing) {
-      return res.status(400).json({ error: 'Ya tienes una solicitud pendiente' });
-    }
-
-    const request = await VerificationRequestModel.create({
-      user: userId,
-      notes,
-      evidenceUrl
-    });
-
-    return res.status(201).json(request);
-  } catch (error) {
-    console.error('[AuthRoute] POST /verification-request Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
 // Logout — increment tokenVersion to invalidate all existing JWTs
 router.post('/logout', requireUser, async (req: Request, res: Response) => {
   try {
@@ -228,4 +214,5 @@ router.post('/logout', requireUser, async (req: Request, res: Response) => {
 router.get('/google', (_req: Request, res: Response) => {
   res.status(405).json({ error: 'Use POST /api/auth/google' });
 });
+
 export const authRouter = router;

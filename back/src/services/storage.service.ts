@@ -23,24 +23,19 @@ export async function initializeStorage() {
     const exists = await minioClient.bucketExists(BUCKET_NAME);
     if (!exists) {
       await minioClient.makeBucket(BUCKET_NAME, 'us-east-1');
-      // Establecer política de lectura pública para que el frontend pueda ver las imágenes
-      const policy = {
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Action: ['s3:GetObject'],
-            Effect: 'Allow',
-            Principal: { AWS: ['*'] },
-            Resource: [`arn:aws:s3:::${BUCKET_NAME}/*`]
-          }
-        ]
-      };
-      await minioClient.setBucketPolicy(BUCKET_NAME, JSON.stringify(policy));
-      console.log(`[Storage] Bucket '${BUCKET_NAME}' creado y configurado como público.`);
+      console.log(`[Storage] Bucket '${BUCKET_NAME}' creado (sin política pública).`);
     }
   } catch (error) {
     console.error(`[Storage] Error inicializando MinIO:`, error);
   }
+}
+
+export async function getPresignedUrl(objectName: string): Promise<string> {
+  return minioClient.presignedGetObject(BUCKET_NAME, objectName, 60 * 60);
+}
+
+export async function getPresignedUploadUrl(objectName: string): Promise<string> {
+  return minioClient.presignedPutObject(BUCKET_NAME, objectName, 60 * 60);
 }
 
 export async function uploadMedia(fileBuffer: Buffer, originalName: string, mimeType: string): Promise<string> {
@@ -52,12 +47,5 @@ export async function uploadMedia(fileBuffer: Buffer, originalName: string, mime
     'Content-Type': mimeType
   });
 
-  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-  const rawEndpoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
-  const cleanEndpoint = rawEndpoint.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const port = process.env.MINIO_PORT || '9000';
-  
-  const baseUrl = process.env.PUBLIC_STORAGE_URL || `${protocol}://${cleanEndpoint}:${port}/${BUCKET_NAME}`;
-  
-  return `${baseUrl}/${fileName}`;
+  return getPresignedUrl(fileName);
 }

@@ -5,6 +5,15 @@ import { localizadoPayloadSchema } from '../validators/localizado.validator';
 import { auditLog } from '../middlewares/audit.middleware';
 import { safeRegexQuery } from '../utils/regex-escape.util';
 
+const MAX_SEARCH_LENGTH = 100;
+const MAX_SPECIAL_CHARS = 10;
+
+function isSafeRegexInput(input: string): boolean {
+  if (input.length > MAX_SEARCH_LENGTH) return false;
+  const specialChars = (input.match(/[.^$*+?{}[\]\\|()]/g) || []).length;
+  return specialChars <= MAX_SPECIAL_CHARS;
+}
+
 export const localizadoRouter = Router();
 
 // GET /api/localizados - Búsqueda de personas localizadas en hospitales (abierto al público)
@@ -15,6 +24,9 @@ localizadoRouter.get('/', async (req: Request, res: Response) => {
     const filter: any = {};
     
     if (q && typeof q === 'string') {
+      if (!isSafeRegexInput(q)) {
+        return res.status(400).json({ error: 'Búsqueda demasiado larga o con demasiados caracteres especiales.' });
+      }
       const sanitizedQ = safeRegexQuery(q);
       if (sanitizedQ) {
         const searchRegex = new RegExp(sanitizedQ, 'i');
@@ -26,6 +38,9 @@ localizadoRouter.get('/', async (req: Request, res: Response) => {
     }
     
     if (location && typeof location === 'string') {
+      if (!isSafeRegexInput(location)) {
+        return res.status(400).json({ error: 'Búsqueda demasiado larga o con demasiados caracteres especiales.' });
+      }
       const sanitizedLocation = safeRegexQuery(location);
       if (sanitizedLocation) {
         filter.location = new RegExp(sanitizedLocation, 'i');

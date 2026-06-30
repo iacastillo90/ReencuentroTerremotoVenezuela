@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { requireUser, requireProfileComplete } from '../../src/middlewares/auth.middleware';
+import { requireUser, requireProfileComplete, requireWebhookApiKey } from '../../src/middlewares/auth.middleware';
 import { UserModel } from '../../src/models/user.model';
 
 jest.mock('jsonwebtoken');
@@ -14,6 +14,7 @@ describe('Auth Middleware', () => {
   beforeEach(() => {
     mockReq = {
       headers: {},
+      cookies: {},
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
@@ -79,6 +80,22 @@ describe('Auth Middleware', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ error: 'Token revoked. Please login again.' });
       expect(mockNext).not.toHaveBeenCalled();
     });
+
+    it('debería aceptar token desde cookie cuando no hay header de autorización', async () => {
+      mockReq.headers = {};
+      mockReq.cookies = { token: 'cookie-jwt-token' };
+      const mockDecoded = { userId: '123', email: 'test@test.com', isProfileComplete: true, tokenVersion: 1 };
+      (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
+      (UserModel.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockResolvedValue({ tokenVersion: 1 }),
+      });
+
+      await requireUser(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(jwt.verify).toHaveBeenCalledWith('cookie-jwt-token', expect.any(String));
+      expect((mockReq as any).user).toEqual(mockDecoded);
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('requireProfileComplete', () => {
@@ -107,6 +124,30 @@ describe('Auth Middleware', () => {
 
       await requireProfileComplete(mockReq as Request, mockRes as Response, mockNext);
       
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('requireWebhookApiKey', () => {
+    it('debería retornar 500 si WEBHOOK_API_KEY no está configurado', () => {
+      delete process.env.WEBHOOK_API_KEY;
+      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Server configuration error' });
+    });
+
+    it('debería retornar 401 si la API key es incorrecta', () => {
+      process.env.WEBHOOK_API_KEY = 'correct-key';
+      mockReq.headers = { 'x-webhook-api-key': 'wrong-key' };
+      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
+      expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized: Invalid webhook API key' });
+    });
+
+    it('debería llamar a next si la API key es correcta', () => {
+      process.env.WEBHOOK_API_KEY = 'correct-key';
+      mockReq.headers = { 'x-webhook-api-key': 'correct-key' };
+      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
   });
