@@ -17,8 +17,9 @@ import { HomePage } from './pages/Home/HomePage';
 import { PublicLanding } from './pages/Home/PublicLanding';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
+import { SearchPage } from './pages/Search/SearchPage';
 
-type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
+type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -160,7 +161,7 @@ function App() {
         />
       ) : showPublicLanding ? (
         <PublicLanding
-          onBuscar={() => setActiveView('feed')}
+          onBuscar={() => setActiveView('search')}
           onAyuda={handleReport}
         />
       ) : (
@@ -185,10 +186,16 @@ function App() {
           <HomePage
             counts={counts}
             persons={persons}
-            onBuscar={() => setActiveView('feed')}
+            onBuscar={() => setActiveView('search')}
             onReportar={handleReport}
             onMapa={() => setActiveView('map')}
             onSelectPerson={setSelectedPerson}
+          />
+        )}
+        {activeView === 'search' && (
+          <SearchPage
+            onSearch={(q) => { setSearchQuery(q); setActiveView('feed'); }}
+            onBack={() => setActiveView('home')}
           />
         )}
         {activeView === 'profile' && <ProfilePage onSelectPerson={setSelectedPerson} />}
