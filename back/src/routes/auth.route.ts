@@ -4,8 +4,23 @@ import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/user.model';
 import { VerificationRequestModel } from '../models/verification-request.model';
 import { requireUser, JWT_SECRET } from '../middlewares/auth.middleware';
+import { hashPassword, verifyPassword } from '../utils/password.util';
 
 const router = Router();
+
+function signToken(user: any): string {
+  return jwt.sign(
+    { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
+function publicUser(user: any) {
+  const obj = typeof user.toObject === 'function' ? user.toObject() : { ...user };
+  delete obj.passwordHash;
+  return obj;
+}
 // Provide a default for local dev, but in prod should be env variable
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
 
@@ -63,6 +78,57 @@ router.post('/google', async (req: Request, res: Response) => {
     return res.status(200).json({ token: authToken, user });
   } catch (error: any) {
     console.error('[AuthRoute] Google Auth Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ── Registro con correo/contraseña ──────────────────────────────────────────
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const { name, lastName, email, password, contactNumber, country, state, municipality } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Nombre, correo y contraseña son obligatorios' });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+    const normEmail = String(email).toLowerCase().trim();
+    const existing = await UserModel.findOne({ email: normEmail });
+    if (existing) {
+      return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
+    }
+    const user = await UserModel.create({
+      email: normEmail,
+      name,
+      lastName,
+      passwordHash: hashPassword(password),
+      contactNumber,
+      country,
+      state,
+      municipality,
+      isProfileComplete: Boolean(contactNumber),
+    });
+    return res.status(201).json({ token: signToken(user), user: publicUser(user) });
+  } catch (error) {
+    console.error('[AuthRoute] POST /register Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// ── Login con correo/contraseña ─────────────────────────────────────────────
+router.post('/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
+    }
+    const user = await UserModel.findOne({ email: String(email).toLowerCase().trim() });
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+    }
+    return res.status(200).json({ token: signToken(user), user: publicUser(user) });
+  } catch (error) {
+    console.error('[AuthRoute] POST /login Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
