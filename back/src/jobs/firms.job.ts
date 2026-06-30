@@ -1,6 +1,9 @@
 import { parse } from 'csv-parse/sync';
+import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox } from '../utils/geo.util';
+
+const rawDataSchema = z.record(z.string(), z.unknown());
 
 export async function fetchFIRMSFires() {
   const apiKey = process.env.FIRMS_API_KEY;
@@ -66,7 +69,7 @@ export async function fetchFIRMSFires() {
               occurredAt,
               validUntil: new Date(occurredAt.getTime() + 24 * 60 * 60 * 1000), // Válido por 24h
               metadata: {
-                rawData: record
+                rawData: rawDataSchema.parse(record)
               }
             }
           },

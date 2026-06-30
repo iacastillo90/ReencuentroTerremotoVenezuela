@@ -2,132 +2,10 @@ import { Router, Request, Response } from 'express';
 import { manualAuditQueue } from '../queues/manual-audit.queue';
 import { upsertPerson } from '../services/person.service';
 import { PersonModel } from '../models/unified-person.model';
-import { UserModel } from '../models/user.model';
-import { VerificationRequestModel } from '../models/verification-request.model';
-import { MatchModel } from '../models/match.model';
-import { StateHistoryModel } from '../models/state-history.model';
-import { requireRoles } from '../middlewares/auth.middleware';
 import { adminStatusUpdateSchema, adminMergeSchema } from '../validators/admin.validator';
 import { auditLog } from '../middlewares/audit.middleware';
 
 const router = Router();
-
-// Endpoint para listar usuarios registrados (Solo Admins)
-router.get('/users', requireRoles(['admin']), async (req: Request, res: Response) => {
-  try {
-    const users = await UserModel.find().sort({ createdAt: -1 }).lean();
-    return res.status(200).json(users);
-  } catch (error) {
-    console.error('[AdminRoute] GET /users Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Endpoint para cambiar el rol de un usuario (Solo Admins)
-router.patch('/users/:id/role', requireRoles(['admin']), async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-
-    if (!['user', 'verifier', 'admin'].includes(role)) {
-      return res.status(400).json({ error: 'Rol inválido' });
-    }
-
-    const updated = await UserModel.findByIdAndUpdate(id, { role }, { new: true });
-    if (!updated) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-    return res.status(200).json({ status: 'updated', user: updated });
-  } catch (error) {
-    console.error('[AdminRoute] PATCH /users/:id/role Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Endpoint para listar solicitudes de verificación
-router.get('/verifications', requireRoles(['admin']), async (req: Request, res: Response) => {
-  try {
-    const requests = await VerificationRequestModel.find()
-      .populate('user', 'name email picture')
-      .sort({ createdAt: -1 })
-      .lean();
-    return res.status(200).json(requests);
-  } catch (error) {
-    console.error('[AdminRoute] GET /verifications Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Endpoint para aprobar/rechazar solicitudes
-router.patch('/verifications/:id/status', requireRoles(['admin']), async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Estado inválido' });
-    }
-
-    const request = await VerificationRequestModel.findById(id);
-    if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
-
-    request.status = status;
-    await request.save();
-
-    if (status === 'approved') {
-      await UserModel.findByIdAndUpdate(request.user, { role: 'verifier' });
-    }
-
-    return res.status(200).json({ status: 'updated', request });
-  } catch (error) {
-    console.error('[AdminRoute] PATCH /verifications/:id/status Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Endpoint para listar coincidencias (Matches de IA)
-router.get('/matches', requireRoles(['admin', 'verifier']), async (req: Request, res: Response) => {
-  try {
-    const matches = await MatchModel.find()
-      .populate('searchRequestId')
-      .sort({ score: -1, createdAt: -1 })
-      .lean();
-    
-    // Adjuntar los datos de la persona para visualizarlo fácilmente
-    const reportIds = matches.map(m => m.reportId);
-    const persons = await PersonModel.find({ idHash: { $in: reportIds } }).lean();
-    const personMap = new Map(persons.map(p => [p.idHash, p]));
-
-    const result = matches.map(m => ({
-      ...m,
-      person: personMap.get(m.reportId) || null
-    }));
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error('[AdminRoute] GET /matches Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Cambiar el estado de un Match
-router.patch('/matches/:id/status', requireRoles(['admin', 'verifier']), async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['posible', 'probable', 'revisar', 'descartado', 'confirmado'].includes(status)) {
-      return res.status(400).json({ error: 'Estado inválido' });
-    }
-
-    const match = await MatchModel.findByIdAndUpdate(id, { status }, { new: true });
-    if (!match) return res.status(404).json({ error: 'Match no encontrado' });
-
-    return res.status(200).json({ status: 'updated', match });
-  } catch (error) {
-    console.error('[AdminRoute] PATCH /matches/:id/status Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 // Endpoint para listar posibles duplicados
 router.get('/audit', async (req: Request, res: Response) => {
@@ -252,10 +130,9 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
 });
 
 // Cambiar estado de una persona (missing <-> found)
-router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), async (req: Request, res: Response) => {
+router.patch('/persons/:idHash/status', async (req: Request, res: Response) => {
   try {
     const { idHash } = req.params;
-    const userId = (req as any).user?.userId;
 
     const validation = adminStatusUpdateSchema.safeParse(req.body);
     if (!validation.success) {
@@ -263,14 +140,6 @@ router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), asy
     }
 
     const { status } = validation.data;
-    const notes = req.body.notes;
-
-    const person = await PersonModel.findOne({ idHash });
-    if (!person) {
-      return res.status(404).json({ error: 'Persona no encontrada' });
-    }
-
-    const previousState = person.status;
 
     const updated = await PersonModel.findOneAndUpdate(
       { idHash },
@@ -278,15 +147,8 @@ router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), asy
       { new: true }
     );
 
-    // Guardar en el log de auditoría (StateHistory)
-    if (previousState !== status) {
-      await StateHistoryModel.create({
-        reportId: idHash as string,
-        changedBy: userId,
-        previousState,
-        newState: status,
-        notes
-      });
+    if (!updated) {
+      return res.status(404).json({ error: 'Persona no encontrada' });
     }
 
     auditLog({
@@ -299,7 +161,7 @@ router.patch('/persons/:idHash/status', requireRoles(['admin', 'verifier']), asy
       req,
     });
 
-    return res.status(200).json({ status: updated?.status, idHash: updated?.idHash });
+    return res.status(200).json({ status: updated.status, idHash: updated.idHash });
   } catch (error) {
     console.error('[AdminRoute] PATCH /persons/:idHash/status Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

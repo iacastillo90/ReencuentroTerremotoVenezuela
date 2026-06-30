@@ -21,12 +21,18 @@ export function getJwtSecret(): string {
 }
 
 export async function requireUser(req: Request, res: Response, next: NextFunction) {
+  let token: string | undefined;
+
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+  }
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
@@ -59,41 +65,64 @@ export async function requireProfileComplete(req: Request, res: Response, next: 
   }
 }
 
-export function requireAdminOrVerifier(req: Request, res: Response, next: NextFunction) {
-  // Primary: JWT with admin/verifier role
+export function requireAdminApiKey(req: Request, res: Response, next: NextFunction) {
+  // First: try JWT with admin role
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      if (decoded.role === 'admin' || decoded.role === 'verifier') {
+      if (decoded.role === 'admin') {
         (req as any).user = decoded;
         next();
         return;
       }
-      return res.status(403).json({ error: 'Forbidden: Admin or verifier access required' });
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
     } catch {
-      // JWT invalid — fall through to legacy API key check
+      // JWT invalid — fall through to API key check
     }
   }
 
-  // Fallback: legacy API key (for migration)
+  // Fallback: existing API key check (legacy)
   const apiKey = req.headers['x-api-key'];
   const validKey = process.env.ADMIN_API_KEY;
 
-  if (apiKey && validKey && apiKey === validKey) {
-    auditLog({
-      eventType: 'admin_action',
-      severity: 'warning',
-      actor: 'api-key',
-      action: `${req.method} ${req.path} — Legacy admin API key used`,
-      detail: { migration: 'Migrate to JWT admin auth' },
-      req,
-    });
-    return next();
+  if (!validKey) {
+    console.warn('[Security] ADMIN_API_KEY is not defined in environment variables. Denying all admin access.');
+    return res.status(403).json({ error: 'Server configuration error' });
   }
 
-  return res.status(401).json({ error: 'Unauthorized: Invalid Admin Credentials' });
+  if (!apiKey || apiKey !== validKey) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+  }
+
+  // Log legacy API key usage for migration tracking
+  auditLog({
+    eventType: 'admin_action',
+    severity: 'warning',
+    actor: 'api-key',
+    action: `${req.method} ${req.path} — Legacy admin API key used`,
+    detail: { migration: 'Migrate to JWT admin auth' },
+    req,
+  });
+
+  next();
+}
+
+export function requireWebhookApiKey(req: Request, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-webhook-api-key'];
+  const validKey = process.env.WEBHOOK_API_KEY;
+
+  if (!validKey) {
+    console.error('[FATAL] WEBHOOK_API_KEY is not defined in environment variables. Denying all webhook access.');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  if (!apiKey || apiKey !== validKey) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid webhook API key' });
+  }
+
+  next();
 }
 
 export function requirePartnerApiKey(req: Request, res: Response, next: NextFunction) {
@@ -111,4 +140,3 @@ export function requirePartnerApiKey(req: Request, res: Response, next: NextFunc
 
   next();
 }
-

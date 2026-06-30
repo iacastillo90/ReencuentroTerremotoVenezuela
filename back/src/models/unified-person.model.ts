@@ -32,6 +32,8 @@ export interface UnifiedPerson extends Document {
     relationship: string;
   };
   possiblyRelatedDisasters?: Types.ObjectId[];
+  // WARNING: Schema.Types.Mixed below — must be validated with Zod before reaching the model.
+  // See personPayloadSchema in validators/person.validator.ts for the expected shape.
   data?: {
     cedula_hash?: string;
     [key: string]: any;
@@ -79,6 +81,7 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     relationship: String,
   },
   possiblyRelatedDisasters: [{ type: Schema.Types.ObjectId, ref: 'DisasterEvent' }],
+  // WARNING: Must be validated with Zod before saving — see personPayloadSchema.
   data: { type: Schema.Types.Mixed },
   metadata: {
     createdAt: { type: Date, default: Date.now },

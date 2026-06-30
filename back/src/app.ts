@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { personRouter } from './routes/person.route';
 import { webhooksRouter } from './routes/webhooks.route';
@@ -12,10 +13,7 @@ import { mediaRouter } from './routes/media.route';
 import { authRouter } from './routes/auth.route';
 import { partnerRouter } from './routes/partner.route';
 import { localizadoRouter } from './routes/localizado.route';
-import { searchRequestRouter } from './routes/search-request.route';
-import { contactRouter } from './routes/contact.route';
-import { cneRouter } from './routes/cne.route';
-import { requireAdminOrVerifier } from './middlewares/auth.middleware';
+import { requireAdminApiKey } from './middlewares/auth.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
 
 const app = express();
@@ -39,6 +37,8 @@ app.use(helmet({
       reportUri: '/api/csp-report',
     },
   },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
 // --- 2. CORS restringido ---
@@ -55,7 +55,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-partner-api-key', 'x-csrf-token'],
 }));
 
-// --- 3. Protección contra ataques de denegación de servicio (Rate Limiting Global) ---
+// --- 3. Logging de peticiones HTTP (Morgan) ---
+const morganFormat = process.env.MORGAN_FORMAT || (process.env.NODE_ENV === 'production' ? 'combined' : 'dev');
+app.use(morgan(morganFormat, { skip: () => process.env.NODE_ENV === 'test' }));
+
+// --- 4. Protección contra ataques de denegación de servicio (Rate Limiting Global) ---
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 100, // Límite de 100 requests por IP por ventana
@@ -65,29 +69,26 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// --- 4. Cookie parser (needed for CSRF) ---
+// --- 5. Cookie parser (needed for CSRF) ---
 app.use(cookieParser());
 
-// --- 5. CSRF Protection ---
+// --- 6. CSRF Protection ---
 app.use(csrfProtection);
 
-// --- 6. Body Parsers y Prevención de Contaminación de Parámetros ---
+// --- 7. Body Parsers y Prevención de Contaminación de Parámetros ---
 app.use(express.json({ limit: '1mb' }));
 app.use(hpp());
 
-// --- 7. Rutas de la Aplicación ---
+// --- 8. Rutas de la Aplicación ---
 app.use('/api/persons', personRouter);
 app.use('/api/webhooks', webhooksRouter);
 // Ruta administrativa protegida
-app.use('/api/admin', requireAdminOrVerifier, adminRouter);
+app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
 app.use('/api/media', mediaRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/partners', partnerRouter);
 app.use('/api/localizados', localizadoRouter);
-app.use('/api/search-requests', searchRequestRouter);
-app.use('/api/contacts', contactRouter);
-app.use('/api/cne', cneRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
