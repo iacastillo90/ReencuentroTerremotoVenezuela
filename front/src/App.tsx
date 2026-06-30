@@ -13,6 +13,7 @@ import type { Person, Disaster } from './types';
 import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { HomePage } from './pages/Home/HomePage';
+import { PublicLanding } from './pages/Home/PublicLanding';
 
 type View = 'home' | 'feed' | 'map' | 'report' | 'admin' | 'library' | 'profile';
 
@@ -138,8 +139,17 @@ function App() {
     return <AdminDashboard onBack={() => setActiveView('home')} />;
   }
 
+  // Landing público (mockup "home public") para usuarios no autenticados
+  const showPublicLanding = activeView === 'home' && !user;
+
   return (
     <>
+      {showPublicLanding ? (
+        <PublicLanding
+          onBuscar={() => setActiveView('feed')}
+          onAyuda={handleReport}
+        />
+      ) : (
       <AppLayout
         activeView={activeView}
         onViewChange={v => {
@@ -193,6 +203,7 @@ function App() {
           />
         )}
       </AppLayout>
+      )}
 
       {selectedPerson && (
         <PersonDetailModal

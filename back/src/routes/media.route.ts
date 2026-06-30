@@ -1,8 +1,19 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { uploadMedia } from '../services/storage.service';
+import { requireUser } from '../middlewares/auth.middleware';
 
 const router = Router();
+
+// Límite específico de subida: máx. 20 archivos por IP cada 15 min (anti-abuso de cuota/almacenamiento).
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas subidas. Intenta más tarde.' }
+});
 
 // Multer in-memory storage for forwarding to MinIO
 const storage = multer.memoryStorage();
@@ -21,7 +32,7 @@ const upload = multer({
   }
 });
 
-router.post('/', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', requireUser, uploadLimiter, upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se envió ningún archivo.' });

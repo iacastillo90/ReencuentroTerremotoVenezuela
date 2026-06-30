@@ -9,3 +9,7 @@ back/page.html
 back/screenshot.png
 doc.txt
 *.log
+
+# Datos crudos de fuentes con PII — NO versionar (mantener en storage privado)
+Doc/*.csv
+Doc/personas-localizadas-venezuelareporta.csv
