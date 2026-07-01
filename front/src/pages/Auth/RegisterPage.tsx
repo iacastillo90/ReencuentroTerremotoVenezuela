@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { humanizeError } from '../../utils/humanizeError';
 import { Button } from '../../components/ui/Button';
 import './Auth.css';
 
@@ -58,7 +59,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
       login(res.data.user);
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'No se pudo crear la cuenta.');
+      setError(humanizeError(err, 'No se pudo crear la cuenta.'));
     } finally {
       setLoading(false);
     }

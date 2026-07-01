@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
+import reunionHero from '../../assets/home-reunion-venezuela.png';
 import './PublicLanding.css';
 import './HomeGateway.css';
 
@@ -43,8 +44,9 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
   <div className="public-landing hg">
     <div className="pl__bg" />
     <div className="hg__inner">
-      <div className="hg__hero">
-        <div className="hg__brand">
+      <div className="hg__hero" style={{ backgroundImage: `url(${reunionHero})` }}>
+        <div className="hg__hero-copy">
+          <div className="hg__brand">
           <BrandMark size={40} />
           <div className="hg__brand-text">
             <span className="hg__brand-name">Reencuentros <em>Venezuela</em></span>
@@ -62,31 +64,33 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
             <div><strong>{counts.total}</strong><span>Registros</span></div>
           </div>
         )}
+        </div>
+
       </div>
 
       <div className="hg__cards">
         <OptionCard
           icon={<Search size={22} />} tone="blue" locked
-          title="Buscar" cta="Iniciar sesión"
-          desc="Consulta reportes de personas y animales. Requiere iniciar sesión como organización autorizada."
+          title="Buscar persona" cta="Iniciar sesión"
+          desc="Consulta reportes y posibles coincidencias."
           onClick={onBuscar}
         />
         <OptionCard
           icon={<PlusCircle size={22} />} tone="red" locked
-          title="Reportar" cta="Iniciar sesión"
-          desc="Sube fotos o videos georreferenciados desde el terreno. Solo organizaciones y medios autorizados."
+          title="Reportar caso" cta="Iniciar sesión"
+          desc="Informa sobre una persona o mascota."
           onClick={onReportar}
         />
         <OptionCard
           icon={<Building2 size={22} />} tone="blue" locked={false}
-          title="Directorio de apoyo" cta="Ingresar"
-          desc="Organizaciones verificadas, teléfonos de emergencia y puntos de control. Acceso libre."
+          title="Directorio" cta="Ver contactos"
+          desc="Organizaciones y teléfonos de apoyo."
           onClick={onDirectorio}
         />
         <OptionCard
           icon={<ShieldCheck size={22} />} tone="green" locked={false}
-          title="Manual y políticas" cta="Ingresar"
-          desc="Protocolos de actuación sísmica (antes, durante y después) y normas de seguridad humanitaria. Acceso libre."
+          title="Manual" cta="Leer guía"
+          desc="Qué hacer antes, durante y después."
           onClick={onManual}
         />
       </div>

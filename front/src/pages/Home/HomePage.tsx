@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, PlusCircle, Map as MapIcon, Megaphone, ChevronRight, ShieldCheck } from 'lucide-react';
 import type { Person } from '../../types';
 import { Button } from '../../components/ui/Button';
+import reunionHero from '../../assets/home-reunion-venezuela.png';
 import './Home.css';
 
 interface Counts { missing: number; found: number; total: number; }
@@ -38,20 +39,48 @@ function statusLabel(status?: string): { label: string; cls: string } {
   }
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReportar, onMapa, onSelectPerson }) => {
+export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, onReportar, onMapa, onSelectPerson }) => {
   const recent = (persons || []).filter(p => p && p.name).slice(0, 3);
 
   return (
     <div className="home">
-      <section className="home-hero">
-        <h1 className="home-title">Juntos<br />te encontramos</h1>
-        <p className="home-lead">Plataforma inteligente para la búsqueda y reencuentro de personas.</p>
+      <section className="home-hero" style={{ backgroundImage: `url(${reunionHero})` }}>
+        <div className="home-hero__copy">
+          <span className="home-kicker">Red humanitaria activa</span>
+          <h1 className="home-title">Juntos<br />te encontramos</h1>
+          <p className="home-lead">Plataforma inteligente para la búsqueda y reencuentro de personas.</p>
+        </div>
+
+        <div className="home-stats" aria-label="Resumen de registros">
+          <div>
+            <strong>{counts.missing}</strong>
+            <span>En búsqueda</span>
+          </div>
+          <div>
+            <strong>{counts.found}</strong>
+            <span>Localizados</span>
+          </div>
+          <div>
+            <strong>{counts.total}</strong>
+            <span>Registros</span>
+          </div>
+        </div>
       </section>
 
       <section className="home-primary">
         <Button fullWidth size="lg" onClick={onBuscar} className="home-btn-override"><Search size={18} /> Buscar personas</Button>
         <Button fullWidth size="lg" variant="danger" onClick={onReportar} className="home-btn-override"><PlusCircle size={18} /> Reportar caso</Button>
         <Button fullWidth size="lg" variant="outline" onClick={onMapa} className="home-btn-override"><MapIcon size={18} /> Mapa de calor</Button>
+      </section>
+
+      <section className="home-section home-section--howto">
+        <div className="howto-card" onClick={onBuscar} role="button" tabIndex={0}>
+          <div className="howto-card__body">
+            <strong>¿Cómo funciona?</strong>
+            <span>Conoce cómo funciona la plataforma y cómo puedes ayudar.</span>
+          </div>
+          <ChevronRight size={20} className="howto-card__chev" />
+        </div>
       </section>
 
       <section className="home-section">
@@ -72,16 +101,6 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="home-section">
-        <div className="howto-card" onClick={onBuscar} role="button" tabIndex={0}>
-          <div className="howto-card__body">
-            <strong>¿Cómo funciona?</strong>
-            <span>Conoce cómo funciona la plataforma y cómo puedes ayudar.</span>
-          </div>
-          <ChevronRight size={20} className="howto-card__chev" />
         </div>
       </section>
 

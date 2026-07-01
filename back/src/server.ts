@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Carga back/.env ANTES que cualquier módulo lea process.env (JWT_SECRET, etc.)
 import mongoose from 'mongoose';
 import app from './app';
 import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';

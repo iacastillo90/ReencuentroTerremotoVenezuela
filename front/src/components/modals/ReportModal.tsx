@@ -60,6 +60,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  const canSubmit = Boolean(name.trim() && estado.trim() && text.trim()) && !isSubmitting;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isSubmitting && !isAnalyzingImage) {
@@ -169,7 +170,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         
         <header className="report-modal-header">
           <h2 className="report-modal-title">
-            Crear Reporte
+            Reportar
           </h2>
           {!isSubmitting && (
             <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
@@ -210,14 +211,14 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
 
               <div className="form-group report-modal-form-group-row">
                 <div className="report-modal-flex-1">
-                  <label>¿Qué deseas reportar?</label>
+                  <label>¿Qué deseas reportar? <span className="required-mark">*</span></label>
                   <select value={reportAction} onChange={(e) => setReportAction(e.target.value as any)}>
                     <option value="busco">Estoy buscando a alguien</option>
                     <option value="vi">He visto a alguien</option>
                   </select>
                 </div>
                 <div className="report-modal-flex-1">
-                  <label>Tipo</label>
+                  <label>Tipo <span className="required-mark">*</span></label>
                   <select value={type} onChange={(e) => setType(e.target.value as any)}>
                     <option value="person">Persona</option>
                     <option value="animal">Mascota</option>
@@ -259,7 +260,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               )}
 
               <div className="form-group">
-                <label>Nombre Completo {type === 'animal' && '(o alias de la mascota)'}</label>
+                <label>Nombre Completo {type === 'animal' && '(o alias de la mascota)'} <span className="required-mark">*</span></label>
                 <input 
                   type="text" 
                   value={name} 
@@ -270,7 +271,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               </div>
 
               <div className="form-group">
-                <label>Ubicación general (Estado, Ciudad o Zona)</label>
+                <label>Ubicación general (Estado, Ciudad o Zona) <span className="required-mark">*</span></label>
                 <input 
                   type="text" 
                   value={estado} 
@@ -368,7 +369,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!canSubmit}>
                   {isSubmitting ? (
                     <><Loader2 size={18} className="spinner" /> Procesando con IA...</>
                   ) : (
