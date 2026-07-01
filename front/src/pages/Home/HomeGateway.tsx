@@ -83,15 +83,15 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
           onClick={onBuscar}
         />
         <OptionCard
-          icon={<Building2 size={22} />} tone="blue" locked={false}
+          icon={<Building2 size={22} />} tone="green" locked={false}
           title="Directorio" cta="Ver contactos"
           desc="Organizaciones y teléfonos de apoyo."
           onClick={onDirectorio}
         />
         <OptionCard
-          icon={<ShieldCheck size={22} />} tone="green" locked={false}
-          title="Manual" cta="Leer guía"
-          desc="Qué hacer antes, durante y después."
+          icon={<ShieldCheck size={22} />} tone="blue" locked={false}
+          title="Manual y políticas" cta="Leer guía"
+          desc="Normativas y guías de uso de la plataforma."
           onClick={onManual}
         />
       </div>
