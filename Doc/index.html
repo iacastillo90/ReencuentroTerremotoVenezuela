@@ -399,7 +399,7 @@ admin → aprueba/rechaza → si aprueba: rol = 'verifier'</code></pre>
       <h3>Controles de aplicación</h3>
       <ul>
         <li><b>Helmet</b> (cabeceras), <b>rate-limit</b> global y de subida, <b>hpp</b>, límite de <i>payload</i> (1 MB).</li>
-        <li><b>CORS</b> restringido por dominio (<code>FRONTEND_URL</code>).</li>
+        <li><b>CORS</b> restringido por dominio (<code>CORS_ORIGINS</code>).</li>
         <li><b>JWT</b> obligatorio: el servidor <b>aborta en producción si falta el secreto</b>; en desarrollo usa uno aleatorio por proceso (sin secreto hardcodeado).</li>
         <li><b>Webhooks n8n</b> validados con secreto compartido antes de encolar.</li>
         <li><b>Subida de medios</b> con autenticación y límite de tasa.</li>
@@ -431,7 +431,7 @@ admin → aprueba/rechaza → si aprueba: rol = 'verifier'</code></pre>
       <h3>Variables de entorno (solo nombres)</h3>
       <p><code>MONGO_URI</code> · <code>REDIS_URL</code> · <code>MINIO_*</code> / <code>PUBLIC_STORAGE_URL</code> ·
       <code>AI_PROVIDER</code> (+ clave del proveedor) · <code>JWT_SECRET</code> · <code>ADMIN_API_KEY</code> ·
-      <code>PARTNER_API_KEY</code> · <code>FRONTEND_URL</code> · <code>N8N_WEBHOOK_SECRET</code> ·
+      <code>PARTNER_API_KEY</code> · <code>CORS_ORIGINS</code> · <code>WEBHOOK_API_KEY</code> ·
       banderas de desarrollo <code>ALLOW_DEV_LOGIN</code> / <code>ALLOW_MOCK_DATA</code>.</p>
       <div class="callout danger"><b>Nunca</b> versionar <code>.env</code> ni valores reales de estas variables. El repositorio incluye <code>.env.example</code> solo con nombres y descripciones.</div>
     </section>

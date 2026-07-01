@@ -16,6 +16,7 @@ import { localizadoRouter } from './routes/localizado.route';
 import { contactRouter } from './routes/contact.route';
 import { cneRouter } from './routes/cne.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
+import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { csrfProtection } from './middlewares/csrf.middleware';
 
 const app = express();
@@ -47,23 +48,24 @@ app.use(helmet({
 }));
 
 // --- 2. CORS restringido ---
-const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4000')
-  .split(',')
-  .map(s => s.trim().replace(/\/$/, '')); // Limpia espacios y barras finales por seguridad
+// Allowlist normalizada UNA vez al arranque. Coincidencia exacta del origin
+// (esquema incluido): cada origin de producción debe listarse explícitamente
+// en CORS_ORIGINS — sin substrings ni equivalencia http/https, que permitían
+// bypass (https://localhost:5173.evil.com) o downgrade con credenciales.
+const corsOrigins = buildAllowedOrigins(
+  process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4000'
+);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir peticiones sin origen (ej. curl, postman)
     if (!origin) return callback(null, true);
-    
-    // Verificación robusta: coincidencia exacta o si el origin termina con la URL permitida (por si cambian a http/https)
-    const isAllowed = corsOrigins.some(allowed => origin === allowed || origin.includes(allowed.replace(/^https?:\/\//, '')));
-    
-    if (isAllowed) {
+
+    if (isOriginAllowed(origin, corsOrigins)) {
       return callback(null, true);
     }
-    
-    console.error(`[CORS RECHAZADO] Origin del cliente: '${origin}'. Valores permitidos en Render:`, corsOrigins);
+
+    console.error(`[CORS RECHAZADO] Origin del cliente: '${origin}'. Valores permitidos en Render:`, [...corsOrigins]);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
