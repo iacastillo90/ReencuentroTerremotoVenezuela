@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { api } from '../services/api';
+import { api, refreshCsrfToken } from '../services/api';
 
 interface User {
   _id: string;
@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      api.get('/auth/csrf-token').catch(() => {});
+      await refreshCsrfToken();
 
       try {
         const res = await api.get('/auth/me');

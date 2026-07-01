@@ -74,18 +74,36 @@
 
 .nav-actions { display: flex; align-items: center; gap: 0.5rem; }
 
+.nav-user-menu { position: relative; }
+
 .nav-user {
   display: flex; align-items: center; gap: 0.4rem;
-  color: var(--clr-text-muted); font-size: 0.9rem;
+  min-height: 36px; padding: 0 8px;
+  border: 1px solid transparent; border-radius: var(--radius-full);
+  background: transparent; color: var(--clr-text-muted); font-size: 0.9rem;
+  cursor: pointer;
+}
+.nav-user:hover,
+.nav-user[aria-expanded="true"] {
+  color: var(--clr-text);
+  background: var(--clr-hover);
+  border-color: var(--clr-border);
 }
 .nav-user-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.btn-report-override {
-  padding: 8px 15px !important;
-  white-space: nowrap;
-  box-shadow: 0 8px 20px rgba(229, 37, 32, 0.28) !important;
+.nav-user-dropdown {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 220;
+  width: 190px; padding: 6px;
+  border: 1px solid var(--clr-border); border-radius: 8px;
+  background: var(--clr-surface); box-shadow: var(--shadow-modal);
 }
-.btn-report-override:hover { box-shadow: 0 10px 26px rgba(229, 37, 32, 0.4) !important; }
+.nav-user-dropdown button {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; min-height: 40px; padding: 0 10px;
+  border: 0; border-radius: 7px; background: transparent;
+  color: var(--clr-text); cursor: pointer; text-align: left;
+}
+.nav-user-dropdown button:hover { background: var(--clr-hover); }
 
 .btn-icon-override {
   width: 38px;

@@ -5,34 +5,58 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-// CSRF token interceptor — attach csrf-token from cookie to mutating requests
+// ── CSRF (patrón double-submit) ────────────────────────────────────────────
+// Token CSRF mantenido en memoria como fuente de verdad del cliente. Se toma del
+// CUERPO de /auth/csrf-token (no solo de document.cookie) para evitar ambigüedades
+// por cookies viejas/duplicadas. Si el servidor responde 403 de CSRF, se refresca
+// el token y se reintenta la petición una vez, de forma transparente al usuario.
+let csrfToken: string | null = null;
+const MUTATING = ['post', 'put', 'patch', 'delete'];
+
+function readCsrfCookie(): string | null {
+  const row = document.cookie.split('; ').find((r) => r.startsWith('csrf-token='));
+  return row ? decodeURIComponent(row.split('=')[1]) : null;
+}
+
+/** Pide un token CSRF fresco al backend (siembra la cookie y lo guarda en memoria). */
+export async function refreshCsrfToken(): Promise<string | null> {
+  try {
+    const { data } = await api.get('/auth/csrf-token');
+    csrfToken = data?.token ?? readCsrfCookie();
+  } catch {
+    csrfToken = readCsrfCookie();
+  }
+  return csrfToken;
+}
+
+// Adjunta el header CSRF en métodos que mutan estado.
 api.interceptors.request.use((config) => {
-  if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method)) {
-    const csrfCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('csrf-token='));
-    if (csrfCookie) {
-      const csrfToken = csrfCookie.split('=')[1];
-      if (csrfToken && config.headers) {
-        config.headers['x-csrf-token'] = csrfToken;
-      }
-    }
+  if (config.method && MUTATING.includes(config.method.toLowerCase())) {
+    const token = csrfToken ?? readCsrfCookie();
+    if (token && config.headers) config.headers['x-csrf-token'] = token;
   }
   return config;
 });
 
-// CSRF token interceptor — attach csrf-token from cookie to mutating requests
-api.interceptors.request.use((config) => {
-  if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method)) {
-    const csrfCookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('csrf-token='));
-    if (csrfCookie) {
-      const csrfToken = csrfCookie.split('=')[1];
-      if (csrfToken && config.headers) {
-        config.headers['x-csrf-token'] = csrfToken;
+// Auto-recuperación: ante un 403 por CSRF, refresca el token y reintenta 1 vez.
+api.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const cfg = error.config;
+    const status = error.response?.status;
+    const msg = String(error.response?.data?.error ?? '');
+    const isCsrf = status === 403 && /csrf/i.test(msg);
+
+    if (isCsrf && cfg && !cfg._csrfRetried) {
+      cfg._csrfRetried = true;
+      await refreshCsrfToken(); // vuelve a sembrar la cookie (sobrescribe la vieja) + token en memoria
+      const token = csrfToken ?? readCsrfCookie();
+      if (token) {
+        cfg.headers = cfg.headers ?? {};
+        cfg.headers['x-csrf-token'] = token;
       }
+      return api(cfg); // reintenta la petición original
     }
+    return Promise.reject(error);
   }
-  return config;
-});
+);

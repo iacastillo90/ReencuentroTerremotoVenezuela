@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   PlusCircle, Settings, Map, BookOpen, X, User as UserIcon, LogOut,
-  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn
+  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { BrandMark } from '../components/BrandMark';
@@ -30,6 +30,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onAdmin
 }) => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
 
   // Navegación principal (5 ítems en móvil): Inicio · Buscar · Reportar · Mapa · Más
@@ -48,7 +49,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     { view: 'profile',    icon: <UserIcon size={20} />,    label: 'Mi perfil',           desc: 'Tus reportes y mensajes' },
   ];
 
-  const go = (view: View) => { setMoreOpen(false); onViewChange(view); };
+  const go = (view: View) => { setMoreOpen(false); setUserMenuOpen(false); onViewChange(view); };
+  const closeSession = () => { setMoreOpen(false); setUserMenuOpen(false); logout(); };
 
   return (
     <div className="app-shell">
@@ -86,12 +88,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <span className="sos-dot" /> Canal SOS
           </span>
           {user && (
-            <div className="nav-user">
-              <UserIcon size={18} />
-              <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
-              <Button variant="outline" size="sm" className="btn-icon-override" onClick={logout} title="Cerrar sesión">
-                <LogOut size={16} />
-              </Button>
+            <div className="nav-user-menu">
+              <button
+                className="nav-user"
+                onClick={() => setUserMenuOpen(open => !open)}
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+              >
+                <UserIcon size={18} />
+                <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
+                <ChevronDown size={14} className="hide-mobile" />
+              </button>
+              {userMenuOpen && (
+                <div className="nav-user-dropdown" role="menu">
+                  <button role="menuitem" onClick={() => go('profile')}>
+                    <UserIcon size={16} /> Mi perfil
+                  </button>
+                  <button role="menuitem" onClick={closeSession}>
+                    <LogOut size={16} /> Cerrar sesión
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {user?.role === 'admin' && (
@@ -99,9 +116,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               <Settings size={17} />
             </Button>
           )}
-          <Button variant="danger" size="sm" className="btn-report-override" onClick={onReport}>
-            + Reportar
-          </Button>
         </div>
       </nav>
 
@@ -163,7 +177,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             </div>
             <div className="more-sheet-foot">
               {user ? (
-                <Button fullWidth size="lg" variant="outline" onClick={() => { setMoreOpen(false); logout(); }} className="flex-center gap-2">
+                <Button fullWidth size="lg" variant="outline" onClick={closeSession} className="flex-center gap-2">
                   <LogOut size={18} /> Cerrar sesión
                 </Button>
               ) : (

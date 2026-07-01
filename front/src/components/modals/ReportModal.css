@@ -309,4 +309,135 @@
   color: var(--clr-danger);
 }
 
+.required-mark {
+  color: var(--clr-amber);
+  font-weight: 800;
+}
+
+.report-modal-overlay {
+  background: var(--clr-bg);
+  backdrop-filter: none;
+  align-items: stretch;
+  padding: 0;
+}
+
+.report-modal-content {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  background: var(--clr-bg);
+}
+
+.report-modal-header {
+  min-height: var(--nav-h);
+  padding: 0 1rem;
+  background: rgba(9, 17, 30, 0.96);
+}
+
+.report-modal-title {
+  font-size: 1.2rem;
+}
+
+.report-modal-body {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.report-modal-form-group-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.report-modal-cne-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  gap: .6rem;
+  align-items: stretch;
+}
+
+.report-modal-cne-row .btn {
+  min-height: 46px;
+}
+
+.report-modal-content .btn-outline,
+.report-modal-content .form-group input,
+.report-modal-content .form-group select,
+.report-modal-content .form-group textarea,
+.audio-recorder-box {
+  border-color: rgba(46,107,236,.48);
+}
+
+.report-modal-content .btn-outline:hover:not(:disabled) {
+  border-color: var(--clr-primary);
+  color: var(--clr-text);
+}
+
+.report-modal-content .btn:disabled {
+  border-color: var(--clr-border);
+}
+
+.audio-recorder-box {
+  background: rgba(18,32,51,.64);
+}
+
+.audio-recorder-header {
+  gap: .85rem;
+}
+
+@media (min-width: 760px) {
+  .report-modal-form-group-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-modal-body {
+    padding: 1.5rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .report-modal-body {
+    padding: .85rem .9rem 1.5rem;
+  }
+
+  .ai-notice {
+    padding: .85rem;
+    font-size: .84rem;
+  }
+
+  .report-modal-cne-row {
+    grid-template-columns: 1fr;
+  }
+
+  .report-modal-cne-row select,
+  .report-modal-cne-row input,
+  .report-modal-cne-row .btn {
+    width: 100% !important;
+  }
+
+  .audio-recorder-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .audio-recorder-controls,
+  .audio-recorder-controls .btn {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: .75rem;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
 
