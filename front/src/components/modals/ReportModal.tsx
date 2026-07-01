@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, CheckCircle, Check, MapPin, ShieldAlert, Video, ArrowLeft } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, MapPin, ShieldAlert, Video, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { AudioRecorder } from './AudioRecorder';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
@@ -34,9 +34,7 @@ const locationIcon = new L.Icon({
 });
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory, onNavigate, defaultType = 'person' }) => {
-  const [reportAction, setReportAction] = useState<'vi' | 'deceso'>('vi');
   const [category, setCategory] = useState<'adulto' | 'niño' | 'adulto_mayor' | 'mascota'>(defaultType === 'animal' ? 'mascota' : 'adulto');
-  const [cedulaNac, setCedulaNac] = useState<'V' | 'E'>('V');
   const [cedula, setCedula] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [name, setName] = useState('');
