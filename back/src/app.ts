@@ -20,6 +20,9 @@ import { csrfProtection } from './middlewares/csrf.middleware';
 
 const app = express();
 
+// Trust reverse proxy (necesario en Render para rate limiting y cookies 'secure')
+app.set('trust proxy', 1);
+
 // --- 1. Seguridad HTTP con Helmet + CSP ---
 app.use(helmet({
   contentSecurityPolicy: {
