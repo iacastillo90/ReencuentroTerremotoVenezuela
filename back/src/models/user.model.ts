@@ -20,9 +20,10 @@ export interface IUser extends Document {
 }
 
 const UserSchema = new Schema<IUser>({
-  // googleId es opcional: los usuarios de correo/contraseña no lo tienen (sparse evita
-  // colisiones de unicidad entre múltiples documentos sin googleId).
-  googleId: { type: String, unique: true, sparse: true },
+  // googleId es opcional: los usuarios de correo/contraseña no lo tienen.
+  // La unicidad se aplica con un índice PARCIAL más abajo (solo cuando googleId
+  // es un string), así múltiples usuarios sin googleId no colisionan.
+  googleId: { type: String },
   passwordHash: { type: String },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   name: { type: String, required: true },
@@ -37,5 +38,13 @@ const UserSchema = new Schema<IUser>({
   isProfileComplete: { type: Boolean, default: false },
   tokenVersion: { type: Number, default: 1 },
 }, { timestamps: true });
+
+// Unicidad de googleId SOLO para usuarios de Google (googleId string). Los usuarios
+// de correo/contraseña no tienen googleId y por eso no colisionan entre sí (evita el
+// error E11000 dup key { googleId: null }).
+UserSchema.index(
+  { googleId: 1 },
+  { unique: true, partialFilterExpression: { googleId: { $type: 'string' } } }
+);
 
 export const UserModel = model<IUser>('User', UserSchema);

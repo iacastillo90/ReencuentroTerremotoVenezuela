@@ -26,10 +26,13 @@ const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_M
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// Rate limiter for auth routes — 5 attempts per 15 minutes
+// Rate limiter for auth routes — estricto en producción (5/15min), generoso en desarrollo.
+// Configurable con AUTH_RATE_LIMIT si se necesita otro valor.
+const AUTH_MAX = Number(process.env.AUTH_RATE_LIMIT) ||
+  (process.env.NODE_ENV === 'production' ? 5 : 1000);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: AUTH_MAX,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiados intentos de autenticación. Intente nuevamente en 15 minutos.' },
