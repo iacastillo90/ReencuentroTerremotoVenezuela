@@ -35,14 +35,11 @@ const locationIcon = new L.Icon({
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory, onNavigate, defaultType = 'person' }) => {
   const [category, setCategory] = useState<'adulto' | 'niño' | 'adulto_mayor' | 'mascota'>(defaultType === 'animal' ? 'mascota' : 'adulto');
-  const [cedula, setCedula] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
   const [raza, setRaza] = useState('');
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [clothingQuestion, setClothingQuestion] = useState('');
   
@@ -143,23 +140,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory
     }
   };
 
-  const handleVerifyCedula = async () => {
-    if (!cedula.trim()) return;
-    setIsVerifying(true);
-    setError('');
-    try {
-      const res = await api.get(`/cne/${cedulaNac}/${cedula.trim()}`);
-      if (res.data.valid && res.data.fullName) {
-        setName(res.data.fullName);
-      } else {
-        setError(res.data.error || 'Cédula no encontrada. Puede ingresar el nombre manualmente.');
-      }
-    } catch (err: any) {
-      setError('No se pudo verificar con el CNE (Modo Offline/Desconectado). Ingrese el nombre manualmente.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +154,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory
 
     try {
       let photoUrl = '';
-      if (file && reportAction !== 'deceso') {
+      if (file) {
         const formData = new FormData();
         formData.append('file', file);
         const uploadRes = await api.post('/media', formData, {
@@ -185,7 +166,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory
       const isAnimal = category === 'mascota';
       
       const payloadText = `Categoría: ${isAnimal ? 'Mascota' : (category === 'adulto' ? 'Adulto' : (category === 'adulto_mayor' ? 'Adulto Mayor' : 'Niño'))}
-${isAnimal && raza ? `Raza: ${raza}\n` : ''}${reportAction === 'vi' ? '[REPORTE: HE VISTO / LOCALIZADO]' : '[REPORTE: DECESO / FALLECIMIENTO]'} ${isAnonymous ? '[ANÓNIMO]' : ''}
+${isAnimal && raza ? `Raza: ${raza}\n` : ''}[REPORTE: HE VISTO / LOCALIZADO]
 ${text.trim()}`.trim();
 
       const payload: any = {
@@ -196,12 +177,10 @@ ${text.trim()}`.trim();
         estado: estado.trim(),
         text: payloadText,
         date: new Date().toISOString(),
-        isAnonymous,
         reporterLocation
       };
       
       if (photoUrl) payload.photoUrl = photoUrl;
-      if (!isAnimal && cedula) payload.data = { cedula_hash: cedula }; // Send cedula if exists
       if (!isAnimal && category === 'niño') {
         payload.data = { ...payload.data, age: '10' }; // Hack to enforce minor logic in backend
       }
@@ -269,12 +248,10 @@ ${text.trim()}`.trim();
         <div className="report-modal-body">
           {isSuccess ? (
             <div className="success-state">
-              <CheckCircle size={64} color={reportAction === 'deceso' ? "var(--clr-amber)" : "var(--clr-success)"} style={{ margin: '0 auto' }} />
-              <h3>{reportAction === 'deceso' ? 'Reporte Registrado' : '¡Reporte enviado exitosamente!'}</h3>
+              <CheckCircle size={64} color="var(--clr-success)" style={{ margin: '0 auto' }} />
+              <h3>¡Reporte enviado exitosamente!</h3>
               <p>
-                {reportAction === 'deceso' 
-                  ? 'Hemos recibido la información. Para proteger a la familia y evitar la exposición de material sensible, un moderador especializado se pondrá en contacto contigo a la brevedad posible para manejar este caso de forma privada y respetuosa.' 
-                  : 'Nuestra Inteligencia Artificial está analizando y organizando la información. En unos minutos aparecerá en el mapa.'}
+                Nuestra Inteligencia Artificial está analizando y organizando la información. En unos minutos aparecerá en el mapa.
               </p>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <Button onClick={onClose}>
@@ -344,9 +321,8 @@ ${text.trim()}`.trim();
                 )}
               </Card>
 
-              {/* CARD 2: EVIDENCIA (No se muestra en deceso) */}
-              {reportAction !== 'deceso' && (
-                <Card>
+              {/* CARD 2: EVIDENCIA */}
+              <Card>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em', color: 'var(--clr-text-muted)', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
                       GRABAR VIDEO / TOMAR FOTO
@@ -373,7 +349,6 @@ ${text.trim()}`.trim();
                     )}
                   </div>
                 </Card>
-              )}
 
               {/* CARD 3: DATOS DINAMICOS */}
               <Card>
@@ -645,7 +620,6 @@ ${text.trim()}`.trim();
         className="modal-bottom-nav"
         onNavigate={(v) => { onNavigate?.(v as any); }}
         onReport={(e) => e.stopPropagation()}
-        onMoreClick={(e) => { e.stopPropagation(); onClose(); }}
       />
 
     </div>
