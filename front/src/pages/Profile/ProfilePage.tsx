@@ -3,6 +3,7 @@ import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
 import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText, ShieldAlert, CheckCircle, MessageCircle } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import './Profile.css';
 
 interface ProfilePageProps {
@@ -73,33 +74,33 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       </div>
 
       {user.role === 'user' && (
-        <div className="profile-content" style={{ marginTop: '20px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-          <h3 style={{ color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <div className="profile-content profile-role-card profile-role-user">
+          <h3 className="profile-role-title">
             <ShieldAlert size={20} /> Solicitar Acceso de Verificador
           </h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+          <p className="profile-role-desc">
             Si eres periodista, miembro de ONG o personal en terreno, puedes solicitar acceso a datos de refugios e información de contacto directo de los desaparecidos encontrados.
           </p>
           {!showRequestForm ? (
-            <button onClick={() => setShowRequestForm(true)} style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+            <Button onClick={() => setShowRequestForm(true)}>
               Solicitar Rol
-            </button>
+            </Button>
           ) : (
-            <form onSubmit={handleRequestVerification} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <form onSubmit={handleRequestVerification} className="profile-request-form">
               <textarea 
                 placeholder="Explica brevemente tu rol y organización para validar tu acceso..."
                 value={requestNotes}
                 onChange={e => setRequestNotes(e.target.value)}
                 required
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#0e1838', border: '1px solid #1e293b', color: '#fff', minHeight: '80px' }}
+                className="profile-textarea"
               />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+              <div className="profile-form-actions">
+                <Button type="submit">
                   Enviar Solicitud
-                </button>
-                <button type="button" onClick={() => setShowRequestForm(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowRequestForm(false)}>
                   Cancelar
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -107,17 +108,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       )}
 
       {user.role === 'verifier' && (
-        <div className="profile-content" style={{ marginTop: '20px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1.5rem', borderRadius: '12px' }}>
-          <h3 style={{ color: 'var(--clr-success)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <div className="profile-content profile-role-card profile-role-verifier">
+          <h3 className="profile-role-title-success">
             <CheckCircle size={20} /> Cuenta Verificada (Periodista / ONG)
           </h3>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <p className="profile-role-desc">
             Tienes acceso completo a la información de contacto y ubicaciones exactas para facilitar reencuentros seguros.
           </p>
         </div>
       )}
 
-      <div className="profile-content" style={{ marginTop: '20px' }}>
+      <div className="profile-content">
         <h3><MessageCircle size={18} /> Mensajes Recibidos ({messages.length})</h3>
         {messages.length === 0 ? (
           <div className="profile-empty">
@@ -126,14 +127,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         ) : (
           <div className="my-reports-list">
             {messages.map(msg => (
-              <div key={msg._id} className="report-card" style={{ borderLeft: '3px solid var(--blue)' }}>
+              <div key={msg._id} className="report-card report-card-message">
                 <div className="report-card-header">
                   <h4>Mensaje sobre reporte: {msg.reportId}</h4>
                   <span className={`status-badge found`}>Nuevo</span>
                 </div>
                 <div className="report-card-body">
                   <p><Clock size={12} /> {new Date(msg.createdAt).toLocaleDateString('es-VE')}</p>
-                  <p className="report-desc" style={{ fontStyle: 'italic', marginTop: '8px', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                  <p className="report-desc report-message-text">
                     "{msg.message}"
                   </p>
                 </div>
@@ -143,7 +144,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         )}
       </div>
 
-      <div className="profile-content" style={{ marginTop: '20px' }}>
+      <div className="profile-content">
         <h3><FileText size={18} /> Mis reportes ({myReports.length})</h3>
         
         {loading ? (

@@ -160,3 +160,83 @@
   gap: 0.25rem;
   font-weight: 500;
 }
+
+.profile-content {
+  margin-top: 20px;
+}
+
+.profile-role-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.profile-role-user {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.profile-role-verifier {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.profile-role-title {
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.profile-role-title-success {
+  color: var(--clr-success);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.profile-role-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.profile-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  background: #0e1838;
+  border: 1px solid #1e293b;
+  color: #fff;
+  min-height: 80px;
+  font-family: inherit;
+  resize: vertical;
+}
+.profile-textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.profile-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.report-card-message {
+  border-left: 3px solid var(--blue);
+}
+
+.report-message-text {
+  font-style: italic;
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
