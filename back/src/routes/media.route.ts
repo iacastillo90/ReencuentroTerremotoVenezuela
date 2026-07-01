@@ -107,4 +107,24 @@ router.post('/analyze-image', requireUser, mediaUploadLimiter, upload.single('im
   }
 });
 
+router.post('/audio-transcribe', requireUser, mediaUploadLimiter, upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ningún audio.' });
+    }
+
+    const aiProvider = getAIProvider();
+    if (!aiProvider.transcribeAudio) {
+      return res.status(501).json({ error: 'Transcripción de audio no soportada por el proveedor de IA actual.' });
+    }
+
+    const transcription = await aiProvider.transcribeAudio(req.file.buffer, req.file.mimetype);
+    
+    return res.status(200).json({ text: transcription });
+  } catch (error: any) {
+    console.error('[MediaRoute] Error transcribiendo audio:', error);
+    return res.status(500).json({ error: error.message || 'Error interno transcribiendo audio con IA' });
+  }
+});
+
 export const mediaRouter = router;
