@@ -97,8 +97,8 @@ Configúralas en `back/.env` (basado en `back/.env.example`). **Usa tus propios 
 | `AI_PROVIDER` (+ clave del proveedor: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`; para Anthropic define además `ANTHROPIC_MODEL`) | Motor de IA (el modelo concreto se define por entorno, no se versiona). |
 | `JWT_SECRET` | Secreto para firmar tokens. **Obligatorio en producción** (el servidor aborta si falta). Genera uno con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. |
 | `ADMIN_API_KEY` · `PARTNER_API_KEY` | Claves de endpoints protegidos. |
-| `FRONTEND_URL` | Origen permitido por CORS en producción. |
-| `N8N_WEBHOOK_SECRET` | Secreto compartido para validar los webhooks de n8n. |
+| `CORS_ORIGINS` | Lista separada por comas de los orígenes permitidos por CORS. Coincidencia **exacta** (esquema incluido): lista cada origen de producción explícitamente, p. ej. `https://app.midominio.com,https://www.midominio.com`. |
+| `WEBHOOK_API_KEY` | Secreto compartido para validar los webhooks de n8n (header `x-webhook-api-key`). Sin él, el backend rechaza todos los webhooks. |
 | `ALLOW_DEV_LOGIN` *(solo dev)* | Habilita el login de desarrollo sin Google (no en producción). |
 | `ALLOW_MOCK_DATA` *(solo dev)* | Permite datos de ejemplo (marcados `isSimulated`) cuando una fuente no responde. |
 
