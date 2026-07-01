@@ -4,6 +4,7 @@ import { upsertPerson } from '../services/person.service';
 import { PersonModel } from '../models/unified-person.model';
 import { adminStatusUpdateSchema, adminMergeSchema } from '../validators/admin.validator';
 import { auditLog } from '../middlewares/audit.middleware';
+import { UserModel } from '../models/user.model';
 
 const router = Router();
 
@@ -194,7 +195,7 @@ router.patch('/users/:id/role', async (req: Request, res: Response) => {
       severity: 'info',
       actor: (req as any).user?.userId || 'admin',
       action: 'PATCH /admin/users/:id/role',
-      resource: id,
+      resource: id as string,
       detail: { newRole: role },
       req,
     });
@@ -221,7 +222,7 @@ router.patch('/users/:id/status', async (req: Request, res: Response) => {
       severity: 'info',
       actor: (req as any).user?.userId || 'admin',
       action: 'PATCH /admin/users/:id/status',
-      resource: id,
+      resource: id as string,
       detail: { newStatus: status },
       req,
     });
