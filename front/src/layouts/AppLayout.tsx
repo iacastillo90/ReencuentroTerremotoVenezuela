@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   PlusCircle, Settings, Map, BookOpen, X, User as UserIcon, LogOut,
-  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn, ChevronDown
+  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn, ChevronDown, Plus
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/ui/Button';
+import { MobileBottomNav } from './MobileBottomNav';
 import './AppLayout.css';
 
 type View =
@@ -42,11 +43,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
   // Destinos secundarios agrupados en "Más"
   const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
-    { view: 'directorio', icon: <Building2 size={20} />,   label: 'Directorio de apoyo', desc: 'Organizaciones verificadas' },
-    { view: 'manual',     icon: <ShieldCheck size={20} />, label: 'Manual y políticas',  desc: 'Actuación sísmica y seguridad' },
-    { view: 'library',    icon: <BookOpen size={20} />,    label: 'Guías y recursos',    desc: 'Biblioteca de ayuda' },
     { view: 'logistics',  icon: <Truck size={20} />,       label: 'Logística',           desc: 'Refugios y vías' },
-    { view: 'profile',    icon: <UserIcon size={20} />,    label: 'Mi perfil',           desc: 'Tus reportes y mensajes' },
+    { view: 'map',        icon: <Map size={20} />,         label: 'Mapa de calor',       desc: 'Vista geográfica' },
   ];
 
   const go = (view: View) => { setMoreOpen(false); setUserMenuOpen(false); onViewChange(view); };
@@ -56,13 +54,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     <div className="app-shell">
       {/* ─ Top Navbar ─ */}
       <nav className="navbar">
-        <button className="nav-brand" onClick={() => onViewChange('home')} aria-label="Inicio">
-          <BrandMark size={34} />
-          <span className="nav-brand-text">
-            <strong>Reencuentros<span>Venezuela</span></strong>
-            <small>Juntos te encontramos</small>
-          </span>
-        </button>
+        <div className="nav-left">
+          <button className="nav-brand" onClick={() => onViewChange('home')} aria-label="Inicio">
+            <BrandMark size={34} />
+            <span className="nav-brand-text">
+              <strong>Reencuentros<span>Venezuela</span></strong>
+              <small>Juntos te encontramos</small>
+            </span>
+          </button>
+        </div>
 
         {/* Nav de escritorio */}
         <div className="nav-toggle-pills">
@@ -88,28 +88,42 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <span className="sos-dot" /> Canal SOS
           </span>
           {user && (
-            <div className="nav-user-menu">
-              <button
-                className="nav-user"
-                onClick={() => setUserMenuOpen(open => !open)}
-                aria-haspopup="menu"
-                aria-expanded={userMenuOpen}
-              >
-                <UserIcon size={18} />
-                <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
-                <ChevronDown size={14} className="hide-mobile" />
-              </button>
-              {userMenuOpen && (
-                <div className="nav-user-dropdown" role="menu">
-                  <button role="menuitem" onClick={() => go('profile')}>
-                    <UserIcon size={16} /> Mi perfil
-                  </button>
-                  <button role="menuitem" onClick={closeSession}>
-                    <LogOut size={16} /> Cerrar sesión
-                  </button>
-                </div>
-              )}
-            </div>
+            <button className="nav-profile-mobile hide-desktop" onClick={() => go('profile')} title="Mi perfil">
+              <Settings size={18} />
+            </button>
+          )}
+          {user ? (
+            <>
+              <div className="nav-user-menu hide-mobile">
+                <button
+                  className="nav-user"
+                  onClick={() => setUserMenuOpen(open => !open)}
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                >
+                  <UserIcon size={18} />
+                  <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
+                  <ChevronDown size={14} className="hide-mobile" />
+                </button>
+                {userMenuOpen && (
+                  <div className="nav-user-dropdown" role="menu">
+                    <button role="menuitem" onClick={() => go('profile')}>
+                      <UserIcon size={16} /> Mi perfil
+                    </button>
+                    <button role="menuitem" onClick={closeSession}>
+                      <LogOut size={16} /> Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" onClick={closeSession} className="flex-center hide-desktop nav-logout-mobile" title="Cerrar sesión">
+                <LogOut size={20} />
+              </Button>
+            </>
+          ) : (
+            <Button variant="danger" size="sm" onClick={() => go('login')} className="flex-center nav-login-btn">
+              <LogIn size={16} /> <span className="hide-mobile">Ingresar</span>
+            </Button>
           )}
           {user?.role === 'admin' && (
             <Button variant="outline" size="sm" className="btn-icon-override" onClick={onAdmin} title="Administración">
@@ -128,33 +142,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       </div>
 
       {/* ─ Bottom Nav — móvil (5 ítems) ─ */}
-      <nav className="bottom-nav">
-        {primaryNav.slice(0, 2).map(item => (
-          <button
-            key={item.view}
-            className={`bottom-nav-item ${activeView === item.view ? 'active' : ''}`}
-            onClick={() => go(item.view)}
-          >
-            {item.icon}<span>{item.label}</span>
-          </button>
-        ))}
-        <button className="bottom-nav-item nav-item-center" onClick={onReport} aria-label="Reportar">
-          <PlusCircle size={30} />
-          <span>Reportar</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${activeView === 'map' ? 'active' : ''}`}
-          onClick={() => go('map')}
-        >
-          <Map size={22} /><span>Mapa</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${moreOpen ? 'active' : ''}`}
-          onClick={() => setMoreOpen(true)}
-        >
-          <MoreHorizontal size={22} /><span>Más</span>
-        </button>
-      </nav>
+      <MobileBottomNav
+        activeView={activeView}
+        onNavigate={(v) => go(v as any)}
+        onReport={onReport}
+        moreOpen={moreOpen}
+        onMoreClick={() => setMoreOpen(true)}
+      />
 
       {/* ─ Hoja "Más" ─ */}
       {moreOpen && (

@@ -27,6 +27,26 @@
   z-index: 100;
 }
 
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.nav-profile-mobile {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--clr-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--clr-text);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;
@@ -119,6 +139,16 @@
 /* ─── Sidebar (desktop only) ─ */
 .sidebar { display: none; }
 
+/* ─── Nav Inline Overrides ─ */
+.nav-logout-mobile {
+  padding: 0 6px !important;
+  color: var(--clr-text-muted) !important;
+}
+
+.nav-login-btn {
+  gap: 6px;
+}
+
 /* ─── Content area ─ */
 .content-area {
   flex: 1;
@@ -135,7 +165,7 @@
   backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   align-items: center;
   padding: 0 0.3rem;
   z-index: 100;
@@ -154,21 +184,39 @@
   cursor: pointer;
   transition: color 0.2s;
   border-radius: var(--radius-md);
+  position: relative;
 }
-.bottom-nav-item span { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.02em; }
-.bottom-nav-item.active { color: var(--brand-red); }
 
-.nav-item-center { color: #fff; }
-.nav-item-center svg {
-  background: var(--brand-red);
-  border-radius: 50%;
-  padding: 3px;
-  margin-top: -18px;
-  border: 3px solid var(--clr-bg);
-  box-shadow: 0 6px 16px rgba(229, 37, 32, 0.45);
-  color: #fff;
+.bottom-nav-item span { 
+  font-size: 0.62rem; 
+  font-weight: 600; 
+  letter-spacing: 0.02em; 
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
 }
-.nav-item-center span { color: var(--brand-red); }
+
+.bottom-nav-item svg {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 5px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+
+.bottom-nav-item.active { color: var(--brand-blue-soft); }
+.bottom-nav-item.active span { transform: translateY(4px); }
+
+.bottom-nav-item.active svg {
+  background: var(--brand-blue-soft);
+  color: #fff;
+  transform: translateY(-16px);
+  border-color: var(--clr-bg);
+  box-shadow: 0 6px 16px rgba(46, 107, 236, 0.45);
+}
+
+.bottom-nav-item.nav-item-report.active { color: var(--brand-red); }
+.bottom-nav-item.nav-item-report.active svg {
+  background: var(--brand-red);
+  box-shadow: 0 6px 16px rgba(229, 37, 32, 0.45);
+}
 
 /* ─── Hoja "Más" ─ */
 .drawer-overlay {
