@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
+import { Search, AlertTriangle, Users, MapPin, Loader2, PawPrint } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
 import { Button } from '../../components/ui/Button';
 import type { Person, Disaster } from '../../types';
@@ -23,7 +23,7 @@ interface FeedPageProps {
   onLoadMore: () => void;
 }
 
-type Filter = 'all' | 'missing' | 'found' | 'disasters';
+type Filter = 'all' | 'missing' | 'found' | 'animals' | 'disasters';
 
 export const FeedPage: React.FC<FeedPageProps> = ({
   persons, disasters, loading, loadingMore, hasMore, total, counts, searchQuery, onSearchChange, onSelectPerson, onLoadMore
@@ -70,14 +70,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
   const filtered = persons
     .filter(p => {
-      if (filter === 'missing') return p.status === 'missing';
-      if (filter === 'found')   return p.status === 'found';
+      if (filter === 'missing') return p.status === 'missing' && p.type !== 'animal';
+      if (filter === 'found')   return p.status === 'found' && p.type !== 'animal';
+      if (filter === 'animals') return p.type === 'animal';
       return true;
     });
 
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: counts.missing },
     { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: counts.found },
+    { key: 'animals',   icon: <PawPrint size={13} />, label: 'Mascotas',      count: (counts as any).animals || 0 },
     { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: counts.total },
     { key: 'disasters', icon: <AlertTriangle size={13} />, label: 'Desastres',     count: disasters.length },
   ];

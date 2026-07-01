@@ -17,15 +17,16 @@ router.get('/counts', async (_req: Request, res: Response) => {
     const cached = await redis.get(CACHE_KEY);
     if (cached) return res.status(200).json(JSON.parse(cached));
 
-    const [missing, found, total, pending, manual] = await Promise.all([
-      PersonModel.countDocuments({ status: 'missing' }),
-      PersonModel.countDocuments({ status: 'found' }),
+    const [missing, found, total, pending, manual, animals] = await Promise.all([
+      PersonModel.countDocuments({ status: 'missing', type: { $ne: 'animal' } }),
+      PersonModel.countDocuments({ status: 'found', type: { $ne: 'animal' } }),
       PersonModel.countDocuments({}),
       PersonModel.countDocuments({ 'metadata.auditStatus': 'pending_review' }),
-      PersonModel.countDocuments({ 'metadata.source': 'manual' })
+      PersonModel.countDocuments({ 'metadata.source': 'manual' }),
+      PersonModel.countDocuments({ type: 'animal' })
     ]);
 
-    const counts = { missing, found, total, pending, manual };
+    const counts = { missing, found, total, pending, manual, animals };
     await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
 
     return res.status(200).json(counts);
@@ -41,6 +42,7 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
     const userId = (req as any).user.userId;
     const safeProjection = {
       idHash: 1,
+      type: 1,
       name: 1,
       status: 1,
       'lastSeen.state': 1,
@@ -102,6 +104,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Proyección segura: excluir PII, contactPerson, externalIds
     const safeProjection = {
       idHash: 1,
+      type: 1,
       name: 1,
       status: 1,
       'lastSeen.state': 1,

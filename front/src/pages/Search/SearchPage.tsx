@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Search, ArrowLeft, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail } from 'lucide-react';
+import { Search, ArrowLeft, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail, Dog } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Search.css';
 
-type AgeCat = 'adulto' | 'adulto_mayor' | 'adolescente' | 'menor';
+type AgeCat = 'adulto' | 'adulto_mayor' | 'mascota' | 'nino';
 
 interface SearchPageProps {
   /** Ejecuta la búsqueda (nombre) y navega a los resultados. */
@@ -12,10 +12,10 @@ interface SearchPageProps {
 }
 
 const AGE_CATS: { key: AgeCat; icon: React.ReactNode; label: string }[] = [
-  { key: 'adulto',       icon: <User size={18} />,      label: 'Adulto' },
-  { key: 'adulto_mayor', icon: <UserRound size={18} />, label: 'Adulto mayor' },
-  { key: 'adolescente',  icon: <User size={18} />,      label: 'Adolescente' },
-  { key: 'menor',        icon: <Baby size={18} />,      label: 'Niño/a' },
+  { key: 'adulto',       icon: <User size={24} />,      label: 'Adulto' },
+  { key: 'adulto_mayor', icon: <UserRound size={24} />, label: 'Adulto Mayor' },
+  { key: 'mascota',      icon: <Dog size={24} />,       label: 'Mascota' },
+  { key: 'nino',         icon: <Baby size={24} />,      label: 'Niño/a' },
 ];
 
 const ESTADOS_VE = [
@@ -30,10 +30,11 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
   const [municipio, setMunicipio] = useState('');
-  const [rango, setRango] = useState('');
+  const [edad, setEdad] = useState('');
+  const [raza, setRaza] = useState('');
   const [fecha, setFecha] = useState('');
 
-  const isMinorCat = ageCategory === 'menor' || ageCategory === 'adolescente';
+  const isMinorCat = ageCategory === 'nino';
 
   const buscar = () => {
     // La búsqueda principal del equipo es por nombre/zona; pasamos el término más específico.
@@ -59,14 +60,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
       </div>
 
       <div className="srch__cats">
-        <span className="srch__label">¿A quién buscas?</span>
-        <div className="agecat-row">
+        <label style={{ textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em', color: 'var(--clr-text-muted)', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
+          ¿A quién buscas?
+        </label>
+        <div className="srch-category-grid">
           {AGE_CATS.map(c => {
-            const minor = c.key === 'menor' || c.key === 'adolescente';
             return (
               <button
+                type="button"
                 key={c.key}
-                className={`agecat ${minor ? 'minor' : ''} ${ageCategory === c.key ? 'active' : ''}`}
+                className={`srch-category-btn ${ageCategory === c.key ? 'active-blue' : ''}`}
                 onClick={() => setAgeCategory(c.key)}
               >
                 {c.icon} {c.label}
@@ -114,19 +117,37 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
               <input placeholder="Escribe el municipio" value={municipio} onChange={e => setMunicipio(e.target.value)} />
             </div>
             <div className="srch__grid2">
+              {ageCategory !== 'mascota' ? (
+                <div className="srch__field-group">
+                  <label>Edad aproximada</label>
+                  <input 
+                    type="number" 
+                    placeholder="Ej: 45" 
+                    value={edad} 
+                    onChange={e => setEdad(e.target.value)}
+                    min="0"
+                    max="120"
+                  />
+                </div>
+              ) : (
+                <div className="srch__field-group">
+                  <label>Raza o color</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ej: Poodle negro" 
+                    value={raza} 
+                    onChange={e => setRaza(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="srch__field-group">
-                <label>Rango de edad</label>
-                <select value={rango} onChange={e => setRango(e.target.value)}>
-                  <option value="">Cualquiera</option>
-                  <option value="18-29">18 a 29</option>
-                  <option value="30-44">30 a 44</option>
-                  <option value="45-59">45 a 59</option>
-                  <option value="60-200">60 o más</option>
-                </select>
-              </div>
-              <div className="srch__field-group">
-                <label>Fecha aproximada</label>
-                <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+                <label>Fecha de desaparición</label>
+                <input 
+                  type="date" 
+                  value={fecha} 
+                  onChange={e => setFecha(e.target.value)} 
+                  title="Última vez que se le vio"
+                />
               </div>
             </div>
           </div>

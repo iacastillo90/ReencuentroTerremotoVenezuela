@@ -1,5 +1,6 @@
 export interface Person {
   idHash: string;
+  type?: 'person' | 'animal';
   name: string;
   status: 'missing' | 'found' | 'deceased' | 'unknown';
   lastSeen: {
