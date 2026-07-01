@@ -18,7 +18,11 @@ const ORGS: Org[] = [
   { id: 'FUN-ANI-006', name: 'Bienestar Animal VE', specialty: 'Rescate y triaje de fauna', channel: 'Canal de coordinación Fauna', channelRole: 'Coordinador de campo' },
 ];
 
-export function DirectoryPage() {
+interface DirectoryPageProps {
+  onNavigate?: (view: string) => void;
+}
+
+export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
   return (
     <div className="directory-page page-content narrow">
       <header className="directory-hero">
@@ -32,7 +36,12 @@ export function DirectoryPage() {
 
       <div className="directory-grid">
         {ORGS.map(org => (
-          <article key={org.id} className="org-card surface-card">
+          <article 
+            key={org.id} 
+            className="org-card surface-card" 
+            onClick={() => onNavigate?.('library')}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="org-card-top">
               <span className="org-id">{org.id}</span>
               <span className="badge verified"><BadgeCheck size={13} /> Certificado</span>

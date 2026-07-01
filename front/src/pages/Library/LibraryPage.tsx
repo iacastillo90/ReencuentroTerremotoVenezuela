@@ -22,7 +22,7 @@ export const LibraryPage: React.FC = () => {
   return (
     <div className="library-page">
       <div className="library-header">
-        <h2>Biblioteca de Recursos</h2>
+        <h2>Directorio</h2>
         <p className="library-note"><Info size={14} style={{display: 'inline', marginRight: 4}}/>{libraryData.meta.note}</p>
         
         <div className="library-tabs">
