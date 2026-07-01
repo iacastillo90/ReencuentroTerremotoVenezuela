@@ -160,10 +160,11 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
       });
     }
 
-    const payload = validationResult.data;
+    const payload: any = validationResult.data;
     if (!payload.isAnonymous) {
       payload.reportedBy = (req as any).user.userId;
     }
+    payload.reporterIp = (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown';
     const updatedAt = payload.date ? new Date(payload.date) : new Date();
 
     // 2. Check Deduplication / SyncState

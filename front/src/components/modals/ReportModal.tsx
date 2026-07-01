@@ -24,6 +24,30 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [clothingQuestion, setClothingQuestion] = useState('');
   
+  const [reporterLocation, setReporterLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [locationSuccess, setLocationSuccess] = useState(false);
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Tu navegador no soporta geolocalización.');
+      return;
+    }
+    setIsRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setReporterLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocationSuccess(true);
+        setIsRequestingLocation(false);
+      },
+      (err) => {
+        setError('No se pudo obtener la ubicación. Por favor permite el acceso en tu navegador.');
+        setIsRequestingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  };
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -115,7 +139,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         // Enrich text for the AI worker to understand context and intent
         text: `${reportAction === 'vi' ? '[REPORTE: HE VISTO A ESTA PERSONA]' : '[REPORTE: ESTOY BUSCANDO A ESTA PERSONA]'} ${isAnonymous ? '[ANÓNIMO]' : ''}\n${text.trim()}`,
         date: new Date().toISOString(),
-        isAnonymous
+        isAnonymous,
+        reporterLocation
       };
       
       if (photoUrl) payload.photoUrl = photoUrl;
@@ -244,6 +269,21 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                   placeholder="Ej: La Guaira, Caraballeda" 
                   disabled={isSubmitting}
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Ubicación GPS <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8em' }}>- Opcional pero ayuda a validar</span></label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={requestLocation}
+                    disabled={isRequestingLocation || locationSuccess || isSubmitting}
+                  >
+                    {isRequestingLocation ? <Loader2 size={16} className="spinner" /> : '📍 Adjuntar mi ubicación actual'}
+                  </Button>
+                  {locationSuccess && <span style={{ color: 'var(--clr-success)', fontSize: '0.9em' }}>¡Ubicación adjuntada! ✓</span>}
+                </div>
               </div>
 
               <div className="form-group">

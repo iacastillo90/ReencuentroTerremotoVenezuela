@@ -34,8 +34,6 @@ const authLimiter = rateLimit({
   message: { error: 'Demasiados intentos de autenticación. Intente nuevamente en 15 minutos.' },
 });
 
-router.use(authLimiter);
-
 // CSRF token endpoint
 router.get('/csrf-token', (req: Request, res: Response) => {
   const token = generateCsrfToken();
@@ -52,7 +50,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
   return res.json({ token });
 });
 
-router.post('/google', async (req: Request, res: Response) => {
+router.post('/google', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = googleAuthSchema.safeParse(req.body);
     if (!validation.success) {
@@ -146,7 +144,7 @@ function issueSession(res: Response, user: any): string {
 }
 
 // ── Registro con correo/contraseña ───────────────────────────────────────────
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
@@ -189,7 +187,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // ── Login con correo/contraseña ──────────────────────────────────────────────
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
