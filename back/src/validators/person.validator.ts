@@ -14,6 +14,11 @@ export const personPayloadSchema = z.object({
   confidence_label: sanitizedStringOptional,
   reportedBy: sanitizedStringOptional,
   isAnonymous: z.boolean().optional(),
+  reporterIp: z.string().optional(),
+  reporterLocation: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }).optional(),
   data: z.object({
     age: z.union([z.string(), z.number()]).optional(),
     cedula_hash: z.string().optional()

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { uploadMedia } from '../services/storage.service';
+import { getAIProvider } from '../services/ai/ai.factory';
 import { ALLOWED_MIME_TYPES, IMAGE_MAX_SIZE, VIDEO_MAX_SIZE, validateMagicBytes, sanitizeFilename } from '../utils/file-validate.util';
 import { auditLog } from '../middlewares/audit.middleware';
 import { requireUser } from '../middlewares/auth.middleware';
@@ -28,6 +29,21 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Formato no permitido. Solo imágenes y videos (MP4).'));
+    }
+  }
+});
+
+const uploadAudio = multer({ 
+  storage,
+  limits: {
+    fileSize: VIDEO_MAX_SIZE
+  },
+  fileFilter: (req, file, cb) => {
+    // Browsers often record audio as video/webm or audio/webm
+    if (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/webm')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato no permitido. Solo archivos de audio generados por el navegador.'));
     }
   }
 });
@@ -79,6 +95,50 @@ router.post('/', requireUser, mediaUploadLimiter, upload.single('file'), async (
   } catch (error: any) {
     console.error('[MediaRoute] Error subiendo archivo:', error);
     return res.status(500).json({ error: error.message || 'Error interno subiendo archivo' });
+  }
+});
+
+router.post('/analyze-image', requireUser, mediaUploadLimiter, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ninguna imagen.' });
+    }
+
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'El archivo debe ser una imagen para su análisis.' });
+    }
+
+    const aiProvider = getAIProvider();
+    if (!aiProvider.analyzeImageDraft) {
+      return res.status(501).json({ error: 'Análisis de imagen no soportado por el proveedor de IA actual.' });
+    }
+
+    const analysis = await aiProvider.analyzeImageDraft(req.file.buffer, req.file.mimetype);
+    
+    return res.status(200).json(analysis);
+  } catch (error: any) {
+    console.error('[MediaRoute] Error analizando imagen:', error);
+    return res.status(500).json({ error: error.message || 'Error interno analizando imagen con IA' });
+  }
+});
+
+router.post('/audio-transcribe', requireUser, mediaUploadLimiter, uploadAudio.single('audio'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ningún audio.' });
+    }
+
+    const aiProvider = getAIProvider();
+    if (!aiProvider.transcribeAudio) {
+      return res.status(501).json({ error: 'Transcripción de audio no soportada por el proveedor de IA actual.' });
+    }
+
+    const transcription = await aiProvider.transcribeAudio(req.file.buffer, req.file.mimetype);
+    
+    return res.status(200).json({ text: transcription });
+  } catch (error: any) {
+    console.error('[MediaRoute] Error transcribiendo audio:', error);
+    return res.status(500).json({ error: error.message || 'Error interno transcribiendo audio con IA' });
   }
 });
 

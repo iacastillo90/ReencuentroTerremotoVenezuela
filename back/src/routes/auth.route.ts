@@ -34,8 +34,6 @@ const authLimiter = rateLimit({
   message: { error: 'Demasiados intentos de autenticación. Intente nuevamente en 15 minutos.' },
 });
 
-router.use(authLimiter);
-
 // CSRF token endpoint
 router.get('/csrf-token', (req: Request, res: Response) => {
   const token = generateCsrfToken();
@@ -52,7 +50,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
   return res.json({ token });
 });
 
-router.post('/google', async (req: Request, res: Response) => {
+router.post('/google', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = googleAuthSchema.safeParse(req.body);
     if (!validation.success) {
@@ -78,24 +76,8 @@ router.post('/google', async (req: Request, res: Response) => {
       });
       payload = ticket.getPayload();
     } catch (e) {
-      // DEV_MODE bypass: skip Google verification
-      if (process.env.DEV_MODE === 'true') {
-        if (process.env.NODE_ENV === 'production') {
-          auditLog({
-            eventType: 'security_violation',
-            severity: 'critical',
-            actor: req.ip || 'unknown',
-            action: 'Attempted DEV_MODE bypass in production',
-            req,
-          });
-          return res.status(403).json({ error: 'DEV_MODE disabled in production' });
-        }
-        console.warn('[DEV_MODE] Skipping Google token verification');
-        const decoded = jwt.decode(token) as any;
-        payload = decoded;
-      } else {
-        throw e;
-      }
+      console.error('[AuthRoute] Google token verification failed:', e);
+      return res.status(401).json({ error: 'Invalid Google Token' });
     }
 
     if (!payload) return res.status(401).json({ error: 'Invalid Google Token' });
@@ -162,7 +144,7 @@ function issueSession(res: Response, user: any): string {
 }
 
 // ── Registro con correo/contraseña ───────────────────────────────────────────
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
@@ -205,7 +187,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // ── Login con correo/contraseña ──────────────────────────────────────────────
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   try {
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
@@ -296,7 +278,6 @@ router.post('/logout', requireUser, async (req: Request, res: Response) => {
     await UserModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
 
     res.clearCookie('token');
-    res.clearCookie('csrf-token');
 
     auditLog({
       eventType: 'auth_logout',

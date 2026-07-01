@@ -49,6 +49,8 @@ export interface UnifiedPerson extends Document {
     aiProcessed: boolean;
     auditStatus: 'clean' | 'pending_review' | 'merged' | 'dismissed';
     reportedBy?: Types.ObjectId | string;
+    reporterIp?: string;
+    reporterLocation?: { lat: number; lng: number };
   };
   embedding?: number[];
 }
@@ -93,7 +95,12 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     confidenceLabel: String,
     aiProcessed: { type: Boolean, default: false },
     auditStatus: { type: String, enum: ['clean', 'pending_review', 'merged', 'dismissed'], default: 'clean' },
-    reportedBy: { type: Schema.Types.ObjectId, ref: 'User' }
+    reportedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    reporterIp: String,
+    reporterLocation: {
+      lat: Number,
+      lng: Number
+    }
   },
   embedding: { type: [Number], select: false } // Vector embedding para IA
 });

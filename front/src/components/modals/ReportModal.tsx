@@ -24,6 +24,39 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [clothingQuestion, setClothingQuestion] = useState('');
   
+  const [reporterLocation, setReporterLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+  const [locationSuccess, setLocationSuccess] = useState(false);
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Tu navegador no soporta geolocalización.');
+      return;
+    }
+    setIsRequestingLocation(true);
+
+    // Timeout de seguridad en caso de que el OS (Linux/Windows) ignore la petición
+    const fallbackTimeout = setTimeout(() => {
+      setIsRequestingLocation(false);
+      setError('Tiempo de espera agotado. El sistema operativo no devolvió la ubicación GPS.');
+    }, 15000);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        clearTimeout(fallbackTimeout);
+        setReporterLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocationSuccess(true);
+        setIsRequestingLocation(false);
+      },
+      (err) => {
+        clearTimeout(fallbackTimeout);
+        setError('No se pudo obtener la ubicación (Asegúrate de tener el GPS activado en tu Sistema Operativo).');
+        setIsRequestingLocation(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+    );
+  };
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -116,7 +149,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
         // Enrich text for the AI worker to understand context and intent
         text: `${reportAction === 'vi' ? '[REPORTE: HE VISTO A ESTA PERSONA]' : '[REPORTE: ESTOY BUSCANDO A ESTA PERSONA]'} ${isAnonymous ? '[ANÓNIMO]' : ''}\n${text.trim()}`,
         date: new Date().toISOString(),
-        isAnonymous
+        isAnonymous,
+        reporterLocation
       };
       
       if (photoUrl) payload.photoUrl = photoUrl;
@@ -248,7 +282,22 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               </div>
 
               <div className="form-group">
-                <label>Dinos todo lo que sepas (Descripción libre) <span className="required-mark">*</span></label>
+                <label>Ubicación GPS <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8em' }}>- Opcional pero ayuda a validar</span></label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={requestLocation}
+                    disabled={isRequestingLocation || locationSuccess || isSubmitting}
+                  >
+                    {isRequestingLocation ? <Loader2 size={16} className="spinner" /> : '📍 Adjuntar mi ubicación actual'}
+                  </Button>
+                  {locationSuccess && <span style={{ color: 'var(--clr-success)', fontSize: '0.9em' }}>¡Ubicación adjuntada! ✓</span>}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Dinos todo lo que sepas (Descripción libre)</label>
                 
                 <AudioRecorder 
                   onTranscription={(transcribedText) => {

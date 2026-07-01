@@ -13,6 +13,8 @@ import { mediaRouter } from './routes/media.route';
 import { authRouter } from './routes/auth.route';
 import { partnerRouter } from './routes/partner.route';
 import { localizadoRouter } from './routes/localizado.route';
+import { contactRouter } from './routes/contact.route';
+import { cneRouter } from './routes/cne.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
 
@@ -89,6 +91,8 @@ app.use('/api/media', mediaRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/partners', partnerRouter);
 app.use('/api/localizados', localizadoRouter);
+app.use('/api/contacts', contactRouter);
+app.use('/api/cne', cneRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -20,19 +20,8 @@ export async function runFunvisisJob() {
     try {
       const response = await axios.get(SOURCE_URL, { timeout: 5000 });
       sismos = response.data;
-    } catch (e) {
-      console.log(`[FUNVISIS] Endpoint caído o inaccesible, usando caché/mock de contingencia.`);
-      sismos = [
-        {
-          id: 'funvisis-2026-001',
-          fecha: new Date().toISOString(),
-          magnitud: 4.5,
-          profundidad: 15.2,
-          latitud: 10.4806,
-          longitud: -66.9036,
-          epicentro: '12 km al norte de Caracas'
-        }
-      ];
+    } catch (e: any) {
+      throw new Error(`Endpoint caído o inaccesible: ${e.message}`);
     }
 
     let ingested = 0;

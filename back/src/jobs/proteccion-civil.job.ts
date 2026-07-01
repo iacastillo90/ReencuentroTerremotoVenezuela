@@ -8,27 +8,8 @@ export async function runProteccionCivilJob() {
   console.log(`[PROTECCIÓN CIVIL] Iniciando extracción de vías y refugios...`);
   
   try {
-    // Para el MVP usamos un mock que simula la API o un RSS de PC Nacional
-    let alerts: any[] = [
-      {
-        id: `pc-refugio-01`,
-        tipo: 'refugio',
-        titulo: 'Refugio Habilitado: Polideportivo José María Vargas',
-        descripcion: 'Capacidad para 500 personas. Se requiere agua potable y colchonetas.',
-        lat: 10.5986,
-        lng: -66.9538, // La Guaira
-        fecha: new Date().toISOString()
-      },
-      {
-        id: `pc-via-01`,
-        tipo: 'via_cerrada',
-        titulo: 'Cierre Preventivo: Autopista Caracas - La Guaira',
-        descripcion: 'Vía cerrada en ambos sentidos por riesgo de deslizamientos a la altura del Boquerón 2.',
-        lat: 10.5500,
-        lng: -66.9700,
-        fecha: new Date().toISOString()
-      }
-    ];
+    // TODO: Reemplazar con integración real a API o RSS de PC Nacional
+    let alerts: any[] = [];
 
     let ingested = 0;
     for (const alert of alerts) {
