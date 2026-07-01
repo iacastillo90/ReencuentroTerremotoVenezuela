@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { Button } from '../../components/ui/Button';
 import './Auth.css';
 
 interface LoginPageProps {
@@ -63,7 +64,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
             ¿Olvidaste tu contraseña?
           </button>
           {error && <div className="auth-error">{error}</div>}
-          <button type="submit" className="auth-submit" disabled={loading}>{loading ? 'Ingresando…' : 'Ingresar'}</button>
+          <div style={{ marginTop: '0.4rem' }}>
+            <Button fullWidth type="submit" disabled={loading} size="lg">
+              {loading ? 'Ingresando…' : 'Ingresar'}
+            </Button>
+          </div>
         </form>
 
         <div className="auth-divider"><span>o continúa con</span></div>

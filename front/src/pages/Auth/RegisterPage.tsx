@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { Button } from '../../components/ui/Button';
 import './Auth.css';
 
 interface RegisterPageProps {
@@ -76,7 +77,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
           <div className="auth-field"><Mail size={18} /><input type="email" placeholder="Correo electrónico" value={form.email} onChange={set('email')} autoComplete="email" /></div>
 
           <div className="auth-row">
-            <div className="auth-field auth-phone"><span style={{ fontSize: '.85rem' }}>🇻🇪 +58</span></div>
+            <div className="auth-field auth-phone"><span className="auth-country-code">🇻🇪 +58</span></div>
             <div className="auth-field"><input type="tel" placeholder="Teléfono" value={form.phone} onChange={set('phone')} /></div>
           </div>
 
@@ -108,7 +109,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
           </div>
 
           {error && <div className="auth-error">{error}</div>}
-          <button type="submit" className="auth-submit" disabled={loading}>{loading ? 'Creando…' : 'Crear cuenta'}</button>
+          <div style={{ marginTop: '0.4rem' }}>
+            <Button fullWidth type="submit" disabled={loading} size="lg">
+              {loading ? 'Creando…' : 'Crear cuenta'}
+            </Button>
+          </div>
         </form>
 
         <p className="auth-foot">¿Ya tienes cuenta? <button className="auth-link" onClick={onGoLogin}>Iniciar sesión</button></p>

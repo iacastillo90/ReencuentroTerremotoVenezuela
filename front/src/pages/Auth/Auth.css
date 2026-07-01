@@ -84,3 +84,4 @@
 
 .auth-terms { text-align: center; color: var(--clr-text-dim); font-size: .72rem; margin: 1rem 0 0; line-height: 1.4; }
 .auth-terms b { color: var(--clr-primary); }
+.auth-country-code { font-size: .85rem; }
