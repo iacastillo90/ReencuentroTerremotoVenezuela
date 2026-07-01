@@ -43,9 +43,16 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
             {timeAgo() && <>&nbsp;·&nbsp;{timeAgo()}</>}
           </div>
         </div>
-        <span className={`badge ${person.status}`}>
-          {person.status === 'missing' ? 'Buscado' : 'Encontrado'}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+          <span className={`badge ${person.status}`}>
+            {person.status === 'missing' ? 'Buscado' : 'Encontrado'}
+          </span>
+          {person.age !== undefined && (
+            <span style={{ fontSize: '0.65rem', color: 'var(--clr-text-muted)', fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+              Edad: {person.age} {person.age === 1 ? 'año' : 'años'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Sellos de confianza */}
@@ -76,9 +83,9 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
 
       {/* Footer */}
       <div className="feed-card-footer">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--clr-text-muted)' }}>
-          <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'} (contacto@pc.gov.ve)</div>
-          <div>📍 <strong>Ubicación aproximada:</strong> {person.lastSeen?.description || person.lastSeen?.state || 'Sector Norte, Caracas'}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--clr-text-muted)' }}>
+          <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'}</div>
+          <div>📍 <strong>Ubicación:</strong> {person.lastSeen?.description || person.lastSeen?.state || 'Ubicación no precisada'}</div>
         </div>
       </div>
     </article>
