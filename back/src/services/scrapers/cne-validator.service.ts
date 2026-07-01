@@ -12,34 +12,47 @@ export class CNEValidatorService {
    */
   static async validateIdentity(nationality: 'V' | 'E', cedula: string): Promise<{ valid: boolean, fullName?: string, error?: string }> {
     try {
-      // NOTA: Para el MVP, creamos un mock seguro porque las APIs públicas reales del CNE
-      // pueden estar caídas o bloqueadas (Anti-DDoS) durante emergencias.
-      // En producción, aquí iría el fetch a un proveedor como api.cne.gob.ve (si existe público)
-      // o a wrappers como 've-cedula' npm package.
-
-      // Mock delay para simular red
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (cedula.length < 6 || cedula.length > 9) {
+      if (!cedula || cedula.length < 6 || cedula.length > 9) {
         return { valid: false, error: 'Formato de cédula inválido' };
       }
 
-      // Mock: Simulamos que cualquier cédula que termine en 1 o 2 es válida (Juan Pérez)
-      // Cualquier otra es inválida. En un entorno real se extrae del CNE.
-      if (cedula.endsWith('1') || cedula.endsWith('2')) {
+      // Endpoint público tradicional del CNE para consulta de registro electoral
+      const url = `http://www.cne.gob.ve/web/registro_electoral/ce.php?nacionalidad=${nationality}&cedula=${cedula}`;
+      
+      // Hacemos la petición real. Configuramos un timeout razonable por si el CNE está caído.
+      const response = await axios.get(url, { 
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
+      const html = response.data;
+
+      // Si la cédula no está registrada, el CNE muestra este mensaje textualmente:
+      if (html.includes('no se encuentra inscrita') || html.includes('no se encuentra inscrito')) {
+        return { valid: false, error: 'Cédula no encontrada en el padrón electoral' };
+      }
+
+      // El CNE normalmente devuelve el nombre dentro de un <td> con <b> 
+      // Estructura usual: <td align="left"><b>APELLIDO NOMBRE</b></td>
+      const nameRegex = /<td align="left"><b>(.*?)<\/b><\/td>/i;
+      const match = html.match(nameRegex);
+
+      if (match && match[1]) {
+        // Encontramos el nombre en el HTML
         return {
           valid: true,
-          fullName: 'CIUDADANO VERIFICADO CNE' // O el nombre real
+          fullName: match[1].trim()
         };
       }
 
-      return { valid: false, error: 'Cédula no encontrada en el padrón electoral' };
+      // Si la página cargó pero la estructura cambió o es un resultado inesperado
+      return { valid: false, error: 'No se pudo extraer el nombre del registro electoral' };
 
     } catch (error: any) {
-      console.error('[CNEValidator] Error de red:', error.message);
-      // En caso de caída del gobierno, permitimos el paso asumiendo que el usuario es válido
-      // para no bloquear reportes vitales en la emergencia. (Fail-open)
-      return { valid: true, fullName: 'Servicio CNE Caído - Verificación Pendiente' };
+      console.error('[CNEValidator] Error de conexión con el CNE:', error.message);
+      return { valid: false, error: 'Servicio CNE inaccesible momentáneamente' };
     }
   }
 }
