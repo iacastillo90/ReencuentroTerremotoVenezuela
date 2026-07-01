@@ -85,7 +85,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <span className="sos-pill hide-mobile" title="Canal de emergencia activo">
             <span className="sos-dot" /> Canal SOS
           </span>
-          {user ? (
+          {user && (
             <div className="nav-user">
               <UserIcon size={18} />
               <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
@@ -93,10 +93,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <LogOut size={16} />
               </Button>
             </div>
-          ) : (
-            <Button variant="outline" size="sm" className="btn-icon-override hide-mobile" onClick={() => onViewChange('login')} title="Iniciar sesión">
-              <LogIn size={17} />
-            </Button>
           )}
           {user?.role === 'admin' && (
             <Button variant="outline" size="sm" className="btn-icon-override" onClick={onAdmin} title="Administración">
