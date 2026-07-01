@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { PlusCircle, Settings, Menu, Map, Users, BookOpen, X, User as UserIcon, LogOut, Home, Heart, Truck } from 'lucide-react';
+import {
+  PlusCircle, Settings, Map, BookOpen, X, User as UserIcon, LogOut,
+  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn
+} from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
+import { BrandMark } from '../components/BrandMark';
 import './AppLayout.css';
 
-type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
+type View =
+  | 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library'
+  | 'profile' | 'logistics' | 'login' | 'register' | 'manual' | 'directorio';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -22,90 +28,80 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onReport,
   onAdmin
 }) => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  const navItems: { view: View; icon: React.ReactNode; label: string; center?: boolean }[] = [
-    { view: 'feed',   icon: <Home size={22} />,     label: 'Inicio' },
-    { view: 'map',    icon: <Map size={22} />,      label: 'Mapa' },
-    { view: 'report', icon: <PlusCircle size={32} color="var(--clr-primary)" fill="rgba(59,130,246,0.2)" />, label: '', center: true },
-    { view: 'library',icon: <BookOpen size={22} />, label: 'Guías' },
-    { view: 'logistics', icon: <Truck size={22} />, label: 'Ayuda' },
+  // Navegación principal (5 ítems en móvil): Inicio · Buscar · Reportar · Mapa · Más
+  const primaryNav: { view: View; icon: React.ReactNode; label: string }[] = [
+    { view: 'home',   icon: <Home size={22} />,   label: 'Inicio' },
+    { view: 'search', icon: <Search size={22} />, label: 'Buscar' },
+    { view: 'map',    icon: <Map size={22} />,    label: 'Mapa' },
   ];
 
-  const handleBottomNav = (view: View) => {
-    if (view === 'report') { onReport(); return; }
-    onViewChange(view);
-  };
+  // Destinos secundarios agrupados en "Más"
+  const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
+    { view: 'directorio', icon: <Building2 size={20} />,   label: 'Directorio de apoyo', desc: 'Organizaciones verificadas' },
+    { view: 'manual',     icon: <ShieldCheck size={20} />, label: 'Manual y políticas',  desc: 'Actuación sísmica y seguridad' },
+    { view: 'library',    icon: <BookOpen size={20} />,    label: 'Guías y recursos',    desc: 'Biblioteca de ayuda' },
+    { view: 'logistics',  icon: <Truck size={20} />,       label: 'Logística',           desc: 'Refugios y vías' },
+    { view: 'profile',    icon: <UserIcon size={20} />,    label: 'Mi perfil',           desc: 'Tus reportes y mensajes' },
+  ];
+
+  const go = (view: View) => { setMoreOpen(false); onViewChange(view); };
 
   return (
     <div className="app-shell">
       {/* ─ Top Navbar ─ */}
       <nav className="navbar">
-        <div className="nav-brand">
-          {/* Hamburger visible on tablet only */}
-          <button
-            className="hamburger-btn"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <Menu size={20} />
-          </button>
+        <button className="nav-brand" onClick={() => onViewChange('home')} aria-label="Inicio">
+          <BrandMark size={34} />
+          <span className="nav-brand-text">
+            <strong>Reencuentros<span>Venezuela</span></strong>
+            <small>Juntos te encontramos</small>
+          </span>
+        </button>
 
-          <div className="nav-logo-icon" style={{ background: 'transparent', display: 'flex', alignItems: 'center' }}>
-            <Heart size={20} color="#f59e0b" fill="var(--clr-danger)" style={{ marginRight: '-8px', zIndex: 1 }} />
-            <Heart size={20} color="var(--clr-primary)" fill="var(--clr-primary)" />
-          </div>
-          <div className="nav-brand-text">
-            <h1>Reencuentros<span>Venezuela</span></h1>
-          </div>
-        </div>
-
-        {/* View toggle pills — desktop only */}
+        {/* Nav de escritorio */}
         <div className="nav-toggle-pills">
-          <button
-            className={`toggle-pill ${activeView === 'feed' ? 'active' : ''}`}
-            onClick={() => onViewChange('feed')}
-          >
-            <Users size={14} style={{ display: 'inline', marginRight: 6 }} />
-            Personas
+          <button className={`toggle-pill ${activeView === 'home' ? 'active' : ''}`} onClick={() => onViewChange('home')}>
+            <Home size={14} /> Inicio
           </button>
-          <button
-            className={`toggle-pill ${activeView === 'map' ? 'active' : ''}`}
-            onClick={() => onViewChange('map')}
-          >
-            <Map size={14} style={{ display: 'inline', marginRight: 6 }} />
-            Mapa
+          <button className={`toggle-pill ${activeView === 'search' || activeView === 'feed' ? 'active' : ''}`} onClick={() => onViewChange('search')}>
+            <Search size={14} /> Buscar
           </button>
-          <button
-            className={`toggle-pill ${activeView === 'library' ? 'active' : ''}`}
-            onClick={() => onViewChange('library')}
-          >
-            <BookOpen size={14} style={{ display: 'inline', marginRight: 6 }} />
-            Guías
+          <button className={`toggle-pill ${activeView === 'map' ? 'active' : ''}`} onClick={() => onViewChange('map')}>
+            <Map size={14} /> Mapa
           </button>
-          <button
-            className={`toggle-pill ${activeView === 'logistics' ? 'active' : ''}`}
-            onClick={() => onViewChange('logistics')}
-          >
-            <Truck size={14} style={{ display: 'inline', marginRight: 6 }} />
-            Ayuda
+          <button className={`toggle-pill ${activeView === 'directorio' ? 'active' : ''}`} onClick={() => onViewChange('directorio')}>
+            <Building2 size={14} /> Directorio
+          </button>
+          <button className={`toggle-pill ${activeView === 'manual' ? 'active' : ''}`} onClick={() => onViewChange('manual')}>
+            <ShieldCheck size={14} /> Manual
           </button>
         </div>
 
         <div className="nav-actions">
+          <span className="sos-pill hide-mobile" title="Canal de emergencia activo">
+            <span className="sos-dot" /> Canal SOS
+          </span>
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '0.5rem', color: 'var(--clr-text-muted)', fontSize: '0.9rem' }}>
+            <div className="nav-user">
               <UserIcon size={18} />
-              <span className="hide-mobile" style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name.split(' ')[0]}</span>
-              <button className="btn-icon" onClick={logout} title="Cerrar sesión" style={{ padding: '4px' }}>
+              <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
+              <button className="btn-icon" onClick={logout} title="Cerrar sesión">
                 <LogOut size={16} />
               </button>
             </div>
-          ) : null}
-          <button className="btn-icon" onClick={onAdmin} title="Administración">
-            <Settings size={17} />
-          </button>
+          ) : (
+            <button className="btn-icon hide-mobile" onClick={() => onViewChange('login')} title="Iniciar sesión">
+              <LogIn size={17} />
+            </button>
+          )}
+          {user?.role === 'admin' && (
+            <button className="btn-icon" onClick={onAdmin} title="Administración">
+              <Settings size={17} />
+            </button>
+          )}
           <button className="btn-report" onClick={onReport}>
             + Reportar
           </button>
@@ -114,42 +110,71 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* ─ Body ─ */}
       <div className="app-body">
-        {/* Sidebar — desktop */}
         {sidebar && <aside className="sidebar">{sidebar}</aside>}
-
-        {/* Main content */}
         <main className="content-area">
           {children}
         </main>
       </div>
 
-      {/* ─ Bottom Nav — mobile ─ */}
+      {/* ─ Bottom Nav — móvil (5 ítems) ─ */}
       <nav className="bottom-nav">
-        {navItems.map(item => (
+        {primaryNav.slice(0, 2).map(item => (
           <button
             key={item.view}
-            className={`bottom-nav-item ${activeView === item.view ? 'active' : ''} ${item.center ? 'nav-item-center' : ''}`}
-            onClick={() => handleBottomNav(item.view)}
+            className={`bottom-nav-item ${activeView === item.view ? 'active' : ''}`}
+            onClick={() => go(item.view)}
           >
-            {item.icon}
-            {item.label && <span>{item.label}</span>}
+            {item.icon}<span>{item.label}</span>
           </button>
         ))}
-        <button className={`bottom-nav-item ${activeView === 'profile' ? 'active' : ''}`} onClick={() => handleBottomNav('profile' as any)}>
-          <UserIcon size={22} />
-          <span>Perfil</span>
+        <button className="bottom-nav-item nav-item-center" onClick={onReport} aria-label="Reportar">
+          <PlusCircle size={30} />
+          <span>Reportar</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${activeView === 'map' ? 'active' : ''}`}
+          onClick={() => go('map')}
+        >
+          <Map size={22} /><span>Mapa</span>
+        </button>
+        <button
+          className={`bottom-nav-item ${moreOpen ? 'active' : ''}`}
+          onClick={() => setMoreOpen(true)}
+        >
+          <MoreHorizontal size={22} /><span>Más</span>
         </button>
       </nav>
 
-      {/* ─ Drawer — tablet ─ */}
-      {drawerOpen && (
-        <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
-          <div className="drawer" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <strong style={{ fontSize: '1rem', color: 'var(--clr-text)' }}>Menú</strong>
-              <button className="btn-icon" onClick={() => setDrawerOpen(false)}><X size={18} /></button>
+      {/* ─ Hoja "Más" ─ */}
+      {moreOpen && (
+        <div className="drawer-overlay" onClick={() => setMoreOpen(false)}>
+          <div className="more-sheet" onClick={e => e.stopPropagation()}>
+            <div className="more-sheet-head">
+              <strong>Más opciones</strong>
+              <button className="btn-icon" onClick={() => setMoreOpen(false)}><X size={18} /></button>
             </div>
-            {sidebar}
+            <div className="more-grid">
+              {moreNav.map(item => (
+                <button key={item.view} className="more-item" onClick={() => go(item.view)}>
+                  <span className="more-item-ico">{item.icon}</span>
+                  <span className="more-item-text">
+                    <strong>{item.label}</strong>
+                    <small>{item.desc}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="more-sheet-foot">
+              {user ? (
+                <button className="more-auth-btn" onClick={() => { setMoreOpen(false); logout(); }}>
+                  <LogOut size={18} /> Cerrar sesión
+                </button>
+              ) : (
+                <button className="more-auth-btn primary" onClick={() => go('login')}>
+                  <LogIn size={18} /> Iniciar sesión
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

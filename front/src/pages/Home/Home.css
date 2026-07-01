@@ -25,7 +25,7 @@
 .home-btn.blue:hover  { background: var(--blue-600); }
 .home-btn.red   { background: var(--clr-danger); color: #fff; box-shadow: 0 6px 16px rgba(239,68,68,.25); }
 .home-btn.red:hover   { background: #DC2626; }
-.home-btn.white { background: var(--white); color: var(--clr-text); border-color: var(--clr-border); box-shadow: var(--shadow-card); }
+.home-btn.white { background: var(--clr-card); color: var(--clr-text); border-color: var(--clr-border); box-shadow: var(--shadow-card); }
 .home-btn.white:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
 
 .home-section { margin: 1.75rem 0; }

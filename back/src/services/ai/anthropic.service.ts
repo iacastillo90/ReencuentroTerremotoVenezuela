@@ -10,8 +10,14 @@ export class AnthropicProvider implements IAIProvider {
 
   async processRecord(rawData: string): Promise<AIProcessResult> {
     try {
+      // El identificador del modelo se define por entorno (no se versiona),
+      // así el repositorio público no fija un modelo concreto.
+      const model = process.env.ANTHROPIC_MODEL;
+      if (!model) {
+        throw new Error('Define ANTHROPIC_MODEL en el .env para usar el proveedor de IA de Anthropic.');
+      }
       const response = await this.client.messages.create({
-        model: 'Anthropic-3-sonnet-20240229',
+        model,
         max_tokens: 300,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: rawData }]

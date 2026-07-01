@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
-   REENCUENTROVE — Design System Global
-   Mobile-first · Dark · Instagram-like
+   REENCUENTROS VENEZUELA — Design System Global
+   "Juntos te encontramos" · Mobile-first · Tema oscuro humanitario
+   Marca oficial (brand book 30/06) · Inter · azul/rojo/amarillo
    ════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* ─── Tokens ─────────────────────────────────────────────── */
 :root {
@@ -33,28 +34,54 @@
   --gray-900: #191919;
   --gray-950: #131313;
 
-  /* App Mapping — TEMA CLARO (mockups 29/06/2026) */
+  /* App Mapping — TEMA OSCURO (brand book oficial 30/06/2026) */
   --white:          #FFFFFF;
-  --clr-bg:         #F4F6F9;
-  --clr-surface:    #FFFFFF;
-  --clr-card:       #FFFFFF;
-  --clr-border:     var(--gray-100);
-  --clr-hover:      var(--gray-50);
+  --ink:            #07101C;
+  --ink-2:          #0B1423;
+  --ink-3:          #122033;
+  --clr-bg:         #07101C;
+  --clr-surface:    #0E1A2B;
+  --clr-card:       #111B2C;
+  --clr-card-grad:  linear-gradient(180deg, #121E30, #0B1423);
+  --clr-border:     #243448;
+  --clr-hover:      #18253A;
 
-  --clr-text:       var(--gray-950);
-  --clr-text-muted: var(--gray-500);
-  --clr-text-dim:   var(--gray-400);
+  --clr-text:       #FFFFFF;
+  --clr-text-muted: #8390A3;
+  --clr-text-dim:   #5E6C80;
 
-  --clr-primary:    var(--blue-500);
-  --clr-primary-glow: rgba(29, 101, 226, 0.18);
+  /* Marca — azul confianza, rojo urgencia, amarillo esperanza */
+  --brand-blue:     #0D47A1;
+  --brand-blue-soft:#2E6BEC;
+  --brand-red:      #E52520;
+  --brand-yellow:   #FFC107;
+  --clr-primary:    #2E6BEC;
+  --clr-primary-glow: rgba(46, 107, 236, 0.28);
 
-  /* Figma - Secondary Palettes (estado, fondos claros) */
-  --clr-danger:     #EF4444;
-  --clr-danger-bg:  #FEE2E2;
-  --clr-success:    #10B981;
-  --clr-success-bg: #D1FAE5;
-  --clr-amber:      #F59E0B;
-  --clr-amber-bg:   #FEF3C7;
+  /* Secondary Palettes (estados, sobre fondo oscuro) */
+  --clr-danger:     #E52520;
+  --clr-danger-bg:  rgba(229, 37, 32, 0.12);
+  --clr-success:    #19A66B;
+  --clr-success-bg: rgba(25, 166, 107, 0.14);
+  --clr-amber:      #FFC107;
+  --clr-amber-bg:   rgba(255, 193, 7, 0.12);
+
+  /* Aliases legacy (usados por modales/admin: --card-bg, --text-primary, …) */
+  --bg-color:        var(--clr-bg);
+  --card-bg:         var(--clr-card);
+  --border-color:    var(--clr-border);
+  --text-primary:    var(--clr-text);
+  --text-secondary:  var(--clr-text-muted);
+  --primary-color:   var(--clr-primary);
+
+  /* Aliases cortos estilo mockup (usados en estilos inline) */
+  --blue:   var(--brand-blue-soft);
+  --line:   var(--clr-border);
+  --red:    var(--brand-red);
+  --yellow: var(--brand-yellow);
+  --green:  var(--clr-success);
+  --purple: #6048d8;
+  --muted:  var(--clr-text-muted);
 
   /* Spacing */
   --nav-h: 60px;
@@ -68,15 +95,15 @@
   --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Shadows (suaves para tema claro) */
-  --shadow-card: 0 1px 3px rgba(16,24,40,0.08), 0 1px 2px rgba(16,24,40,0.06);
-  --shadow-modal: 0 20px 40px rgba(16,24,40,0.16);
+  /* Shadows (profundas para tema oscuro) */
+  --shadow-card: 0 10px 30px rgba(3, 8, 16, 0.45);
+  --shadow-modal: 0 24px 70px rgba(3, 8, 16, 0.6);
 
   /* Typography */
-  font-family: 'Work Sans', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.4;
-  color-scheme: light;
+  color-scheme: dark;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -100,6 +127,10 @@ body {
 img { max-width: 100%; display: block; }
 button { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
+
+/* Controles nativos en tema oscuro (evita el desplegable blanco de <select>) */
+input, select, textarea, button { color-scheme: dark; }
+select option { background: var(--clr-surface); color: var(--clr-text); }
 
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -129,58 +160,108 @@ a { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.badge.missing { background: var(--clr-danger-bg); color: #B91C1C; }
-.badge.found   { background: var(--clr-success-bg); color: #047857; }
+.badge.missing { background: var(--clr-danger-bg); color: #FF6D68; border: 1px solid rgba(229,37,32,.4); }
+.badge.found   { background: var(--clr-success-bg); color: #4ADCA0; border: 1px solid rgba(25,166,107,.4); }
+
+/* ─── Sellos de confianza (mockups B/C) ──────────────────── */
+.badge.verified {
+  background: rgba(13,71,161,.22); color: #8FB4F2;
+  border: 1px solid rgba(46,107,236,.45);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.badge.protected {
+  background: var(--clr-amber-bg); color: #FFD874;
+  border: 1px solid rgba(255,193,7,.4);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* ─── Media protegida: difumina identidad de menores/protegidos ── */
+.protected-media { position: relative; overflow: hidden; }
+.protected-media > img,
+.protected-media > .protected-blur-target { filter: blur(14px) saturate(.7); transform: scale(1.08); }
+.protected-media::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(7,16,28,.15), rgba(7,16,28,.55));
+}
+.protected-lock {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; color: var(--clr-amber); text-align: center;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+}
+
+/* ─── Indicador "Canal SOS" (dot con pulso) ──────────────── */
+.sos-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-full);
+  background: rgba(124, 0, 10, .35); color: #fff;
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+}
+.sos-pill .sos-dot { width: 8px; height: 8px; border-radius: 50%; background: #16c77a; }
+@media (prefers-reduced-motion: no-preference) {
+  .sos-pill .sos-dot { animation: sosPulse 1.6s ease-in-out infinite; }
+}
+@keyframes sosPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22,199,122,.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(22,199,122,0); }
+}
+
+/* ─── Tarjeta de superficie con degradado de marca ───────── */
+.surface-card {
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  background: var(--clr-card-grad);
+}
 
 /* ─── Typography (Figma) ─────────────────────────────────── */
 h1, .text-h1 {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: clamp(32px, 5vw, 64px);
   letter-spacing: -0.02em;
 }
 
 h2, .text-h2 {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: clamp(24px, 4vw, 40px);
   letter-spacing: -0.02em;
 }
 
 h3, .text-h3 {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: clamp(20px, 3vw, 24px);
   letter-spacing: -0.02em;
 }
 
 .text-subtitle {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 24px;
 }
 
 body, p, .text-body {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.4;
 }
 
 strong, b, .text-body-bold {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 16px;
 }
 
 small, .text-small {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 500;
   font-size: 14px;
 }
 
 .text-pre-title {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 10px;
   letter-spacing: 0.03em;
@@ -188,14 +269,14 @@ small, .text-small {
 }
 
 button, .text-button {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.03em;
 }
 
 a.text-link {
-  font-family: 'Work Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 16px;
   text-decoration: underline;

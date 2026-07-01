@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search, HeartHandshake, Heart } from 'lucide-react';
+import { Search, HeartHandshake } from 'lucide-react';
+import { BrandMark } from '../../components/BrandMark';
 import './PublicLanding.css';
 
 interface PublicLandingProps {
@@ -13,7 +14,7 @@ export const PublicLanding: React.FC<PublicLandingProps> = ({ onBuscar, onAyuda 
     <div className="pl__bg" />
     <div className="pl__inner">
       <div className="pl__brand">
-        <span className="pl__heart"><Heart size={26} fill="currentColor" /></span>
+        <span className="pl__heart"><BrandMark size={38} /></span>
         <div className="pl__brand-text">
           <span className="pl__brand-name">Reencuentros <em>Venezuela</em></span>
           <small>JUNTOS TE ENCONTRAMOS</small>

@@ -26,8 +26,10 @@ Arquitectura de **microservicios sobre la nube (PaaS/Serverless)**, diseñada pa
 
 ### 1. Frontend (`front/`)
 - **Stack:** React 19 · Vite · TypeScript · PWA · Leaflet (mapas) · Axios · Lucide.
-- **Diseño:** *mobile-first* en **tema claro** (paleta de Figma, tipografía Work Sans), pensado para conectividad intermitente (SPA + payloads JSON pequeños).
-- **Vistas:** landing público, Inicio, Buscar (con categorías de edad y protección de menores), Mapa, Biblioteca, Administración, Perfil, Login y Registro.
+- **Diseño:** *mobile-first* en **tema oscuro humanitario** siguiendo la marca oficial *Reencuentros Venezuela — «Juntos te encontramos»* (tipografía **Inter**; paleta azul `#0D47A1` / rojo `#E52520` / amarillo `#FFC107`). Pensado para conectividad intermitente (SPA + payloads JSON pequeños).
+- **Navegación:** cabecera con indicador *Canal SOS*, barra inferior de 5 accesos (Inicio · Buscar · Reportar · Mapa · Más) y barra lateral en escritorio.
+- **Vistas:** landing público, Inicio, Buscar (con categorías de edad y protección de menores), Mapa, **Directorio de organizaciones verificadas**, **Manual y políticas** (actuación sísmica + seguridad humanitaria), Biblioteca, Logística, Administración, Perfil, Login y Registro.
+- **Confianza y privacidad en la UI:** tarjetas con sello *verificado* e **identidad protegida con desenfoque** para menores/casos protegidos.
 - **Autenticación:** Google OAuth **y** correo/contraseña; control de acceso por roles (`user` / `verifier` / `admin`).
 
 ### 2. Backend (`back/`)
@@ -92,7 +94,7 @@ Configúralas en `back/.env` (basado en `back/.env.example`). **Usa tus propios 
 | `MONGO_URI` | Conexión a MongoDB. |
 | `REDIS_URL` | Conexión a Redis (colas/caché). |
 | `MINIO_ENDPOINT` · `MINIO_PORT` · `MINIO_USE_SSL` · `MINIO_ACCESS_KEY` · `MINIO_SECRET_KEY` · `MINIO_BUCKET` · `PUBLIC_STORAGE_URL` | Almacenamiento S3-compatible. |
-| `AI_PROVIDER` (+ clave del proveedor: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`) | Motor de IA. |
+| `AI_PROVIDER` (+ clave del proveedor: `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY`; para Anthropic define además `ANTHROPIC_MODEL`) | Motor de IA (el modelo concreto se define por entorno, no se versiona). |
 | `JWT_SECRET` | Secreto para firmar tokens. **Obligatorio en producción** (el servidor aborta si falta). Genera uno con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. |
 | `ADMIN_API_KEY` · `PARTNER_API_KEY` | Claves de endpoints protegidos. |
 | `FRONTEND_URL` | Origen permitido por CORS en producción. |

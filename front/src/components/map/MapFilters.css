@@ -33,7 +33,7 @@
   background: rgba(17, 17, 24, 0.9);
   backdrop-filter: blur(8px);
   color: var(--clr-text-muted);
-  font-family: var(--font-family, 'Work Sans'), sans-serif;
+  font-family: var(--font-family, 'Inter'), sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;

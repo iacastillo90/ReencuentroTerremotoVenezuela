@@ -40,9 +40,13 @@ router.use(authLimiter);
 // CSRF token endpoint
 router.get('/csrf-token', (req: Request, res: Response) => {
   const token = generateCsrfToken();
+  // Patrón double-submit: el cliente DEBE poder leer esta cookie por JS
+  // (document.cookie) para reenviarla como header `x-csrf-token`. Por eso NO
+  // es httpOnly (no es un secreto de sesión; el JWT sí sigue httpOnly). En
+  // desarrollo (http://localhost) `secure` debe ser false o el navegador la descarta.
   res.cookie('csrf-token', token, {
-    httpOnly: true,
-    secure: true,
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 24 * 60 * 60 * 1000, // 24h
   });

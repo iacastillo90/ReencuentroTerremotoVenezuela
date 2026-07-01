@@ -175,6 +175,14 @@
   margin-top: 2px;
 }
 
+/* Sellos de confianza (verificado / protegido) */
+.feed-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 1rem 0.5rem;
+}
+
 /* Card photo */
 .feed-card-photo {
   width: 100%;

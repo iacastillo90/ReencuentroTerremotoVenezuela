@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, BadgeCheck, ShieldAlert } from 'lucide-react';
 import type { Person } from '../../../types';
 import '../Feed.css';
 
@@ -11,6 +11,13 @@ interface FeedCardProps {
 export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
   const urgency = person.metadata?.urgencyScore ?? 0;
   const urgencyClass = urgency >= 75 ? 'high' : urgency >= 40 ? 'medium' : 'low';
+
+  // Identidad protegida: menores (LOPNNA) o casos marcados como protegidos por el backend.
+  const isProtected =
+    (person as any).protected === true ||
+    person.name === 'Caso protegido' ||
+    (typeof person.age === 'number' && person.age < 18);
+  const verifiedBy = person.data?.verificado_por;
 
   const timeAgo = () => {
     if (!person.metadata?.createdAt) return null;
@@ -43,14 +50,28 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
         </span>
       </div>
 
+      {/* Sellos de confianza */}
+      {(verifiedBy || isProtected) && (
+        <div className="feed-card-badges">
+          {verifiedBy && <span className="badge verified"><BadgeCheck size={13} /> {verifiedBy}</span>}
+          {isProtected && <span className="badge protected"><ShieldAlert size={13} /> Protegido</span>}
+        </div>
+      )}
+
       {/* Photo */}
-      <div className="feed-card-photo">
+      <div className={`feed-card-photo${isProtected ? ' protected-media' : ''}`}>
         {person.photoUrl ? (
-          <img src={person.photoUrl} alt={person.name} loading="lazy" />
+          <img src={person.photoUrl} alt={isProtected ? 'Identidad protegida' : person.name} loading="lazy" />
         ) : (
-          <div className="feed-card-photo-placeholder">
+          <div className="feed-card-photo-placeholder protected-blur-target">
             <Users size={36} />
             <span>Sin fotografía</span>
+          </div>
+        )}
+        {isProtected && (
+          <div className="protected-lock">
+            <ShieldAlert size={26} />
+            <span>Identidad protegida (LOPNNA)</span>
           </div>
         )}
       </div>
