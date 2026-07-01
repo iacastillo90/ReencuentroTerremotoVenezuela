@@ -1,37 +1,17 @@
 import { ShieldCheck, BookOpen, AlertTriangle, Activity, LifeBuoy } from 'lucide-react';
 import './Manual.css';
 
-const PROTOCOL_SECTIONS = [
-  {
-    title: 'ANTES DEL SISMO (PREPARACIÓN)',
-    tone: 'blue' as const,
-    icon: <BookOpen size={18} />,
-    items: [
-      { strong: 'Prepara un bolso de emergencia:', text: 'Agua embotellada, linterna, baterías, radio portátil, silbato, botiquín de primeros auxilios y copia de documentos.' },
-      { strong: 'Identifica zonas seguras:', text: 'Reconoce las columnas de concreto armado de tu vivienda, plazas abiertas alejadas del tendido eléctrico o canchas deportivas cercanas.' },
-      { strong: 'Asegura objetos pesados:', text: 'Sujeta firmemente estantes, televisores o calentadores que puedan colapsar.' },
-    ],
-  },
-  {
-    title: 'DURANTE EL SISMO (ACCIÓN)',
-    tone: 'red' as const,
-    icon: <AlertTriangle size={18} />,
-    items: [
-      { strong: 'Agáchate, cúbrete y sujétate:', text: 'Busca refugio debajo de una mesa resistente o colócate en posición fetal junto a una columna estructural.' },
-      { strong: 'Aléjate de ventanas:', text: 'Evita vidrios, ventanas, paredes exteriores y cualquier estructura que pueda desprenderse.' },
-      { strong: 'No uses ascensores:', text: 'La tecnología de ascensores puede fallar por falta de fluido eléctrico. Usa las escaleras solo una vez cese la sacudida.' },
-    ],
-  },
-  {
-    title: 'DESPUÉS DEL SISMO (SUPERVIVENCIA)',
-    tone: 'green' as const,
-    icon: <LifeBuoy size={18} />,
-    items: [
-      { strong: 'Evacua de forma ordenada:', text: 'Dirígete a espacios abiertos predefinidos. Cierra el suministro de gas y electricidad si es seguro hacerlo.' },
-      { strong: 'Sintoniza radio de emergencia:', text: 'En caso de colapso de internet móvil, sintoniza la banda de Radioaficionados de Venezuela (146.520 MHz VHF) para reportes oficiales.' },
-      { strong: 'Usa esta plataforma responsablemente:', text: 'Si encuentras a una persona desorientada, inicia sesión, graba un video descriptivo y súbelo para alertar a las redes de rescate.' },
-    ],
-  },
+const GUIDELINES = [
+  { strong: '1. La seguridad es primero:', text: 'Nunca pongas en riesgo tu vida ni la de otras personas para obtener una imagen.' },
+  { strong: '2. Prioriza la dignidad:', text: 'Graba con respeto, evitando escenas que humillen, expongan o revictimicen a las personas.' },
+  { strong: '3. Obtén consentimiento cuando sea posible:', text: 'Explica el propósito del registro y pide autorización antes de tomar imágenes o videos.' },
+  { strong: '4. En niños, extrema la protección:', text: 'Si un niño está acompañado, solicita autorización al adulto responsable. Evita primeros planos innecesarios y situaciones que comprometan su privacidad.' },
+  { strong: '5. Registra información útil:', text: 'Incluye la ubicación aproximada, fecha, hora y cualquier dato relevante que pueda facilitar la identificación o el reencuentro.' },
+  { strong: '6. Captura imágenes claras:', text: 'Graba con buena iluminación, mantén la cámara estable y procura mostrar el rostro o características distintivas sin exagerar el acercamiento.' },
+  { strong: '7. Haz videos cortos:', text: 'Entre 10 y 30 segundos suele ser suficiente para registrar información útil.' },
+  { strong: '8. Identifica características importantes:', text: 'Menciona o registra ropa, accesorios, lesiones visibles, tatuajes, cicatrices o cualquier rasgo distintivo. En mascotas, incluye collar, placa, color, tamaño y características particulares.' },
+  { strong: '9. No difundas información sensible:', text: 'Evita publicar datos personales, documentos de identidad o ubicaciones exactas que puedan poner en riesgo a las personas.' },
+  { strong: '10. Verifica antes de compartir:', text: 'Confirma que el contenido sea reciente, auténtico y corresponda al lugar indicado. La información incorrecta puede dificultar los reencuentros y afectar las labores de respuesta.' }
 ];
 
 const POLICIES = [
@@ -63,23 +43,23 @@ export function ManualPage() {
         <div>
           <p className="eyebrow">Seguridad y actuación</p>
           <h2>Manual y políticas</h2>
-          <p className="manual-hero-sub">Protocolos oficiales de actuación y normativas de seguridad ciudadana en situaciones de crisis.</p>
+          <p className="manual-hero-sub">Buenas prácticas de reporte ético y políticas de seguridad ciudadana.</p>
         </div>
       </header>
 
       <section className="surface-card manual-block">
-        <h3 className="manual-block-title"><Activity size={18} /> Manual de actuación ciudadana (FUNVISIS / Protección Civil)</h3>
+        <h3 className="manual-block-title"><Activity size={18} /> Guía de buenas prácticas para reportes</h3>
         <div className="manual-protocols">
-          {PROTOCOL_SECTIONS.map(section => (
-            <div key={section.title} className={`manual-protocol tone-${section.tone}`}>
-              <h4>{section.icon} {section.title}</h4>
-              <ul>
-                {section.items.map(item => (
-                  <li key={item.strong}><strong>{item.strong}</strong> {item.text}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="manual-protocol tone-blue">
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {GUIDELINES.map(item => (
+                <li key={item.strong} style={{ lineHeight: '1.4' }}>
+                  <strong style={{ display: 'block', marginBottom: '0.2rem' }}>{item.strong}</strong> 
+                  <span style={{ color: 'var(--clr-text-muted)' }}>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
