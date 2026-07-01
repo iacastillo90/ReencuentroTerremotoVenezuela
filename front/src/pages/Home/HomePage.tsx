@@ -53,16 +53,16 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, o
 
         <div className="home-stats" aria-label="Resumen de registros">
           <div>
-            <strong>{counts.missing}</strong>
-            <span>En búsqueda</span>
-          </div>
-          <div>
-            <strong>{counts.found}</strong>
-            <span>Localizados</span>
-          </div>
-          <div>
             <strong>{counts.total}</strong>
-            <span>Registros</span>
+            <span>Casos reportados</span>
+          </div>
+          <div>
+            <strong>0</strong>
+            <span>Medios</span>
+          </div>
+          <div>
+            <strong>4</strong>
+            <span>Organizaciones</span>
           </div>
         </div>
       </section>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock, Map } from 'lucide-react';
+import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
 import reunionHero from '../../assets/home-reunion-venezuela.png';
 import './PublicLanding.css';
@@ -60,9 +60,9 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
 
         {counts && counts.total > 0 && (
           <div className="hg__stats">
-            <div><strong>{counts.missing}</strong><span>En búsqueda</span></div>
-            <div><strong>{counts.found}</strong><span>Localizados</span></div>
-            <div><strong>{counts.total}</strong><span>Registros</span></div>
+            <div><strong>{counts.total}</strong><span>Casos reportados</span></div>
+            <div><strong>0</strong><span>Medios</span></div>
+            <div><strong>4</strong><span>Organizaciones</span></div>
           </div>
         )}
         </div>
@@ -93,12 +93,6 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
           title="Manual" cta="Leer guía"
           desc="Qué hacer antes, durante y después."
           onClick={onManual}
-        />
-        <OptionCard
-          icon={<Map size={22} />} tone="blue" locked
-          title="Mapa de calor" cta="Iniciar sesión"
-          desc="Vista geográfica de reportes y refugios."
-          onClick={onMapa}
         />
       </div>
     </div>
