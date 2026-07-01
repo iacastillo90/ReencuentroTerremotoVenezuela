@@ -22,6 +22,33 @@ const ESTADOS_VE = [
   'Táchira', 'Trujillo', 'Yaracuy', 'Zulia',
 ];
 
+const MOCK_RESULTS: Record<AgeCat, Person[]> = {
+  adulto: [
+    { idHash: 'm-1', type: 'person', name: 'Juan Pérez', status: 'missing', age: 35, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Miranda', municipality: 'Chacao', description: 'Visto cerca de la plaza' }, metadata: { urgencyScore: 3, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } },
+    { idHash: 'm-2', type: 'person', name: 'María Gonzalez', status: 'missing', age: 42, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Distrito Capital', municipality: 'Libertador', description: 'Vestía chaqueta azul' }, metadata: { urgencyScore: 4, createdAt: new Date().toISOString() }, data: { origen: 'Rescatistas' } },
+    { idHash: 'm-3', type: 'person', name: 'Carlos Mendoza', status: 'found', age: 28, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Aragua', municipality: 'Girardot', description: 'En refugio temporal' }, metadata: { urgencyScore: 1, createdAt: new Date().toISOString() }, data: { origen: 'Hospital' } },
+    { idHash: 'm-4', type: 'person', name: 'Ana Silva', status: 'missing', age: 50, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Carabobo', municipality: 'Valencia', description: 'Cerca del mercado' }, metadata: { urgencyScore: 2, createdAt: new Date().toISOString() }, data: { origen: 'Vecinos' } }
+  ] as Person[],
+  adulto_mayor: [
+    { idHash: 'am-1', type: 'person', name: 'Pedro Suárez', status: 'missing', age: 72, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Lara', municipality: 'Iribarren', description: 'Desorientado cerca del parque' }, metadata: { urgencyScore: 5, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } },
+    { idHash: 'am-2', type: 'person', name: 'Carmen Rojas', status: 'found', age: 68, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Zulia', municipality: 'Maracaibo', description: 'En buen estado de salud' }, metadata: { urgencyScore: 1, createdAt: new Date().toISOString() }, data: { origen: 'Cruz Roja' } },
+    { idHash: 'am-3', type: 'person', name: 'José Martínez', status: 'missing', age: 80, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Mérida', municipality: 'Libertador', description: 'Con bastón' }, metadata: { urgencyScore: 5, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } },
+    { idHash: 'am-4', type: 'person', name: 'Teresa Blanco', status: 'missing', age: 75, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Táchira', municipality: 'San Cristóbal', description: 'Llevaba un suéter gris' }, metadata: { urgencyScore: 4, createdAt: new Date().toISOString() }, data: { origen: 'Protección Civil' } }
+  ] as Person[],
+  mascota: [
+    { idHash: 'p-1', type: 'animal', name: 'Luna', status: 'missing', description: 'Poodle blanco, collar rojo', lastSeen: { date: new Date().toISOString(), state: 'Miranda', municipality: 'Sucre', description: 'Corrió hacia la avenida' }, metadata: { urgencyScore: 2, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } },
+    { idHash: 'p-2', type: 'animal', name: 'Max', status: 'found', description: 'Golden Retriever', lastSeen: { date: new Date().toISOString(), state: 'Distrito Capital', municipality: 'Chacao', description: 'Resguardado por vecinos' }, metadata: { urgencyScore: 1, createdAt: new Date().toISOString() }, data: { origen: 'Bienestar Animal' } },
+    { idHash: 'p-3', type: 'animal', name: 'Milo', status: 'missing', description: 'Gato siamés', lastSeen: { date: new Date().toISOString(), state: 'Aragua', municipality: 'Mario Briceño', description: 'Asustado en el techo' }, metadata: { urgencyScore: 3, createdAt: new Date().toISOString() }, data: { origen: 'Dueño' } },
+    { idHash: 'p-4', type: 'animal', name: 'Bella', status: 'missing', description: 'Mestiza pequeña, mancha en el ojo', lastSeen: { date: new Date().toISOString(), state: 'Carabobo', municipality: 'San Diego', description: 'Sin collar' }, metadata: { urgencyScore: 2, createdAt: new Date().toISOString() }, data: { origen: 'Rescatistas' } }
+  ] as Person[],
+  nino: [
+    { idHash: 'n-1', type: 'person', name: 'Caso Protegido', status: 'missing', age: 10, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Distrito Capital', municipality: 'Libertador', description: 'Información reservada (LOPNNA)' }, metadata: { urgencyScore: 5, createdAt: new Date().toISOString() }, data: { origen: 'Protección Civil' } },
+    { idHash: 'n-2', type: 'person', name: 'Caso Protegido', status: 'found', age: 6, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Miranda', municipality: 'Baruta', description: 'Bajo resguardo de autoridades' }, metadata: { urgencyScore: 1, createdAt: new Date().toISOString() }, data: { origen: 'Cruz Roja' } },
+    { idHash: 'n-3', type: 'person', name: 'Caso Protegido', status: 'missing', age: 15, gender: 'F', lastSeen: { date: new Date().toISOString(), state: 'Vargas', municipality: 'La Guaira', description: 'Información reservada (LOPNNA)' }, metadata: { urgencyScore: 4, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } },
+    { idHash: 'n-4', type: 'person', name: 'Caso Protegido', status: 'missing', age: 12, gender: 'M', lastSeen: { date: new Date().toISOString(), state: 'Aragua', municipality: 'Girardot', description: 'Información reservada (LOPNNA)' }, metadata: { urgencyScore: 5, createdAt: new Date().toISOString() }, data: { origen: 'Familiar' } }
+  ] as Person[]
+};
+
 export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }) => {
   const [ageCategory, setAgeCategory] = useState<AgeCat>('adulto');
   const [name, setName] = useState('');
@@ -40,17 +67,9 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }
     setLoading(true);
     setResults(null);
     try {
-      const qParams = new URLSearchParams();
-      if (name) qParams.append('q', name);
-      if (estado) qParams.append('state', estado);
-      if (municipio) qParams.append('municipality', municipio);
-      if (ageCategory) qParams.append('category', ageCategory);
-      
-      // Limitamos los resultados y consultamos al backend
-      qParams.append('limit', '20');
-      
-      const res = await api.get<{ total: number; persons: Person[] }>(`/persons?${qParams.toString()}`);
-      setResults(res.data.persons);
+      // MVP: Simulamos retardo y usamos los MOCK_RESULTS para no exponer info de la DB real.
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setResults(MOCK_RESULTS[ageCategory] || []);
     } catch (err) {
       console.error(err);
       setResults([]);
@@ -98,31 +117,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }
         <input placeholder="Nombre de la persona…" value={name} onChange={e => setName(e.target.value)} />
       </div>
 
-      {isMinorCat ? (
-        <div className="minor-notice">
-          <div className="minor-notice__shield"><ShieldCheck size={40} /></div>
-          <h2>Búsqueda de niños y adolescentes</h2>
-          <div className="minor-notice__alert">
-            Por protección legal y ética (LOPNNA), la información de niños, niñas y adolescentes no se muestra
-            directamente en los resultados de búsqueda.
-          </div>
-          <p className="minor-notice__lead">
-            Si estás buscando a un menor de edad, podemos ayudarte a verificar si existe un reporte relacionado.
-          </p>
-          <h4>¿Cómo funciona?</h4>
-          <div className="minor-steps">
-            <div className="minor-step"><div className="minor-step__icon"><ClipboardList size={16} /></div><span>1. Completa el formulario de solicitud con el nombre del menor.</span></div>
-            <div className="minor-step"><div className="minor-step__icon"><ShieldCheck size={16} /></div><span>2. Nuestro equipo revisará la información de forma protegida.</span></div>
-            <div className="minor-step"><div className="minor-step__icon"><Mail size={16} /></div><span>3. Si existe un posible caso, te contactaremos por correo electrónico.</span></div>
-          </div>
-          <Button fullWidth size="lg" variant="danger" onClick={() => alert('Solicitud registrada. Nuestro equipo revisará la información de forma protegida y te contactará por correo si hay un caso relacionado.')}>
-            Solicitar búsqueda
-          </Button>
-          <a className="minor-notice__link" href="#" onClick={e => e.preventDefault()}>Conoce más sobre nuestra política de protección infantil</a>
+      {isMinorCat && (
+        <div className="minor-notice__alert" style={{ marginBottom: '1rem', padding: '0.8rem', borderRadius: '8px', fontSize: '0.85rem' }}>
+          Por protección LOPNNA, los datos mostrados son limitados en el MVP.
         </div>
-      ) : (
-        <>
-          <div className="srch__filters">
+      )}
+
+      <div className="srch__filters">
             <span className="srch__label">Filtros de búsqueda (opcionales)</span>
             <div className="srch__field-group">
               <label>Estado / Provincia</label>
@@ -193,8 +194,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }
               )}
             </div>
           )}
-        </>
-      )}
     </div>
   );
 };
