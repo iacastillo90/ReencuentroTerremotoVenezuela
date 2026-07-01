@@ -18,8 +18,10 @@ import { PublicLanding } from './pages/Home/PublicLanding';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
 import { SearchPage } from './pages/Search/SearchPage';
+import { ManualPage } from './pages/Manual/ManualPage';
+import { DirectoryPage } from './pages/Directory/DirectoryPage';
 
-type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register';
+type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register' | 'manual' | 'directorio';
 
 interface Counts { missing: number; found: number; total: number; }
 
@@ -227,6 +229,10 @@ function App() {
         {activeView === 'logistics' && (
           <LogisticsPage disasters={disasters} />
         )}
+
+        {activeView === 'manual' && <ManualPage />}
+
+        {activeView === 'directorio' && <DirectoryPage />}
       </AppLayout>
       )}
 
