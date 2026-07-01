@@ -19,7 +19,7 @@ const ORGS: Org[] = [
 ];
 
 interface DirectoryPageProps {
-  onNavigate?: (view: string) => void;
+  onNavigate?: (view: any) => void;
 }
 
 export function DirectoryPage({ onNavigate }: DirectoryPageProps) {

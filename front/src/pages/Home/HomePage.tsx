@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, Map as MapIcon, Megaphone, ChevronRight, ShieldCheck, Building2 } from 'lucide-react';
+import { Search, PlusCircle, Megaphone, ChevronRight, ShieldCheck, Building2 } from 'lucide-react';
 import type { Person } from '../../types';
 import { Button } from '../../components/ui/Button';
 import reunionHero from '../../assets/home-reunion-venezuela.png';
@@ -12,9 +12,8 @@ interface HomePageProps {
   persons: Person[];
   onBuscar: () => void;
   onReportar: () => void;
-  onMapa: () => void;
   onSelectPerson: (p: Person) => void;
-  onNavigate: (view: string) => void;
+  onNavigate: (view: any) => void;
 }
 
 const COMUNICADOS = [
@@ -40,7 +39,7 @@ function statusLabel(status?: string): { label: string; cls: string } {
   }
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, onReportar, onMapa, onSelectPerson, onNavigate }) => {
+export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, onReportar, onSelectPerson, onNavigate }) => {
   const recent = (persons || []).filter(p => p && p.name).slice(0, 3);
 
   return (

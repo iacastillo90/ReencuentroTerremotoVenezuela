@@ -187,7 +187,6 @@ function App() {
               persons={persons}
               onBuscar={() => navigate('search')}
               onReportar={handleReport}
-              onMapa={() => navigate('map')}
               onSelectPerson={setSelectedPerson}
               onNavigate={navigate}
             />

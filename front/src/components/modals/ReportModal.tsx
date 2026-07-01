@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Send, Loader2, CheckCircle, Check, Info, Image as ImageIcon, MapPin, AlignLeft, ShieldAlert, FileText, User, Video, Home, Search, Map, MoreHorizontal, PlusCircle, ArrowLeft, Building2, ShieldCheck, Plus } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, Check, MapPin, ShieldAlert, Video, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
@@ -10,7 +10,7 @@ import './ReportModal.css';
 interface ReportModalProps {
   onClose: () => void;
   onGoDirectory?: () => void;
-  onNavigate?: (view: string) => void;
+  onNavigate?: (view: any) => void;
   defaultType?: 'person' | 'animal';
 }
 
@@ -80,7 +80,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory
           console.error('Error in reverse geocoding', e);
         }
       },
-      (err) => {
+      (_err) => {
         clearTimeout(fallbackTimeout);
         setError('No se pudo obtener la ubicación (Asegúrate de tener el GPS activado en tu Sistema Operativo).');
         setIsRequestingLocation(false);
@@ -94,7 +94,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory
   const [error, setError] = useState('');
 
   // Permit submission depending on category
-  const canSubmit = Boolean(name.trim() && estado.trim() && text.trim()) && !isSubmitting;
+  // const canSubmit = Boolean(name.trim() && estado.trim() && text.trim()) && !isSubmitting;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isSubmitting && !isAnalyzingImage) {

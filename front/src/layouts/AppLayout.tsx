@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-  PlusCircle, Settings, Map, BookOpen, X, User as UserIcon, LogOut,
-  Home, Search, MoreHorizontal, ShieldCheck, Building2, Truck, LogIn, ChevronDown, Plus
+  Settings, Map, X, User as UserIcon, LogOut,
+  Home, Search, ShieldCheck, Building2, Truck, LogIn, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { BrandMark } from '../components/BrandMark';
@@ -34,12 +34,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
 
-  // Navegación principal (5 ítems en móvil): Inicio · Buscar · Reportar · Mapa · Más
-  const primaryNav: { view: View; icon: React.ReactNode; label: string }[] = [
-    { view: 'home',   icon: <Home size={22} />,   label: 'Inicio' },
-    { view: 'search', icon: <Search size={22} />, label: 'Buscar' },
-    { view: 'map',    icon: <Map size={22} />,    label: 'Mapa' },
-  ];
 
   // Destinos secundarios agrupados en "Más"
   const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
