@@ -262,3 +262,51 @@
   border: 1px solid var(--border-color);
 }
 
+.audio-recorder-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--surface-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.audio-recorder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.audio-recorder-title {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+.audio-recorder-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.audio-recorder-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.audio-recorder-status {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--clr-danger);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.audio-recorder-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--clr-danger);
+  animation: pulse 1.5s infinite;
+}
+.audio-recorder-error {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--clr-danger);
+}
+
+

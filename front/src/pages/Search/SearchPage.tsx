@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ArrowLeft, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 import './Search.css';
 
 type AgeCat = 'adulto' | 'adulto_mayor' | 'adolescente' | 'menor';
@@ -42,7 +43,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
   return (
     <div className="srch">
       <div className="srch__head">
-        <button className="srch__back" onClick={onBack} aria-label="Volver"><ArrowLeft size={20} /></button>
+        <Button variant="outline" className="srch__back" onClick={onBack} aria-label="Volver"><ArrowLeft size={20} /></Button>
         <h1>Buscar personas</h1>
       </div>
 
@@ -92,9 +93,9 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
             <div className="minor-step"><div className="minor-step__icon"><ShieldCheck size={16} /></div><span>2. Nuestro equipo revisará la información de forma protegida.</span></div>
             <div className="minor-step"><div className="minor-step__icon"><Mail size={16} /></div><span>3. Si existe un posible caso, te contactaremos por correo electrónico.</span></div>
           </div>
-          <button className="srch__btn dark" onClick={() => alert('Solicitud registrada. Nuestro equipo revisará la información de forma protegida y te contactará por correo si hay un caso relacionado.')}>
+          <Button fullWidth size="lg" variant="danger" onClick={() => alert('Solicitud registrada. Nuestro equipo revisará la información de forma protegida y te contactará por correo si hay un caso relacionado.')}>
             Solicitar búsqueda
-          </button>
+          </Button>
           <a className="minor-notice__link" href="#" onClick={e => e.preventDefault()}>Conoce más sobre nuestra política de protección infantil</a>
         </div>
       ) : (
@@ -129,7 +130,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
               </div>
             </div>
           </div>
-          <button className="srch__btn" onClick={buscar}><Search size={18} /> Buscar</button>
+          <Button fullWidth size="lg" onClick={buscar} className="flex-center gap-2"><Search size={18} /> Buscar</Button>
         </>
       )}
     </div>

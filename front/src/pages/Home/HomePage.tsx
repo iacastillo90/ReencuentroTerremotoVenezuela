@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, PlusCircle, Map as MapIcon, Megaphone, ChevronRight, ShieldCheck } from 'lucide-react';
 import type { Person } from '../../types';
+import { Button } from '../../components/ui/Button';
 import './Home.css';
 
 interface Counts { missing: number; found: number; total: number; }
@@ -48,15 +49,15 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
       </section>
 
       <section className="home-primary">
-        <button className="home-btn blue" onClick={onBuscar}><Search size={18} /> Buscar personas</button>
-        <button className="home-btn red" onClick={onReportar}><PlusCircle size={18} /> Reportar caso</button>
-        <button className="home-btn white" onClick={onMapa}><MapIcon size={18} /> Mapa de calor</button>
+        <Button fullWidth size="lg" onClick={onBuscar} className="home-btn-override"><Search size={18} /> Buscar personas</Button>
+        <Button fullWidth size="lg" variant="danger" onClick={onReportar} className="home-btn-override"><PlusCircle size={18} /> Reportar caso</Button>
+        <Button fullWidth size="lg" variant="outline" onClick={onMapa} className="home-btn-override"><MapIcon size={18} /> Mapa de calor</Button>
       </section>
 
       <section className="home-section">
         <div className="home-section__head">
           <h2 className="home-h2">Últimos comunicados</h2>
-          <button className="link-btn" onClick={onBuscar}>Ver todos</button>
+          <Button variant="ghost" size="sm" onClick={onBuscar} className="link-btn-override">Ver todos</Button>
         </div>
         <div className="home-comunicados">
           {COMUNICADOS.map((c, i) => (
@@ -75,19 +76,19 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
       </section>
 
       <section className="home-section">
-        <button className="howto-card" onClick={onBuscar}>
+        <div className="howto-card" onClick={onBuscar} role="button" tabIndex={0}>
           <div className="howto-card__body">
             <strong>¿Cómo funciona?</strong>
             <span>Conoce cómo funciona la plataforma y cómo puedes ayudar.</span>
           </div>
           <ChevronRight size={20} className="howto-card__chev" />
-        </button>
+        </div>
       </section>
 
       <section className="home-section">
         <div className="home-section__head">
           <h2 className="home-h2">Organizaciones aliadas</h2>
-          <button className="link-btn">Ver todas</button>
+          <Button variant="ghost" size="sm" className="link-btn-override">Ver todas</Button>
         </div>
         <div className="home-orgs">
           {ORGS.map((o, i) => (
@@ -103,7 +104,7 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
         <section className="home-section">
           <div className="home-section__head">
             <h2 className="home-h2">Casos recientes</h2>
-            <button className="link-btn" onClick={onBuscar}>Ver todos</button>
+            <Button variant="ghost" size="sm" onClick={onBuscar} className="link-btn-override">Ver todos</Button>
           </div>
           <div className="home-cases">
             {recent.map((p, i) => {
@@ -121,7 +122,7 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
               }
               const st = statusLabel(p.status);
               return (
-                <button className="case-row" key={p.idHash || i} onClick={() => onSelectPerson(p)}>
+                <div className="case-row" key={p.idHash || i} onClick={() => onSelectPerson(p)} role="button" tabIndex={0}>
                   <div className="case-row__avatar">
                     {p.photoUrl
                       ? <img src={p.photoUrl} alt={p.name} loading="lazy" />
@@ -132,7 +133,7 @@ export const HomePage: React.FC<HomePageProps> = ({ persons, onBuscar, onReporta
                     <span>{p.lastSeen?.state || 'Ubicación no especificada'}</span>
                   </div>
                   <span className={`case-chip ${st.cls}`}>{st.label}</span>
-                </button>
+                </div>
               );
             })}
           </div>

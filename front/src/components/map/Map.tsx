@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import type { Person, Disaster } from '../../types';
 import { MapLegend } from './MapLegend';
+import { Button } from '../ui/Button';
 import './Map.css';
 
 // Fix para los iconos de leaflet en react
@@ -85,13 +86,15 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
                       <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
                       <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
                       {onSelectPerson && (
-                        <button 
-                          className="btn-primary" 
-                          style={{ width: '100%', marginTop: '10px', fontSize: '0.8rem', padding: '0.5rem' }}
-                          onClick={() => onSelectPerson(person)}
-                        >
-                          Ver perfil completo
-                        </button>
+                        <div style={{ marginTop: '10px' }}>
+                          <Button 
+                            fullWidth
+                            size="sm"
+                            onClick={() => onSelectPerson(person)}
+                          >
+                            Ver perfil completo
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </Popup>

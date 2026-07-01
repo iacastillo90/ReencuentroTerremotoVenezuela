@@ -132,7 +132,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 {isMissing ? 'Aún sin contacto' : 'Localizado / A Salvo'}
               </span>
               <div className="hero-meta">
-                <span><MapPin size={14} style={{ display: 'inline', marginRight: 4 }} /> {person.lastSeen?.state || 'Ubicación desconocida'}</span>
+                <span><MapPin size={14} className="inline-icon" /> {person.lastSeen?.state || 'Ubicación desconocida'}</span>
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
                 {canViewSensitive ? (
@@ -158,7 +158,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   </span>
                 )}
 
-                {person.metadata?.reportedBy && <span><User size={12} style={{ display: 'inline', marginRight: 4 }}/> Reportado por: {person.metadata.reportedBy.name}</span>}
+                {person.metadata?.reportedBy && <span><User size={12} className="inline-icon" /> Reportado por: {person.metadata.reportedBy.name}</span>}
               </div>
             </div>
           </div>
@@ -272,7 +272,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 ) : (
                   <div className="person-modal-protected-box">
                     <p className="person-modal-protected-desc">
-                      <Lock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+                      <Lock size={16} className="inline-icon" />
                       Esta persona fue localizada. Por su seguridad, la ubicación exacta y el detalle del refugio están protegidos. Si eres familiar, introduce su cédula para ver los datos:
                     </p>
                     <form onSubmit={handleCedulaMatch} className="person-modal-protected-form">

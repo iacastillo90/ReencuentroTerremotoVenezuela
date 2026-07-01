@@ -109,7 +109,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
           </div>
 
           {error && <div className="auth-error">{error}</div>}
-          <div style={{ marginTop: '0.4rem' }}>
+          <div className="auth-submit-wrap">
             <Button fullWidth type="submit" disabled={loading} size="lg">
               {loading ? 'Creando…' : 'Crear cuenta'}
             </Button>

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { BrandMark } from '../components/BrandMark';
+import { Button } from '../components/ui/Button';
 import './AppLayout.css';
 
 type View =
@@ -63,21 +64,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
         {/* Nav de escritorio */}
         <div className="nav-toggle-pills">
-          <button className={`toggle-pill ${activeView === 'home' ? 'active' : ''}`} onClick={() => onViewChange('home')}>
+          <Button variant={activeView === 'home' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('home')}>
             <Home size={14} /> Inicio
-          </button>
-          <button className={`toggle-pill ${activeView === 'search' || activeView === 'feed' ? 'active' : ''}`} onClick={() => onViewChange('search')}>
+          </Button>
+          <Button variant={activeView === 'search' || activeView === 'feed' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('search')}>
             <Search size={14} /> Buscar
-          </button>
-          <button className={`toggle-pill ${activeView === 'map' ? 'active' : ''}`} onClick={() => onViewChange('map')}>
+          </Button>
+          <Button variant={activeView === 'map' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('map')}>
             <Map size={14} /> Mapa
-          </button>
-          <button className={`toggle-pill ${activeView === 'directorio' ? 'active' : ''}`} onClick={() => onViewChange('directorio')}>
+          </Button>
+          <Button variant={activeView === 'directorio' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('directorio')}>
             <Building2 size={14} /> Directorio
-          </button>
-          <button className={`toggle-pill ${activeView === 'manual' ? 'active' : ''}`} onClick={() => onViewChange('manual')}>
+          </Button>
+          <Button variant={activeView === 'manual' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('manual')}>
             <ShieldCheck size={14} /> Manual
-          </button>
+          </Button>
         </div>
 
         <div className="nav-actions">
@@ -88,23 +89,23 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             <div className="nav-user">
               <UserIcon size={18} />
               <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
-              <button className="btn-icon" onClick={logout} title="Cerrar sesión">
+              <Button variant="outline" size="sm" className="btn-icon-override" onClick={logout} title="Cerrar sesión">
                 <LogOut size={16} />
-              </button>
+              </Button>
             </div>
           ) : (
-            <button className="btn-icon hide-mobile" onClick={() => onViewChange('login')} title="Iniciar sesión">
+            <Button variant="outline" size="sm" className="btn-icon-override hide-mobile" onClick={() => onViewChange('login')} title="Iniciar sesión">
               <LogIn size={17} />
-            </button>
+            </Button>
           )}
           {user?.role === 'admin' && (
-            <button className="btn-icon" onClick={onAdmin} title="Administración">
+            <Button variant="outline" size="sm" className="btn-icon-override" onClick={onAdmin} title="Administración">
               <Settings size={17} />
-            </button>
+            </Button>
           )}
-          <button className="btn-report" onClick={onReport}>
+          <Button variant="danger" size="sm" className="btn-report-override" onClick={onReport}>
             + Reportar
-          </button>
+          </Button>
         </div>
       </nav>
 
@@ -166,13 +167,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             </div>
             <div className="more-sheet-foot">
               {user ? (
-                <button className="more-auth-btn" onClick={() => { setMoreOpen(false); logout(); }}>
+                <Button fullWidth size="lg" variant="outline" onClick={() => { setMoreOpen(false); logout(); }} className="flex-center gap-2">
                   <LogOut size={18} /> Cerrar sesión
-                </button>
+                </Button>
               ) : (
-                <button className="more-auth-btn primary" onClick={() => go('login')}>
+                <Button fullWidth size="lg" onClick={() => go('login')} className="flex-center gap-2">
                   <LogIn size={18} /> Iniciar sesión
-                </button>
+                </Button>
               )}
             </div>
           </div>

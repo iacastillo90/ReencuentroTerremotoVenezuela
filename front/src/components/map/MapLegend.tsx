@@ -32,7 +32,7 @@ export const MapLegend: React.FC<MapLegendProps> = ({ layers, onToggleLayer }) =
   return (
     <div className={`map-legend ${isExpanded ? 'expanded' : 'collapsed'}`}>
       <div className="legend-header" onClick={toggle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="legend-header-title">
           <MapIcon size={16} />
           <h4 className="legend-title">Leyenda</h4>
         </div>

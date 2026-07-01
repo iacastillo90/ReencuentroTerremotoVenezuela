@@ -355,3 +355,9 @@
 .info-section-warning { background-color: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); }
 .info-section-warning-title { color: #d97706; }
 .info-section-warning-text { font-size: 0.9rem; color: var(--text-primary); font-style: italic; }
+
+.inline-icon {
+  display: inline;
+  margin-right: 4px;
+  vertical-align: text-bottom;
+}

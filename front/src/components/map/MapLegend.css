@@ -23,6 +23,12 @@
   transition: background 0.2s;
 }
 
+.legend-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .map-legend.expanded .legend-header {
   border-bottom: 1px solid var(--clr-border);
   background: rgba(255,255,255,0.02);
