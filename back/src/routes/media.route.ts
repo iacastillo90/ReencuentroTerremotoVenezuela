@@ -33,6 +33,21 @@ const upload = multer({
   }
 });
 
+const uploadAudio = multer({ 
+  storage,
+  limits: {
+    fileSize: VIDEO_MAX_SIZE
+  },
+  fileFilter: (req, file, cb) => {
+    // Browsers often record audio as video/webm or audio/webm
+    if (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/webm')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato no permitido. Solo archivos de audio generados por el navegador.'));
+    }
+  }
+});
+
 router.post('/', requireUser, mediaUploadLimiter, upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
@@ -107,7 +122,7 @@ router.post('/analyze-image', requireUser, mediaUploadLimiter, upload.single('im
   }
 });
 
-router.post('/audio-transcribe', requireUser, mediaUploadLimiter, upload.single('audio'), async (req: Request, res: Response) => {
+router.post('/audio-transcribe', requireUser, mediaUploadLimiter, uploadAudio.single('audio'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se envió ningún audio.' });

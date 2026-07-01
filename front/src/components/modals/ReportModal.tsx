@@ -34,17 +34,26 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
       return;
     }
     setIsRequestingLocation(true);
+
+    // Timeout de seguridad en caso de que el OS (Linux/Windows) ignore la petición
+    const fallbackTimeout = setTimeout(() => {
+      setIsRequestingLocation(false);
+      setError('Tiempo de espera agotado. El sistema operativo no devolvió la ubicación GPS.');
+    }, 15000);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        clearTimeout(fallbackTimeout);
         setReporterLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         setLocationSuccess(true);
         setIsRequestingLocation(false);
       },
       (err) => {
-        setError('No se pudo obtener la ubicación. Por favor permite el acceso en tu navegador.');
+        clearTimeout(fallbackTimeout);
+        setError('No se pudo obtener la ubicación (Asegúrate de tener el GPS activado en tu Sistema Operativo).');
         setIsRequestingLocation(false);
       },
-      { timeout: 10000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
     );
   };
   
