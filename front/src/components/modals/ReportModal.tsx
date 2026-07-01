@@ -163,7 +163,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 <div>
                   <strong>Asistente de IA Activo</strong>
                   <p style={{ margin: 0, marginTop: 4 }}>
-                  <p>
                     Escribe todo lo que sepas en el cajón de abajo. Nuestra inteligencia artificial se encargará de extraer la edad, descripciones físicas y estado de salud automáticamente, protegiendo tu privacidad.
                   </p>
                 </div>

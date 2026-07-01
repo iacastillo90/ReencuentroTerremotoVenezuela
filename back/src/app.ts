@@ -62,7 +62,7 @@ app.use(morgan(morganFormat, { skip: () => process.env.NODE_ENV === 'test' }));
 // --- 4. Protección contra ataques de denegación de servicio (Rate Limiting Global) ---
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 requests por IP por ventana
+  max: Number(process.env.GLOBAL_RATE_LIMIT) || 500, // Configurable, por defecto 500
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas peticiones. Por favor, intente más tarde.' }
