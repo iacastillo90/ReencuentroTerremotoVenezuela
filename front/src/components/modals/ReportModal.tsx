@@ -380,38 +380,7 @@ ${text.trim()}`.trim();
               {/* CARD 3: DATOS DINAMICOS */}
               <Card>
                 
-                {(category === 'adulto' || category === 'adulto_mayor') && (
-                  <div className="form-group">
-                    <label>Verificar Identidad (CNE) <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8em' }}>- Opcional</span></label>
-                    <div className="report-modal-cne-row">
-                      <select 
-                        value={cedulaNac} 
-                        onChange={(e) => setCedulaNac(e.target.value as 'V'|'E')}
-                        style={{ width: '80px' }}
-                        disabled={isSubmitting || isVerifying}
-                      >
-                        <option value="V">V-</option>
-                        <option value="E">E-</option>
-                      </select>
-                      <input 
-                        type="text" 
-                        value={cedula} 
-                        onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))} 
-                        placeholder="Número de Cédula" 
-                        disabled={isSubmitting || isVerifying}
-                        maxLength={9}
-                      />
-                      <Button 
-                        type="button" 
-                        onClick={handleVerifyCedula}
-                        disabled={isSubmitting || isVerifying || !cedula}
-                        variant="outline"
-                      >
-                        {isVerifying ? <Loader2 size={16} className="spinner" /> : 'Verificar'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+
 
                 <div className="form-group">
                   <label>
@@ -567,45 +536,6 @@ ${text.trim()}`.trim();
               </Card>
 
               {/* ACCIONES FINALES */}
-              <div 
-                onClick={() => !isSubmitting && setIsAnonymous(!isAnonymous)}
-                style={{ 
-                  marginTop: '1.5rem', 
-                  marginBottom: '1.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  backgroundColor: isAnonymous ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '12px',
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  border: isAnonymous ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  borderRadius: '4px', 
-                  border: isAnonymous ? 'none' : '2px solid rgba(255,255,255,0.3)',
-                  backgroundColor: isAnonymous ? '#ffffff' : 'rgba(0,0,0,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.2s'
-                }}>
-                  {isAnonymous && <Check size={14} color="#000000" strokeWidth={4} />}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: isAnonymous ? '#ffffff' : 'var(--clr-text)' }}>
-                    Reportar de forma anónima
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--clr-text-muted)' }}>
-                    Ocultar mi nombre del registro público
-                  </span>
-                </div>
-              </div>
 
               <button 
                 type="submit" 
