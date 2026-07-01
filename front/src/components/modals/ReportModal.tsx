@@ -310,19 +310,7 @@ ${text.trim()}`.trim();
 
               {/* CARD 1: CATEGORIA */}
               <Card>
-                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em', color: 'var(--clr-text-muted)', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
-                    TIPO DE REPORTE
-                  </label>
-                  <div className="type-btn-row">
-                    <button type="button" className={`category-btn ${reportAction === 'vi' ? 'active-blue' : ''}`} onClick={() => setReportAction('vi')}>
-                      He visto a alguien
-                    </button>
-                    <button type="button" className={`category-btn ${reportAction === 'deceso' ? 'active-red' : ''}`} onClick={() => { setReportAction('deceso'); setFile(null); }}>
-                      Reporte de Deceso
-                    </button>
-                  </div>
-                </div>
+
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label style={{ textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em', color: 'var(--clr-text-muted)', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
