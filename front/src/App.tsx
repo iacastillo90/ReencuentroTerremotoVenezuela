@@ -14,7 +14,7 @@ import { LibraryPage } from './pages/Library/LibraryPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { LogisticsPage } from './pages/Logistics/LogisticsPage';
 import { HomePage } from './pages/Home/HomePage';
-import { PublicLanding } from './pages/Home/PublicLanding';
+import { HomeGateway } from './pages/Home/HomeGateway';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
 import { SearchPage } from './pages/Search/SearchPage';
@@ -138,13 +138,18 @@ function App() {
     setIsReporting(true);
   };
 
+  // Control de acceso: Buscar/Feed/Mapa/Perfil requieren sesión.
+  // Home, Directorio y Manual son públicos. Reportar se gestiona en handleReport.
+  const AUTH_VIEWS: View[] = ['search', 'feed', 'map', 'profile'];
+  const navigate = (v: View) => {
+    if (AUTH_VIEWS.includes(v) && !user) { setActiveView('login'); return; }
+    setActiveView(v);
+  };
+
   // Admin view — full screen takeover
   if (activeView === 'admin') {
     return <AdminDashboard onBack={() => setActiveView('home')} />;
   }
-
-  // Landing público (mockup "home public") para usuarios no autenticados
-  const showPublicLanding = activeView === 'home' && !user;
 
   return (
     <>
@@ -161,21 +166,10 @@ function App() {
           onGoLogin={() => setActiveView('login')}
           onBack={() => setActiveView('login')}
         />
-      ) : showPublicLanding ? (
-        <PublicLanding
-          onBuscar={() => setActiveView('search')}
-          onAyuda={handleReport}
-        />
       ) : (
       <AppLayout
         activeView={activeView}
-        onViewChange={v => {
-          if (v === 'profile' && !user) {
-            setActiveView('login');
-            return;
-          }
-          setActiveView(v);
-        }}
+        onViewChange={navigate}
         onReport={handleReport}
         onAdmin={() => setActiveView('admin')}
         sidebar={
@@ -185,14 +179,24 @@ function App() {
         }
       >
         {activeView === 'home' && (
-          <HomePage
-            counts={counts}
-            persons={persons}
-            onBuscar={() => setActiveView('search')}
-            onReportar={handleReport}
-            onMapa={() => setActiveView('map')}
-            onSelectPerson={setSelectedPerson}
-          />
+          user ? (
+            <HomePage
+              counts={counts}
+              persons={persons}
+              onBuscar={() => navigate('search')}
+              onReportar={handleReport}
+              onMapa={() => navigate('map')}
+              onSelectPerson={setSelectedPerson}
+            />
+          ) : (
+            <HomeGateway
+              counts={counts}
+              onBuscar={() => navigate('search')}
+              onReportar={handleReport}
+              onDirectorio={() => setActiveView('directorio')}
+              onManual={() => setActiveView('manual')}
+            />
+          )
         )}
         {activeView === 'search' && (
           <SearchPage
