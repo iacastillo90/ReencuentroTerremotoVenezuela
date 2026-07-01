@@ -167,5 +167,73 @@ router.patch('/persons/:idHash/status', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+// ── Gestión de Usuarios ──
+router.get('/users', async (req: Request, res: Response) => {
+  try {
+    const users = await UserModel.find({}, '-passwordHash').sort({ createdAt: -1 });
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error('[AdminRoute] GET /users Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
+router.patch('/users/:id/role', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!['user', 'verifier', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Rol inválido' });
+    }
+
+    const user = await UserModel.findByIdAndUpdate(id, { role }, { new: true });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'info',
+      actor: (req as any).user?.userId || 'admin',
+      action: 'PATCH /admin/users/:id/role',
+      resource: id,
+      detail: { newRole: role },
+      req,
+    });
+
+    return res.status(200).json(user);
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.patch('/users/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+
+    const user = await UserModel.findByIdAndUpdate(id, { status }, { new: true });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    auditLog({
+      eventType: 'admin_action',
+      severity: 'info',
+      actor: (req as any).user?.userId || 'admin',
+      action: 'PATCH /admin/users/:id/status',
+      resource: id,
+      detail: { newStatus: status },
+      req,
+    });
+
+    return res.status(200).json(user);
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Mock verifications endpoint just to satisfy the frontend for now
+router.get('/verifications', async (req: Request, res: Response) => {
+  return res.status(200).json([]);
+});
 export const adminRouter = router;

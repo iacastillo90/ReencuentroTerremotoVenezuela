@@ -14,6 +14,7 @@ export interface IUser extends Document {
   state?: string;
   municipality?: string;
   isProfileComplete: boolean;
+  status: 'pending' | 'approved' | 'rejected';
   tokenVersion: number;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +37,7 @@ const UserSchema = new Schema<IUser>({
   state: { type: String },
   municipality: { type: String },
   isProfileComplete: { type: Boolean, default: false },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   tokenVersion: { type: Number, default: 1 },
 }, { timestamps: true });
 

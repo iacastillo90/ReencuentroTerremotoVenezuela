@@ -11,6 +11,7 @@ interface User {
   sector?: string;
   contactNumber?: string;
   role?: string;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 interface AuthContextType {

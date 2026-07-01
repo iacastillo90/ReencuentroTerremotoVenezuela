@@ -26,6 +26,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [contactNumber, setContactNumber] = useState(user?.contactNumber || '');
 
   const needsProfileCompletion = user && !user.isProfileComplete;
+  const isPendingReview = user?.status === 'pending';
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
@@ -34,7 +35,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       const res = await api.post('/auth/google', { token: credentialResponse.credential });
       login(res.data.user);
       
-      if (res.data.user.isProfileComplete) {
+      if (res.data.user.isProfileComplete && res.data.user.status !== 'pending') {
         onSuccess();
       }
     } catch (err: any) {
@@ -93,7 +94,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       const res = await api.post('/auth/profile', { sector, contactNumber });
 
       login(res.data.user);
-      onSuccess();
+      if (res.data.user.status !== 'pending') {
+        onSuccess();
+      }
     } catch (err) {
       console.error(err);
       setError('Error al guardar el perfil.');
@@ -107,7 +110,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       <div className="report-modal-content" role="dialog" aria-modal="true" style={{ maxWidth: '400px' }}>
         <header className="report-modal-header">
           <h2 className="report-modal-title">
-            {needsProfileCompletion ? 'Completa tu Perfil' : 'Iniciar Sesión'}
+            {isPendingReview ? 'Verificación Pendiente' : needsProfileCompletion ? 'Completa tu Perfil' : 'Iniciar Sesión'}
           </h2>
           {!isSubmitting && (
             <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">
@@ -182,6 +185,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                 </Button>
               </div>
             </form>
+          ) : user?.status === 'pending' ? (
+            <div className="auth-modal-login-container" style={{ textAlign: 'center', padding: '20px' }}>
+              <h3 style={{ color: '#d97706', marginBottom: '10px' }}>Cuenta en Revisión</h3>
+              <p className="auth-modal-login-text">
+                Tu cuenta ha sido registrada y actualmente está pendiente de revisión por un moderador para verificar la autenticidad de los datos. Te notificaremos pronto.
+              </p>
+              <Button fullWidth onClick={onClose} style={{ marginTop: '15px' }}>Entendido</Button>
+            </div>
           ) : null}
         </div>
       </div>

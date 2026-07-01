@@ -86,18 +86,21 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
 
     let user = await UserModel.findOne({ googleId });
     if (!user) {
+      const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
       user = await UserModel.create({
         googleId,
         email,
         name,
         picture,
-        isProfileComplete: false
+        isProfileComplete: false,
+        role: isAdmin ? 'admin' : 'user',
+        status: isAdmin ? 'approved' : 'pending'
       });
     }
 
     const authToken = jwt.sign(
       { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-        role: user.role, tokenVersion: user.tokenVersion },
+        role: user.role, status: user.status, tokenVersion: user.tokenVersion },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -130,7 +133,7 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
 function issueSession(res: Response, user: any): string {
   const authToken = jwt.sign(
     { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-      role: user.role, tokenVersion: user.tokenVersion },
+      role: user.role, status: user.status, tokenVersion: user.tokenVersion },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -158,6 +161,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
     }
 
+    const isAdmin = process.env.ADMIN_EMAIL && normEmail === process.env.ADMIN_EMAIL.toLowerCase();
     const user = await UserModel.create({
       email: normEmail,
       name,
@@ -168,6 +172,8 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
       state,
       municipality,
       isProfileComplete: Boolean(contactNumber),
+      role: isAdmin ? 'admin' : 'user',
+      status: isAdmin ? 'approved' : 'pending'
     });
 
     const authToken = issueSession(res, user);
@@ -252,7 +258,7 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
 
     const authToken = jwt.sign(
       { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-        role: user.role, tokenVersion: user.tokenVersion },
+        role: user.role, status: user.status, tokenVersion: user.tokenVersion },
       JWT_SECRET,
       { expiresIn: '7d' }
     );

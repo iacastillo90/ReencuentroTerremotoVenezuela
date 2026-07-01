@@ -404,6 +404,15 @@ function SectionUsuarios() {
     }
   };
 
+  const changeUserStatus = async (id: string, newStatus: string) => {
+    try {
+      await api.patch(`/admin/users/${id}/status`, { status: newStatus });
+      setUsers(prev => prev.map(u => u._id === id ? { ...u, status: newStatus } : u));
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Error cambiando estado');
+    }
+  };
+
   const changeVerificationStatus = async (id: string, newStatus: string) => {
     try {
       await api.patch(`/admin/verifications/${id}/status`, { status: newStatus });
@@ -436,7 +445,8 @@ function SectionUsuarios() {
               <th>Usuario</th>
               <th>Email</th>
               <th>Rol Actual</th>
-              <th>Acciones de Rol</th>
+              <th>Estado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -455,10 +465,18 @@ function SectionUsuarios() {
                   </span>
                 </td>
                 <td>
+                  <span className={`admin-badge ${u.status === 'approved' ? 'found' : u.status === 'rejected' ? 'missing' : 'pending'}`}>
+                    {(u.status || 'pending').toUpperCase()}
+                  </span>
+                </td>
+                <td>
                   <div className="action-buttons">
-                    {u.role !== 'admin' && <button className="btn-merge" onClick={() => changeRole(u._id, 'admin')}>Hacer Admin</button>}
-                    {u.role !== 'verifier' && <button className="btn-found" onClick={() => changeRole(u._id, 'verifier')}>Hacer Verificador</button>}
-                    {u.role !== 'user' && <button className="btn-dismiss" onClick={() => changeRole(u._id, 'user')}>Quitar Permisos</button>}
+                    {(u.status === 'pending' || !u.status) && (
+                      <button className="btn-found" onClick={() => changeUserStatus(u._id, 'approved')}>Aprobar</button>
+                    )}
+                    {u.role !== 'admin' && <button className="btn-merge" onClick={() => changeRole(u._id, 'admin')}>Admin</button>}
+                    {u.role !== 'verifier' && <button className="btn-found" onClick={() => changeRole(u._id, 'verifier')}>Verificador</button>}
+                    {u.role !== 'user' && <button className="btn-dismiss" onClick={() => changeRole(u._id, 'user')}>Quitar Rol</button>}
                   </div>
                 </td>
               </tr>
