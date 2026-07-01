@@ -3,6 +3,7 @@ import { X, Loader2 } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { Button } from '../ui/Button';
 import './ReportModal.css'; // Reusing some modal styles
 
 interface AuthModalProps {
@@ -117,44 +118,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
         <div className="report-modal-body">
           {error && (
-            <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem' }}>
+            <div className="auth-modal-error">
               {error}
             </div>
           )}
 
           {!user ? (
-            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-              <p style={{ marginBottom: '1.5rem', color: 'var(--clr-text-muted)' }}>
+            <div className="auth-modal-login-container">
+              <p className="auth-modal-login-text">
                 Para reportar a una persona o mascota, por favor inicia sesión. Esto nos ayuda a evitar reportes duplicados y a contactarte si hay novedades.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              <div className="auth-modal-login-actions">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => setError('Google Login Failed')}
                 />
                 
                 {isDevMode && (
-                  <button 
+                  <Button 
+                    variant="outline"
                     onClick={handleBypassLogin}
                     disabled={isSubmitting}
-                    style={{
-                      background: 'var(--clr-surface)',
-                      border: '1px dashed var(--clr-border)',
-                      color: 'var(--clr-text-muted)',
-                      padding: '8px 16px',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem'
-                    }}
                   >
                     Bypass Login (Modo de Desarrollo)
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
           ) : needsProfileCompletion ? (
             <form onSubmit={handleProfileSubmit}>
-              <p style={{ marginBottom: '1.5rem', color: 'var(--clr-text-muted)', fontSize: '0.9rem' }}>
+              <p className="auth-modal-profile-text">
                 Antes de reportar, necesitamos un par de datos adicionales para poder contactarte en caso de encontrar coincidencias.
               </p>
               <div className="form-group">
@@ -180,13 +173,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="btn-submit" disabled={isSubmitting} style={{ width: '100%' }}>
+                <Button fullWidth type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <><Loader2 size={18} className="spinner" /> Guardando...</>
                   ) : (
                     'Guardar y Continuar'
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           ) : null}

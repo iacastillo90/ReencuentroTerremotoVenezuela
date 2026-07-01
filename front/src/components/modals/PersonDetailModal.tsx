@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
+import { Button } from '../ui/Button';
 import './PersonDetailModal.css';
 
 interface PersonDetailModalProps {
@@ -138,20 +139,20 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   <>
                     {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
                     {person.data?.verificado_por && (
-                      <span style={{ color: 'var(--clr-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="person-meta-verified">
                         <CheckCircle size={14} /> Verificado por {person.data.verificado_por}
                       </span>
                     )}
                   </>
                 ) : (
-                  <span style={{ color: 'var(--clr-amber)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="person-meta-hidden">
                     <Lock size={14} /> Datos de refugio ocultos
                   </span>
                 )}
 
                 {person.data?.ficha_url && (
-                  <span style={{ color: 'var(--blue)', fontWeight: 600 }}>
-                    <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span className="person-meta-link">
+                    <a href={person.data.ficha_url} target="_blank" rel="noopener noreferrer">
                       <AlertCircle size={14} /> Ver ficha original
                     </a>
                   </span>
@@ -174,7 +175,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
               </button>
             )}
             {isMissing && isOwner && (
-              <button className="btn-main-action" style={{ backgroundColor: 'var(--clr-success)' }} onClick={() => setShowCloseCase(!showCloseCase)}>
+              <button className="btn-main-action btn-main-action-success" onClick={() => setShowCloseCase(!showCloseCase)}>
                 <ShieldCheck size={18} />
                 Cerrar Caso (Auditoría Legal)
               </button>
@@ -182,18 +183,18 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           </div>
 
           {showCloseCase && (
-            <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', color: 'var(--clr-success)' }}>
+            <div className="person-modal-close-case-card">
+              <h4 className="person-modal-close-case-title">
                 <ShieldCheck size={16} /> Auditoría y Cierre de Caso
               </h4>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+              <p className="person-modal-desc-text">
                 Al cerrar este caso, tu dirección IP y marca de tiempo quedarán selladas criptográficamente para cumplir con el artículo 43 de la LOPNNA y la Ley de Protección de Datos.
               </p>
-              <form onSubmit={handleCloseCase} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <form onSubmit={handleCloseCase} className="person-modal-form">
                 <select 
                   value={closeResolution} 
                   onChange={e => setCloseResolution(e.target.value as any)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff' }}
+                  className="person-modal-input"
                 >
                   <option value="found">La persona ha sido Localizada (Viva)</option>
                   <option value="deceased">La persona ha sido hallada sin vida</option>
@@ -204,42 +205,44 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   placeholder="Detalles del reencuentro o resolución (Opcional)..."
                   value={closeNotes}
                   onChange={e => setCloseNotes(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', minHeight: '60px' }}
+                  className="person-modal-input"
+                  style={{ minHeight: '60px' }}
                 />
                 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="submit" disabled={closing} style={{ background: 'var(--clr-success)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                <div className="person-modal-form-actions">
+                  <button type="submit" disabled={closing} className="btn-success">
                     {closing ? 'Sellando...' : 'Sellar y Cerrar Caso'}
                   </button>
-                  <button type="button" onClick={() => setShowCloseCase(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                  <Button type="button" variant="outline" onClick={() => setShowCloseCase(false)}>
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
           )}
 
           {showContactForm && (
-            <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', margin: '15px', border: '1px solid #1e293b' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}><Lock size={16} color="var(--clr-amber)" /> Comunicación Segura</h4>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+            <div className="person-modal-contact-card">
+              <h4 className="person-modal-contact-title"><Lock size={16} color="var(--clr-amber)" /> Comunicación Segura</h4>
+              <p className="person-modal-desc-text">
                 Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de Reencuentro Terremoto Venezuela intermediará si es necesario.
               </p>
-              <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <form onSubmit={handleSendMessage} className="person-modal-form">
                 <textarea 
                   placeholder="Escribe aquí tu mensaje sobre esta persona..."
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', minHeight: '80px' }}
+                  className="person-modal-input"
+                  style={{ minHeight: '80px' }}
                 />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="submit" disabled={sending} style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                <div className="person-modal-form-actions">
+                  <Button type="submit" disabled={sending}>
                     {sending ? 'Enviando...' : 'Enviar Mensaje'}
-                  </button>
-                  <button type="button" onClick={() => setShowContactForm(false)} style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--text-secondary)', cursor: 'pointer' }}>
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowContactForm(false)}>
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -267,22 +270,22 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 {canViewSensitive ? (
                   <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
                 ) : (
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px dashed #334155' }}>
-                    <p style={{ margin: '0 0 10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <div className="person-modal-protected-box">
+                    <p className="person-modal-protected-desc">
                       <Lock size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
                       Esta persona fue localizada. Por su seguridad, la ubicación exacta y el detalle del refugio están protegidos. Si eres familiar, introduce su cédula para ver los datos:
                     </p>
-                    <form onSubmit={handleCedulaMatch} style={{ display: 'flex', gap: '8px' }}>
+                    <form onSubmit={handleCedulaMatch} className="person-modal-protected-form">
                       <input 
                         type="text" 
                         placeholder="Cédula de Identidad" 
                         value={cedulaInput}
                         onChange={e => setCedulaInput(e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #475569', background: '#1e293b', color: '#fff', flex: 1 }}
+                        className="person-modal-protected-input"
                       />
-                      <button type="submit" style={{ padding: '6px 14px', borderRadius: '4px', background: 'var(--blue)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                      <Button type="submit">
                         Verificar
-                      </button>
+                      </Button>
                     </form>
                   </div>
                 )}
@@ -290,12 +293,12 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </div>
           </div>
 
-          <div className="info-section" style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-            <h3 style={{ color: '#d97706' }}><AlertCircle size={18} /> Avisos de la comunidad</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+          <div className="info-section info-section-warning">
+            <h3 className="info-section-warning-title"><AlertCircle size={18} /> Avisos de la comunidad</h3>
+            <p className="person-modal-desc-text">
               Esta información es enviada por la comunidad y no ha sido verificada oficialmente.
             </p>
-            <p style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--text-primary)' }}>
+            <p className="info-section-warning-text">
               Aún no hay reportes de la comunidad para esta persona.
             </p>
           </div>

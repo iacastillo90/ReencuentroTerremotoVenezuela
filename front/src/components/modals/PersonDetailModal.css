@@ -327,3 +327,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+.person-meta-verified { color: var(--clr-success); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.person-meta-hidden { color: var(--clr-amber); display: flex; align-items: center; gap: 4px; }
+.person-meta-link { color: var(--blue); font-weight: 600; }
+.person-meta-link a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+
+.btn-main-action-success { background-color: var(--clr-success); }
+.btn-success { background: var(--clr-success); color: #fff; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: .15s; }
+.btn-success:hover { filter: brightness(1.1); }
+
+.person-modal-close-case-card { background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; margin: 15px; border: 1px solid rgba(34, 197, 94, 0.3); }
+.person-modal-close-case-title { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--clr-success); }
+.person-modal-desc-text { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px; }
+.person-modal-form { display: flex; flex-direction: column; gap: 10px; }
+.person-modal-input { width: 100%; padding: 10px; border-radius: 6px; background: #1e293b; border: 1px solid #334155; color: #fff; font-family: inherit; }
+.person-modal-form-actions { display: flex; gap: 10px; }
+
+.person-modal-contact-card { background: #0f172a; padding: 15px; border-radius: 8px; margin: 15px; border: 1px solid #1e293b; }
+.person-modal-contact-title { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+
+.person-modal-protected-box { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px dashed #334155; }
+.person-modal-protected-desc { margin: 0 0 10px; font-size: 0.9rem; color: var(--text-secondary); }
+.person-modal-protected-form { display: flex; gap: 8px; }
+.person-modal-protected-input { padding: 6px 12px; border-radius: 4px; border: 1px solid #475569; background: #1e293b; color: #fff; flex: 1; }
+
+.info-section-warning { background-color: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); }
+.info-section-warning-title { color: #d97706; }
+.info-section-warning-text { font-size: 0.9rem; color: var(--text-primary); font-style: italic; }

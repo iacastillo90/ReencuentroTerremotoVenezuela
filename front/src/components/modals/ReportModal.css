@@ -191,3 +191,74 @@
   color: var(--clr-text-muted);
   margin-bottom: 2rem;
 }
+
+.auth-modal-error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.auth-modal-login-container {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.auth-modal-login-text {
+  margin-bottom: 1.5rem;
+  color: var(--clr-text-muted);
+}
+
+.auth-modal-login-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-modal-profile-text {
+  margin-bottom: 1.5rem;
+  color: var(--clr-text-muted);
+  font-size: 0.9rem;
+}
+
+.report-modal-form-group-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.report-modal-flex-1 {
+  flex: 1;
+}
+
+.report-modal-cne-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.report-modal-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.report-modal-analyzing-msg {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--clr-primary);
+  font-size: 0.85rem;
+}
+
+.report-modal-ai-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--surface-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+

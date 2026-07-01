@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Send, Loader2, CheckCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import { AudioRecorder } from './AudioRecorder';
+import { Button } from '../ui/Button';
 import './ReportModal.css';
 
 interface ReportModalProps {
@@ -149,9 +150,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               <CheckCircle size={64} color="var(--clr-success)" style={{ margin: '0 auto' }} />
               <h3>¡Reporte enviado exitosamente!</h3>
               <p>Nuestra Inteligencia Artificial está analizando y organizando la información. En unos minutos aparecerá en el mapa.</p>
-              <button className="btn-submit" style={{ margin: '0 auto' }} onClick={onClose}>
-                Cerrar
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button onClick={onClose}>
+                  Cerrar
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
@@ -160,26 +163,27 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 <div>
                   <strong>Asistente de IA Activo</strong>
                   <p style={{ margin: 0, marginTop: 4 }}>
+                  <p>
                     Escribe todo lo que sepas en el cajón de abajo. Nuestra inteligencia artificial se encargará de extraer la edad, descripciones físicas y estado de salud automáticamente, protegiendo tu privacidad.
                   </p>
                 </div>
               </div>
 
               {error && (
-                <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem' }}>
+                <div className="auth-modal-error">
                   {error}
                 </div>
               )}
 
-              <div className="form-group" style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
+              <div className="form-group report-modal-form-group-row">
+                <div className="report-modal-flex-1">
                   <label>¿Qué deseas reportar?</label>
                   <select value={reportAction} onChange={(e) => setReportAction(e.target.value as any)}>
                     <option value="busco">Estoy buscando a alguien</option>
                     <option value="vi">He visto a alguien</option>
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="report-modal-flex-1">
                   <label>Tipo</label>
                   <select value={type} onChange={(e) => setType(e.target.value as any)}>
                     <option value="person">Persona</option>
@@ -191,7 +195,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               {type === 'person' && (
                 <div className="form-group">
                   <label>Verificar Identidad (CNE) <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.8em' }}>- Opcional</span></label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="report-modal-cne-row">
                     <select 
                       value={cedulaNac} 
                       onChange={(e) => setCedulaNac(e.target.value as 'V'|'E')}
@@ -209,14 +213,14 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                       disabled={isSubmitting || isVerifying}
                       maxLength={9}
                     />
-                    <button 
+                    <Button 
                       type="button" 
-                      className="btn-verify-cne" 
                       onClick={handleVerifyCedula}
                       disabled={isSubmitting || isVerifying || !cedula}
+                      variant="outline"
                     >
                       {isVerifying ? <Loader2 size={16} className="spinner" /> : 'Verificar'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -260,7 +264,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 ></textarea>
               </div>
 
-              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
+              <div className="form-group report-modal-checkbox-row">
                 <input 
                   type="checkbox" 
                   id="anon-checkbox"
@@ -285,13 +289,13 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                 />
                 
                 {isAnalyzingImage && (
-                  <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--clr-primary)', fontSize: '0.85rem' }}>
+                  <div className="report-modal-analyzing-msg">
                     <Loader2 size={16} className="spinner" /> La IA está analizando los rasgos de la foto...
                   </div>
                 )}
 
                 {clothingQuestion && (
-                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--surface-hover)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div className="report-modal-ai-box">
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                       <Sparkles size={18} style={{ color: 'var(--clr-amber)', flexShrink: 0, marginTop: '2px' }} />
                       <div>
@@ -300,8 +304,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
                           {clothingQuestion}
                         </p>
                         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                          <button type="button" onClick={() => { setText(prev => prev + '\nLlevaba esa misma ropa al momento de desaparecer.'); setClothingQuestion(''); }} style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--clr-primary)', backgroundColor: 'transparent', color: 'var(--clr-primary)', cursor: 'pointer' }}>Sí, llevaba esa ropa</button>
-                          <button type="button" onClick={() => { setText(prev => prev + '\nNO llevaba esa ropa al momento de desaparecer.'); setClothingQuestion(''); }} style={{ fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}>No llevaba eso</button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => { setText(prev => prev + '\nLlevaba esa misma ropa al momento de desaparecer.'); setClothingQuestion(''); }}>Sí, llevaba esa ropa</Button>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => { setText(prev => prev + '\nNO llevaba esa ropa al momento de desaparecer.'); setClothingQuestion(''); }}>No llevaba eso</Button>
                         </div>
                       </div>
                     </div>
@@ -313,16 +317,16 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose, defaultType =
               </div>
 
               <div className="form-actions">
-                <button type="button" className="btn-cancel" onClick={onClose} disabled={isSubmitting}>
+                <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                   Cancelar
-                </button>
-                <button type="submit" className="btn-submit" disabled={isSubmitting}>
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <><Loader2 size={18} className="spinner" /> Procesando con IA...</>
                   ) : (
                     <><Send size={18} /> Enviar Reporte</>
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           )}
