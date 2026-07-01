@@ -12,48 +12,30 @@ export async function runInamehJob() {
   try {
     let alerts: any[] = [];
     
-    try {
-      // Intentar hacer scraping de la web oficial
-      const response = await axios.get(SOURCE_URL, { timeout: 8000 });
-      const $ = cheerio.load(response.data);
+    // Intentar hacer scraping de la web oficial
+    const response = await axios.get(SOURCE_URL, { timeout: 8000 });
+    const $ = cheerio.load(response.data);
+    
+    // Suponiendo que hay un div con clase 'alerta-meteorologica'
+    $('.alerta-meteorologica').each((_, element) => {
+      const title = $(element).find('h3').text().trim();
+      const description = $(element).find('.desc').text().trim();
+      const dateRaw = $(element).find('.fecha').text().trim();
       
-      // Suponiendo que hay un div con clase 'alerta-meteorologica'
-      $('.alerta-meteorologica').each((_, element) => {
-        const title = $(element).find('h3').text().trim();
-        const description = $(element).find('.desc').text().trim();
-        const dateRaw = $(element).find('.fecha').text().trim();
-        
-        if (title && description) {
-          alerts.push({
-            id: `inameh-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            title,
-            description,
-            fecha: dateRaw || new Date().toISOString(),
-            type: title.toLowerCase().includes('inundación') ? 'flood' : 'hurricane',
-            severity: 'medium'
-          });
-        }
-      });
+      if (title && description) {
+        alerts.push({
+          id: `inameh-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          title,
+          description,
+          fecha: dateRaw || new Date().toISOString(),
+          type: title.toLowerCase().includes('inundación') ? 'flood' : 'hurricane',
+          severity: 'medium'
+        });
+      }
+    });
 
-      // Si la página no tiene la estructura (cambió o no hay alertas), usamos el fallback
-      if (alerts.length === 0) throw new Error('Estructura no encontrada o sin alertas');
-      
-    } catch (e) {
-      console.log(`[INAMEH] Scraping falló o no hay red, usando fallback heurístico...`);
-      // Mock de datos heurísticos para la alerta
-      alerts = [
-        {
-          id: `inameh-fallback-01`,
-          title: 'Alerta Naranja: Crecida del Río Guaire',
-          description: 'Probabilidad de desbordamiento en áreas aledañas a Petare debido a lluvias continuas durante las últimas 4 horas.',
-          fecha: new Date().toISOString(),
-          type: 'flood',
-          severity: 'high',
-          lat: 10.4795,
-          lng: -66.8192
-        }
-      ];
-    }
+    // Si la página no tiene la estructura (cambió o no hay alertas), usamos el fallback
+    if (alerts.length === 0) throw new Error('Estructura no encontrada o sin alertas');
 
     let ingested = 0;
     let skipped = 0;

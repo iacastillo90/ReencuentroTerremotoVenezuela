@@ -78,24 +78,8 @@ router.post('/google', async (req: Request, res: Response) => {
       });
       payload = ticket.getPayload();
     } catch (e) {
-      // DEV_MODE bypass: skip Google verification
-      if (process.env.DEV_MODE === 'true') {
-        if (process.env.NODE_ENV === 'production') {
-          auditLog({
-            eventType: 'security_violation',
-            severity: 'critical',
-            actor: req.ip || 'unknown',
-            action: 'Attempted DEV_MODE bypass in production',
-            req,
-          });
-          return res.status(403).json({ error: 'DEV_MODE disabled in production' });
-        }
-        console.warn('[DEV_MODE] Skipping Google token verification');
-        const decoded = jwt.decode(token) as any;
-        payload = decoded;
-      } else {
-        throw e;
-      }
+      console.error('[AuthRoute] Google token verification failed:', e);
+      return res.status(401).json({ error: 'Invalid Google Token' });
     }
 
     if (!payload) return res.status(401).json({ error: 'Invalid Google Token' });
