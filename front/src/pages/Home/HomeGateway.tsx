@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock } from 'lucide-react';
+import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock, Map } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
 import reunionHero from '../../assets/home-reunion-venezuela.png';
 import './PublicLanding.css';
@@ -11,6 +11,7 @@ interface HomeGatewayProps {
   onReportar: () => void;    // requiere login (gating en App)
   onDirectorio: () => void;  // público
   onManual: () => void;      // público
+  onMapa: () => void;        // requiere login
 }
 
 interface OptionCardProps {
@@ -40,7 +41,7 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, title, desc, cta, tone, l
 );
 
 /** Home público: presenta las opciones sobre un fondo de marca. Reportar/Buscar piden login; Directorio/Manual son públicos. */
-export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onDirectorio, onManual }) => (
+export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onDirectorio, onManual, onMapa }) => (
   <div className="public-landing hg">
     <div className="pl__bg" />
     <div className="hg__inner">
@@ -70,16 +71,16 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
 
       <div className="hg__cards">
         <OptionCard
-          icon={<Search size={22} />} tone="blue" locked
-          title="Buscar persona" cta="Iniciar sesión"
-          desc="Consulta reportes y posibles coincidencias."
-          onClick={onBuscar}
-        />
-        <OptionCard
           icon={<PlusCircle size={22} />} tone="red" locked
           title="Reportar caso" cta="Iniciar sesión"
           desc="Informa sobre una persona o mascota."
           onClick={onReportar}
+        />
+        <OptionCard
+          icon={<Search size={22} />} tone="blue" locked
+          title="Buscar persona" cta="Iniciar sesión"
+          desc="Consulta reportes y posibles coincidencias."
+          onClick={onBuscar}
         />
         <OptionCard
           icon={<Building2 size={22} />} tone="blue" locked={false}
@@ -92,6 +93,12 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
           title="Manual" cta="Leer guía"
           desc="Qué hacer antes, durante y después."
           onClick={onManual}
+        />
+        <OptionCard
+          icon={<Map size={22} />} tone="blue" locked
+          title="Mapa de calor" cta="Iniciar sesión"
+          desc="Vista geográfica de reportes y refugios."
+          onClick={onMapa}
         />
       </div>
     </div>

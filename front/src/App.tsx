@@ -23,14 +23,14 @@ import { DirectoryPage } from './pages/Directory/DirectoryPage';
 
 type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register' | 'manual' | 'directorio';
 
-interface Counts { missing: number; found: number; total: number; }
+interface Counts { missing: number; found: number; total: number; animals?: number; }
 
 const PAGE_SIZE = 50;
 
 function App() {
   const [persons, setPersons]         = useState<Person[]>([]);
   const [disasters, setDisasters]     = useState<Disaster[]>([]);
-  const [counts, setCounts]           = useState<Counts>({ missing: 0, found: 0, total: 0 });
+  const [counts, setCounts]           = useState<Counts>({ missing: 0, found: 0, total: 0, animals: 0 });
   const [total, setTotal]             = useState(0);
   const [offset, setOffset]           = useState(0);
   const [loading, setLoading]         = useState(true);
@@ -52,7 +52,7 @@ function App() {
         api.get<{ total: number; persons: Person[] }>(endpoint),
         // Only fetch these if it's initial load to save requests, but doing it parallel is fine
         api.get<Disaster[]>('/disasters/active').catch(() => ({ data: [] })),
-        api.get<Counts>('/persons/counts').catch(() => ({ data: { missing: 0, found: 0, total: 0 } })),
+        api.get<Counts>('/persons/counts').catch(() => ({ data: { missing: 0, found: 0, total: 0, animals: 0 } })),
         api.get<{ data: any[], total: number }>(`/localizados?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`).catch(() => ({ data: { data: [], total: 0 } }))
       ]);
       const { total: t, persons: p } = pRes.data;
@@ -87,7 +87,8 @@ function App() {
       setCounts({
         missing: cRes.data.missing,
         found: cRes.data.found + (locRes.data?.total || 0),
-        total: cRes.data.total + (locRes.data?.total || 0)
+        total: cRes.data.total + (locRes.data?.total || 0),
+        animals: cRes.data.animals || 0
       });
 
       if (append) {
@@ -144,6 +145,7 @@ function App() {
   const navigate = (v: View) => {
     if (AUTH_VIEWS.includes(v) && !user) { setActiveView('login'); return; }
     setActiveView(v);
+    setIsReporting(false);
   };
 
   // Admin view — full screen takeover
@@ -187,6 +189,7 @@ function App() {
               onReportar={handleReport}
               onMapa={() => navigate('map')}
               onSelectPerson={setSelectedPerson}
+              onNavigate={navigate}
             />
           ) : (
             <HomeGateway
@@ -195,6 +198,7 @@ function App() {
               onReportar={handleReport}
               onDirectorio={() => setActiveView('directorio')}
               onManual={() => setActiveView('manual')}
+              onMapa={() => navigate('map')}
             />
           )
         )}
@@ -236,7 +240,7 @@ function App() {
 
         {activeView === 'manual' && <ManualPage />}
 
-        {activeView === 'directorio' && <DirectoryPage />}
+        {activeView === 'directorio' && <DirectoryPage onNavigate={navigate} />}
       </AppLayout>
       )}
 
@@ -268,6 +272,11 @@ function App() {
       {isReporting && (
         <ReportModal
           onClose={() => setIsReporting(false)}
+          onNavigate={navigate}
+          onGoDirectory={() => {
+            setIsReporting(false);
+            setActiveView('directorio');
+          }}
         />
       )}
     </>

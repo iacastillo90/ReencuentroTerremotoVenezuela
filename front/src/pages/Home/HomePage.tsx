@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, Map as MapIcon, Megaphone, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Search, PlusCircle, Map as MapIcon, Megaphone, ChevronRight, ShieldCheck, Building2 } from 'lucide-react';
 import type { Person } from '../../types';
 import { Button } from '../../components/ui/Button';
 import reunionHero from '../../assets/home-reunion-venezuela.png';
@@ -14,6 +14,7 @@ interface HomePageProps {
   onReportar: () => void;
   onMapa: () => void;
   onSelectPerson: (p: Person) => void;
+  onNavigate: (view: string) => void;
 }
 
 const COMUNICADOS = [
@@ -22,10 +23,10 @@ const COMUNICADOS = [
 ];
 
 const ORGS = [
-  { name: 'Cruz Roja', color: '#E4002B' },
-  { name: 'Protección', color: '#F59E0B' },
-  { name: 'Cáritas', color: '#C0392B' },
-  { name: 'Unicef', color: '#1CABE2' },
+  { name: 'Cruz Roja', color: '#E4002B', url: 'https://cruzrojavenezolana.org/' },
+  { name: 'Protección Civil', color: '#F59E0B', url: 'http://www.pcivil.gob.ve/' },
+  { name: 'Cáritas', color: '#C0392B', url: 'https://caritasvenezuela.org/' },
+  { name: 'Unicef', color: '#1CABE2', url: 'https://www.unicef.org/venezuela/' },
 ];
 
 const isMinor = (p: Person) => p.age != null && p.age > 0 && p.age < 18;
@@ -39,7 +40,7 @@ function statusLabel(status?: string): { label: string; cls: string } {
   }
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, onReportar, onMapa, onSelectPerson }) => {
+export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, onReportar, onMapa, onSelectPerson, onNavigate }) => {
   const recent = (persons || []).filter(p => p && p.name).slice(0, 3);
 
   return (
@@ -68,13 +69,13 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, o
       </section>
 
       <section className="home-primary">
-        <Button fullWidth size="lg" onClick={onBuscar} className="home-btn-override"><Search size={18} /> Buscar personas</Button>
         <Button fullWidth size="lg" variant="danger" onClick={onReportar} className="home-btn-override"><PlusCircle size={18} /> Reportar caso</Button>
-        <Button fullWidth size="lg" variant="outline" onClick={onMapa} className="home-btn-override"><MapIcon size={18} /> Mapa de calor</Button>
+        <Button fullWidth size="lg" onClick={onBuscar} className="home-btn-override"><Search size={18} /> Buscar personas</Button>
+        <Button fullWidth size="lg" variant="outline" onClick={() => onNavigate('directorio')} className="home-btn-override"><Building2 size={18} /> Directorio</Button>
       </section>
 
       <section className="home-section home-section--howto">
-        <div className="howto-card" onClick={onBuscar} role="button" tabIndex={0}>
+        <div className="howto-card" onClick={() => onNavigate('manual')} role="button" tabIndex={0}>
           <div className="howto-card__body">
             <strong>¿Cómo funciona?</strong>
             <span>Conoce cómo funciona la plataforma y cómo puedes ayudar.</span>
@@ -86,7 +87,7 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, o
       <section className="home-section">
         <div className="home-section__head">
           <h2 className="home-h2">Últimos comunicados</h2>
-          <Button variant="ghost" size="sm" onClick={onBuscar} className="link-btn-override">Ver todos</Button>
+          <Button variant="ghost" size="sm" onClick={() => onNavigate('logistics')} className="link-btn-override">Ver todos</Button>
         </div>
         <div className="home-comunicados">
           {COMUNICADOS.map((c, i) => (
@@ -107,14 +108,14 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, persons, onBuscar, o
       <section className="home-section">
         <div className="home-section__head">
           <h2 className="home-h2">Organizaciones aliadas</h2>
-          <Button variant="ghost" size="sm" className="link-btn-override">Ver todas</Button>
+          <Button variant="ghost" size="sm" onClick={() => onNavigate('directorio')} className="link-btn-override">Ver todas</Button>
         </div>
         <div className="home-orgs">
           {ORGS.map((o, i) => (
-            <div className="org-card" key={i}>
+            <a href={o.url} target="_blank" rel="noopener noreferrer" className="org-card" key={i} style={{ textDecoration: 'none' }}>
               <div className="org-card__logo" style={{ background: o.color }}>{o.name.charAt(0)}</div>
               <span className="org-card__name">{o.name}</span>
-            </div>
+            </a>
           ))}
         </div>
       </section>
