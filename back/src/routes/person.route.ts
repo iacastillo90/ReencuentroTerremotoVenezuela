@@ -73,7 +73,7 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { q, status } = req.query;
+    const { q, status, category, state, municipality } = req.query;
 
     // Paginación — máx 200 por página
     const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
@@ -90,8 +90,30 @@ router.get('/', async (req: Request, res: Response) => {
         filter.normalizedName = { $regex: sanitizedQuery, $options: 'i' };
       }
     }
+    
+    if (category) {
+      if (category === 'mascota') {
+        filter.type = 'animal';
+      } else if (category === 'nino') {
+        filter.type = 'person';
+        filter.age = { $lt: 18 };
+      } else if (category === 'adulto') {
+        filter.type = 'person';
+        filter.age = { $gte: 18, $lt: 65 };
+      } else if (category === 'adulto_mayor') {
+        filter.type = 'person';
+        filter.age = { $gte: 65 };
+      }
+    }
+    
+    if (state && typeof state === 'string') {
+      filter['lastSeen.state'] = state;
+    }
+    if (municipality && typeof municipality === 'string') {
+      filter['lastSeen.municipality'] = { $regex: safeRegexQuery(municipality), $options: 'i' };
+    }
 
-    const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
+    const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:l=${limit}:o=${offset}`;
 
     // Solo cachear primera página sin búsqueda activa
     if (!q && offset === 0) {

@@ -203,7 +203,7 @@ function App() {
         )}
         {activeView === 'search' && (
           <SearchPage
-            onSearch={(q) => { setSearchQuery(q); setActiveView('feed'); }}
+            onSelectPerson={(p) => setSelectedPerson(p)}
             onBack={() => setActiveView('home')}
           />
         )}

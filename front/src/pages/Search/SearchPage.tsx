@@ -2,21 +2,18 @@ import React, { useState } from 'react';
 import { Search, ArrowLeft, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail, Dog } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Search.css';
+import { api } from '../../services/api';
+import { FeedCard } from '../Feed/components/FeedCard';
+import type { Person } from '../../types';
 
 type AgeCat = 'adulto' | 'adulto_mayor' | 'mascota' | 'nino';
 
 interface SearchPageProps {
-  /** Ejecuta la búsqueda (nombre) y navega a los resultados. */
-  onSearch: (query: string) => void;
   onBack: () => void;
+  onSelectPerson: (person: Person) => void;
 }
 
-const AGE_CATS: { key: AgeCat; icon: React.ReactNode; label: string }[] = [
-  { key: 'adulto', icon: <User size={24} />, label: 'Adulto' },
-  { key: 'adulto_mayor', icon: <UserRound size={24} />, label: 'Adulto Mayor' },
-  { key: 'mascota', icon: <Dog size={24} />, label: 'Mascota' },
-  { key: 'nino', icon: <Baby size={24} />, label: 'Niño/a' },
-];
+
 
 const ESTADOS_VE = [
   'Amazonas', 'Anzoátegui', 'Apure', 'Aragua', 'Barinas', 'Bolívar', 'Carabobo',
@@ -25,7 +22,7 @@ const ESTADOS_VE = [
   'Táchira', 'Trujillo', 'Yaracuy', 'Zulia',
 ];
 
-export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
+export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }) => {
   const [ageCategory, setAgeCategory] = useState<AgeCat>('adulto');
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
@@ -33,12 +30,33 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
   const [edad, setEdad] = useState('');
   const [raza, setRaza] = useState('');
   const [fecha, setFecha] = useState('');
+  
+  const [results, setResults] = useState<Person[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const isMinorCat = ageCategory === 'nino';
 
-  const buscar = () => {
-    // La búsqueda principal del equipo es por nombre/zona; pasamos el término más específico.
-    onSearch(name || estado || municipio);
+  const buscar = async () => {
+    setLoading(true);
+    setResults(null);
+    try {
+      const qParams = new URLSearchParams();
+      if (name) qParams.append('q', name);
+      if (estado) qParams.append('state', estado);
+      if (municipio) qParams.append('municipality', municipio);
+      if (ageCategory) qParams.append('category', ageCategory);
+      
+      // Limitamos los resultados y consultamos al backend
+      qParams.append('limit', '20');
+      
+      const res = await api.get<{ total: number; persons: Person[] }>(`/persons?${qParams.toString()}`);
+      setResults(res.data.persons);
+    } catch (err) {
+      console.error(err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -152,7 +170,29 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
               </div>
             </div>
           </div>
-          <Button fullWidth size="lg" onClick={buscar} className="flex-center gap-2"><Search size={18} /> Buscar</Button>
+          <Button fullWidth size="lg" onClick={buscar} disabled={loading} className="flex-center gap-2">
+            {loading ? <div className="spinner" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> : <Search size={18} />} 
+            {loading ? 'Buscando...' : 'Buscar'}
+          </Button>
+          
+          {results !== null && (
+            <div className="srch__results" style={{ marginTop: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--clr-text)' }}>
+                Resultados ({results.length})
+              </h3>
+              {results.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {results.map(p => (
+                    <FeedCard key={p.idHash} person={p} onClick={() => onSelectPerson(p)} />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: 'var(--clr-surface)', borderRadius: '12px', border: '1px solid var(--clr-border)' }}>
+                  <p style={{ color: 'var(--clr-text-muted)', margin: 0 }}>No se encontraron resultados para esta búsqueda.</p>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
