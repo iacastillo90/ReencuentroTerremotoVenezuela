@@ -86,7 +86,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
               ? <>&nbsp;·&nbsp;CI: {(person as any).data.cedula}</>
               : null}
           </div>
-          <small style={{ color: 'var(--clr-text-dim)', fontSize: '0.72rem' }}>
+          <small className="feed-card-urgency-text">
             Urgencia {urgency}/100
           </small>
         </div>

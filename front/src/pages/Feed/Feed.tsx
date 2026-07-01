@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, AlertTriangle, Users, MapPin, Loader2 } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
+import { Button } from '../../components/ui/Button';
 import type { Person, Disaster } from '../../types';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
@@ -124,9 +125,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
               <p>No hay desastres activos reportados.</p>
             </div>
           ) : disasters.map(d => (
-            <article key={d._id} className="feed-card" style={{ borderLeft: `3px solid ${d.severity === 'critical' ? 'var(--clr-danger)' : 'var(--clr-amber)'}` }}>
+            <article key={d._id} className={`feed-card ${d.severity === 'critical' ? 'feed-card-critical' : 'feed-card-amber'}`}>
               <div className="feed-card-header">
-                <div className="feed-avatar" style={{ color: 'var(--clr-danger)' }}>
+                <div className="feed-avatar feed-avatar-danger">
                   <AlertTriangle size={22} />
                 </div>
                 <div className="feed-card-meta">
@@ -145,20 +146,19 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           <Users size={48} />
           <p>No se encontraron personas con esos filtros.</p>
           {searchQuery && (
-            <div style={{ marginTop: '15px' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+            <div className="feed-empty-actions">
+              <p className="feed-empty-hint">
                 ¿No encuentras a quien buscas?
               </p>
               {user ? (
-                <button 
+                <Button 
                   onClick={handleCreateSearchRequest} 
                   disabled={creatingAlert}
-                  style={{ background: 'var(--blue)', color: '#fff', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                 >
                   {creatingAlert ? 'Creando...' : 'Crear Alerta de Búsqueda'}
-                </button>
+                </Button>
               ) : (
-                <p style={{ fontSize: '0.85rem', color: 'var(--clr-amber)' }}>Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
+                <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
               )}
             </div>
           )}
@@ -174,7 +174,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           ))}
 
           {/* Sentinel para scroll infinito */}
-          <div ref={sentinelRef} style={{ height: '1px' }} />
+          <div ref={sentinelRef} className="feed-sentinel" />
 
           {/* Spinner de carga más */}
           {loadingMore && (
@@ -226,8 +226,8 @@ export const FeedSidebar: React.FC<{
           <p>Alertas Activas</p>
         </div>
       </div>
-      <div className="sidebar-stat" style={{ color: 'var(--clr-amber)' }}>
-        <span style={{ fontSize: '1.1rem' }}>🗄️</span>
+      <div className="sidebar-stat sidebar-stat-amber">
+        <span className="sidebar-stat-icon-large">🗄️</span>
         <div>
           <h4>{total.toLocaleString()}</h4>
           <p>Total en BD</p>
@@ -235,7 +235,7 @@ export const FeedSidebar: React.FC<{
       </div>
     </div>
 
-    <p style={{ fontSize: '0.78rem', color: 'var(--clr-text-muted)', lineHeight: 1.6 }}>
+    <p className="sidebar-panel-footer">
       Plataforma de búsqueda y reencuentro de personas afectadas por el terremoto en Venezuela.
       Todos los reportes son públicos para maximizar la visibilidad.
     </p>

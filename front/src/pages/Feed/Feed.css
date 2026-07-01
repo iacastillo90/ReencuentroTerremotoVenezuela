@@ -364,3 +364,15 @@
   font-size: 0.78rem;
   border-top: 1px solid var(--clr-border);
 }
+
+.feed-card-critical { border-left: 3px solid var(--clr-danger); }
+.feed-card-amber { border-left: 3px solid var(--clr-amber); }
+.feed-avatar-danger { color: var(--clr-danger); }
+.feed-empty-actions { margin-top: 15px; }
+.feed-empty-hint { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px; }
+.feed-empty-login-hint { font-size: 0.85rem; color: var(--clr-amber); }
+.feed-sentinel { height: 1px; }
+.sidebar-stat-amber { color: var(--clr-amber); }
+.sidebar-stat-icon-large { font-size: 1.1rem; }
+.sidebar-panel-footer { font-size: 0.78rem; color: var(--clr-text-muted); line-height: 1.6; }
+.feed-card-urgency-text { color: var(--clr-text-dim); font-size: 0.72rem; }
