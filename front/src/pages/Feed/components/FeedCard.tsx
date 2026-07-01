@@ -5,12 +5,9 @@ import '../Feed.css';
 
 interface FeedCardProps {
   person: Person;
-  onClick: () => void;
 }
 
-export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
-  const urgency = person.metadata?.urgencyScore ?? 0;
-  const urgencyClass = urgency >= 75 ? 'high' : urgency >= 40 ? 'medium' : 'low';
+export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
 
   // Identidad protegida: menores (LOPNNA) o casos marcados como protegidos por el backend.
   const isProtected =
@@ -28,7 +25,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
   };
 
   return (
-    <article className="feed-card" onClick={onClick} role="button" tabIndex={0}>
+    <article className="feed-card">
       {/* Header */}
       <div className="feed-card-header">
         <div className="feed-avatar">
@@ -39,6 +36,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
         </div>
         <div className="feed-card-meta">
           <div className="feed-card-name">{person.name}</div>
+          {person.description && <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginBottom: '4px', lineHeight: '1.2' }}>{person.description}</div>}
           <div className="feed-card-sub">
             <MapPin size={11} />
             {person.lastSeen?.state || 'Ubicación desconocida'}
@@ -78,27 +76,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person, onClick }) => {
 
       {/* Footer */}
       <div className="feed-card-footer">
-        <div className="feed-card-footer-top">
-          <div className="feed-card-location">
-            <MapPin size={12} /> {person.lastSeen?.state || '—'}
-            {person.age && <>&nbsp;·&nbsp;{person.age}&nbsp;años</>}
-            {(person as any)['data.cedula'] || (person as any).data?.cedula
-              ? <>&nbsp;·&nbsp;CI: {(person as any).data.cedula}</>
-              : null}
-          </div>
-          <small className="feed-card-urgency-text">
-            Urgencia {urgency}/100
-          </small>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--clr-text-muted)' }}>
+          <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'} (contacto@pc.gov.ve)</div>
+          <div>📍 <strong>Ubicación aproximada:</strong> {person.lastSeen?.description || person.lastSeen?.state || 'Sector Norte, Caracas'}</div>
         </div>
-        <div className="urgency-bar">
-          <div
-            className={`urgency-fill ${urgencyClass}`}
-            style={{ width: `${urgency}%` }}
-          />
-        </div>
-        {person.description && (
-          <p className="feed-card-desc">{person.description}</p>
-        )}
       </div>
     </article>
   );

@@ -171,7 +171,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             <FeedCard
               key={p.idHash}
               person={p}
-              onClick={() => onSelectPerson(p)}
             />
           ))}
 

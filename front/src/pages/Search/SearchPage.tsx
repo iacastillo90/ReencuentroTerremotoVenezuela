@@ -184,7 +184,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }
               {results.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {results.map(p => (
-                    <FeedCard key={p.idHash} person={p} onClick={() => onSelectPerson(p)} />
+                    <FeedCard key={p.idHash} person={p} />
                   ))}
                 </div>
               ) : (
