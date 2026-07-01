@@ -64,18 +64,19 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
           ¿A quién buscas?
         </label>
         <div className="srch-category-grid">
-          {AGE_CATS.map(c => {
-            return (
-              <button
-                type="button"
-                key={c.key}
-                className={`srch-category-btn ${ageCategory === c.key ? 'active-blue' : ''}`}
-                onClick={() => setAgeCategory(c.key)}
-              >
-                {c.icon} {c.label}
-              </button>
-            );
-          })}
+          <button type="button" className={`srch-category-btn ${ageCategory === 'nino' ? 'active-red' : ''}`} onClick={() => setAgeCategory('nino')} style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '1rem 0.5rem' }}>
+            <span>Niño | Niña</span>
+            <span style={{ fontSize: '0.7em', fontWeight: 500, opacity: 0.85 }}>o Adolescente</span>
+          </button>
+          <button type="button" className={`srch-category-btn ${ageCategory === 'adulto' ? 'active-blue' : ''}`} onClick={() => setAgeCategory('adulto')} style={{ padding: '1rem 0.5rem' }}>
+            Adulto
+          </button>
+          <button type="button" className={`srch-category-btn ${ageCategory === 'adulto_mayor' ? 'active-blue' : ''}`} onClick={() => setAgeCategory('adulto_mayor')} style={{ padding: '1rem 0.5rem' }}>
+            Adulto Mayor
+          </button>
+          <button type="button" className={`srch-category-btn ${ageCategory === 'mascota' ? 'active-blue' : ''}`} onClick={() => setAgeCategory('mascota')} style={{ padding: '1rem 0.5rem' }}>
+            Mascota
+          </button>
         </div>
       </div>
 
