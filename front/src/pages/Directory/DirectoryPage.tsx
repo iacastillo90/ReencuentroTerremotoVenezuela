@@ -10,12 +10,12 @@ interface Org {
 }
 
 const ORGS: Org[] = [
-  { id: 'PC-VEN-001', name: 'Protección Civil Nacional', specialty: 'Rescate y búsqueda urbana', channel: 'Canal de coordinación PC', channelRole: 'Coordinador de operaciones' },
-  { id: 'BOM-DTC-002', name: 'Bomberos Distrito Capital', specialty: 'Rescate técnico y estructuras colapsadas', channel: 'Canal de coordinación Bomberos', channelRole: 'Comandante de guardia' },
   { id: 'CR-VEN-003', name: 'Cruz Roja Venezolana', specialty: 'Atención médica y albergues', channel: 'Canal de coordinación Cruz Roja', channelRole: 'Líder de respuesta humanitaria' },
   { id: 'NEV-VEN-004', name: 'Noticiero Emergencia VE', specialty: 'Registro y verificación de campo', channel: 'Canal de coordinación Noticiero', channelRole: 'Editor de mesa técnica' },
-  { id: 'KSAR-VEN-005', name: 'Brigada Rescate K-SAR', specialty: 'Búsqueda con caninos', channel: 'Canal de coordinación K-SAR', channelRole: 'Jefe de brigada' },
   { id: 'FUN-ANI-006', name: 'Bienestar Animal VE', specialty: 'Rescate y triaje de fauna', channel: 'Canal de coordinación Fauna', channelRole: 'Coordinador de campo' },
+  { id: 'BOM-DTC-002', name: 'Bomberos Distrito Capital', specialty: 'Rescate técnico y estructuras colapsadas', channel: 'Canal de coordinación Bomberos', channelRole: 'Comandante de guardia' },
+  { id: 'PC-VEN-001', name: 'Protección Civil Nacional', specialty: 'Rescate y búsqueda urbana', channel: 'Canal de coordinación PC', channelRole: 'Coordinador de operaciones' },
+  { id: 'KSAR-VEN-005', name: 'Brigada Rescate K-SAR', specialty: 'Búsqueda con caninos', channel: 'Canal de coordinación K-SAR', channelRole: 'Jefe de brigada' },
 ];
 
 interface DirectoryPageProps {
