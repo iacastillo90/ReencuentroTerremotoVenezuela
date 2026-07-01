@@ -56,8 +56,13 @@ app.use(cors({
     // Permitir peticiones sin origen (ej. curl, postman)
     if (!origin) return callback(null, true);
     
-    // Verificación robusta: coincidencia exacta o si el origin termina con la URL permitida (por si cambian a http/https)
-    const isAllowed = corsOrigins.some(allowed => origin === allowed || origin.includes(allowed.replace(/^https?:\/\//, '')));
+    // Verificación robusta: coincidencia exacta normalizada, o mismo host/puerto con otro esquema (por si cambian a http/https).
+    // Nota: se evita `includes()` porque un substring permite bypass (ej. https://localhost:5173.evil.com).
+    const normalize = (u: string) => u.trim().toLowerCase().replace(/\/$/, '');
+    const stripScheme = (u: string) => normalize(u).replace(/^https?:\/\//, '');
+    const isAllowed = corsOrigins.some(allowed =>
+      normalize(origin) === normalize(allowed) || stripScheme(origin) === stripScheme(allowed)
+    );
     
     if (isAllowed) {
       return callback(null, true);
