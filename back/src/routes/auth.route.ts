@@ -11,15 +11,11 @@ import { hashPassword, verifyPassword } from '../utils/password.util';
 
 const router = Router();
 
-// JWT_SECRET startup validation — fail-fast in production
+// JWT_SECRET startup validation — fail-fast
 const JWT_SECRET = (() => {
   if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[FATAL] JWT_SECRET is required in production');
-    process.exit(1);
-  }
-  console.warn('[WARN] JWT_SECRET not set. Generated temporary development secret.');
-  return 'dev-secret-do-not-use-in-production';
+  console.error('[FATAL] JWT_SECRET is required');
+  process.exit(1);
 })();
 
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
