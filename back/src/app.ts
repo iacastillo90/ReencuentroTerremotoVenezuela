@@ -45,11 +45,22 @@ app.use(helmet({
 
 // --- 2. CORS restringido ---
 const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4000')
-  .split(',').map(s => s.trim());
+  .split(',')
+  .map(s => s.trim().replace(/\/$/, '')); // Limpia espacios y barras finales por seguridad
+
 app.use(cors({
   origin: (origin, callback) => {
+    // Permitir peticiones sin origen (ej. curl, postman)
     if (!origin) return callback(null, true);
-    if (corsOrigins.includes(origin)) return callback(null, true);
+    
+    // Verificación robusta: coincidencia exacta o si el origin termina con la URL permitida (por si cambian a http/https)
+    const isAllowed = corsOrigins.some(allowed => origin === allowed || origin.includes(allowed.replace(/^https?:\/\//, '')));
+    
+    if (isAllowed) {
+      return callback(null, true);
+    }
+    
+    console.error(`[CORS RECHAZADO] Origin del cliente: '${origin}'. Valores permitidos en Render:`, corsOrigins);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
