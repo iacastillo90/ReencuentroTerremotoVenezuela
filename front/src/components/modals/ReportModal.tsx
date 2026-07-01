@@ -317,8 +317,9 @@ ${text.trim()}`.trim();
                     CATEGORÍAS
                   </label>
                   <div className="category-grid">
-                    <button type="button" className={`category-btn ${category === 'niño' ? 'active-red' : ''}`} onClick={() => setCategory('niño')}>
-                      Niño | Niña
+                    <button type="button" className={`category-btn ${category === 'niño' ? 'active-red' : ''}`} onClick={() => setCategory('niño')} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span>Niño | Niña</span>
+                      <span style={{ fontSize: '0.7em', fontWeight: 500, opacity: 0.85 }}>o Adolescente</span>
                     </button>
                     <button type="button" className={`category-btn ${category === 'adulto' ? 'active-blue' : ''}`} onClick={() => setCategory('adulto')}>
                       Adulto
@@ -327,7 +328,7 @@ ${text.trim()}`.trim();
                       Adulto Mayor
                     </button>
                     <button type="button" className={`category-btn ${category === 'mascota' ? 'active-blue' : ''}`} onClick={() => setCategory('mascota')}>
-                      Mascota | Animal
+                      Mascota
                     </button>
                   </div>
                 </div>
