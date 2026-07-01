@@ -40,7 +40,7 @@ export class GeminiProvider implements IAIProvider {
               mimeType: mimeType
             }
           },
-          { text: "Transcribe exactamente el siguiente audio. No agregues comentarios, solo la transcripción." }
+          { text: "Eres un experto transcribiendo audio. Transcribe todo lo que escuches en el audio adjunto palabra por palabra. Si el audio está vacío, en silencio, o solo hay ruido, responde exactamente con: 'No se detectó voz clara en el audio.'" }
         ]
       });
 
