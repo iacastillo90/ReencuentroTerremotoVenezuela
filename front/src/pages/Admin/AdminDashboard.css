@@ -500,3 +500,18 @@
     padding: 1rem 1.5rem;
   }
 }
+
+.admin-text-muted { color: #64748b; }
+.admin-text-white { color: #f1f5f9; }
+.admin-text-secondary { color: var(--text-secondary); }
+.admin-text-danger { color: var(--clr-danger); }
+.admin-urgency-high { color: #fb7185; font-weight: 600; }
+.admin-urgency-medium { color: var(--clr-amber); font-weight: 600; }
+.admin-urgency-low { color: #34d399; font-weight: 600; }
+.admin-table-empty { text-align: center; padding: 2rem; color: #475569; }
+.admin-table-empty-simple { text-align: center; padding: 2rem; }
+.admin-score-high { font-weight: bold; color: var(--clr-success); }
+.admin-score-medium { font-weight: bold; color: var(--clr-amber); }
+.admin-header-actions { display: flex; gap: 1rem; align-items: center; }
+.admin-header-button-group { display: flex; gap: 0.5rem; }
+.admin-user-email { font-size: 12px; color: var(--text-secondary); }
