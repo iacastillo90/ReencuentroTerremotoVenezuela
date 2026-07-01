@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Sparkles, Loader2, CheckCircle, Check, MapPin, ShieldAlert, Video, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { AudioRecorder } from './AudioRecorder';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Button } from '../ui/Button';
 import { BrandMark } from '../BrandMark';
 import { MobileBottomNav } from '../../layouts/MobileBottomNav';
@@ -21,6 +24,14 @@ const Card = ({ children }: { children: React.ReactNode }) => (
     </div>
   </div>
 );
+
+const locationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  shadowSize: [41, 41]
+});
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onGoDirectory, onNavigate, defaultType = 'person' }) => {
   const [reportAction, setReportAction] = useState<'vi' | 'deceso'>('vi');
@@ -443,7 +454,7 @@ ${text.trim()}`.trim();
                   <div>
                     <strong style={{ fontSize: '0.85rem' }}>Asistente de IA Activo</strong>
                     <p style={{ margin: 0, marginTop: 2, fontSize: '0.75rem', lineHeight: 1.4 }}>
-                      Nuestra inteligencia artificial se encargará de extraer rasgos físicos, edad y estado de salud a partir de tu texto o grabación.
+                      Nuestra inteligencia artificial se encargará de manejar los datos de manera segura.
                     </p>
                   </div>
                 </div>
@@ -532,6 +543,25 @@ ${text.trim()}`.trim();
                       {clientIp}
                     </div>
                   </div>
+
+                  {reporterLocation && (
+                    <div style={{ marginTop: '1rem', borderRadius: '8px', overflow: 'hidden', height: '150px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <MapContainer 
+                        center={[reporterLocation.lat, reporterLocation.lng]} 
+                        zoom={14} 
+                        style={{ height: '100%', width: '100%' }}
+                        zoomControl={false}
+                        dragging={false}
+                        scrollWheelZoom={false}
+                        doubleClickZoom={false}
+                      >
+                        <TileLayer
+                          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        />
+                        <Marker position={[reporterLocation.lat, reporterLocation.lng]} icon={locationIcon} />
+                      </MapContainer>
+                    </div>
+                  )}
                 </div>
               </Card>
 
