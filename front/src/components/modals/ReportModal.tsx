@@ -363,7 +363,7 @@ ${text.trim()}`.trim();
                       <div className="upload-dropzone-content">
                         <Video size={40} color="var(--clr-text-muted)" style={{ margin: '0 auto 0.5rem' }} />
                         <span style={{ color: 'var(--clr-text-muted)', fontWeight: 600, fontSize: '0.9rem' }}>
-                          {file ? file.name : 'Grabar y seleccionar video (Prioritario)'}
+                          {file ? file.name : ''}
                         </span>
                       </div>
                     </div>

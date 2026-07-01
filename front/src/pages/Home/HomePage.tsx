@@ -51,7 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, onBuscar, onReportar
         <Button fullWidth size="lg" variant="danger" onClick={onReportar} className="home-btn-override"><PlusCircle size={18} /> Reportar caso</Button>
         <Button fullWidth size="lg" onClick={onBuscar} className="home-btn-override"><Search size={18} /> Buscar personas</Button>
         <Button fullWidth size="lg" onClick={() => onNavigate('directorio')} className="home-btn-override" style={{ backgroundColor: '#0d9488', color: 'white', border: 'none' }}><Building2 size={18} /> Directorio</Button>
-        <Button fullWidth size="lg" variant="outline" onClick={() => onNavigate('manual')} className="home-btn-override"><ShieldCheck size={18} /> Manual y políticas</Button>
+        <Button fullWidth size="lg" onClick={() => onNavigate('manual')} className="home-btn-override" style={{ backgroundColor: '#6366f1', color: 'white', border: 'none' }}><ShieldCheck size={18} /> Manual y políticas</Button>
       </section>
 
       <section className="home-section">
