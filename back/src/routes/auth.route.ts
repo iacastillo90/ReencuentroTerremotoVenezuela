@@ -278,7 +278,6 @@ router.post('/logout', requireUser, async (req: Request, res: Response) => {
     await UserModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
 
     res.clearCookie('token');
-    res.clearCookie('csrf-token');
 
     auditLog({
       eventType: 'auth_logout',
