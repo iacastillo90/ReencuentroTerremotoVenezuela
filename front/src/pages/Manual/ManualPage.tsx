@@ -1,4 +1,4 @@
-import { ShieldCheck, BookOpen, AlertTriangle, Activity, LifeBuoy } from 'lucide-react';
+import { ShieldCheck, Activity } from 'lucide-react';
 import './Manual.css';
 
 const GUIDELINES = [

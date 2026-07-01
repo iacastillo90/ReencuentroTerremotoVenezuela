@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, PlusCircle, Megaphone, ChevronRight, ShieldCheck, Building2 } from 'lucide-react';
+import { Search, PlusCircle, Megaphone, ShieldCheck, Building2 } from 'lucide-react';
 import type { Person } from '../../types';
 import { Button } from '../../components/ui/Button';
 import reunionHero from '../../assets/home-reunion-venezuela.png';

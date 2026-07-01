@@ -19,14 +19,13 @@ interface FeedPageProps {
   counts: Counts;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  onSelectPerson: (p: Person) => void;
   onLoadMore: () => void;
 }
 
 type Filter = 'all' | 'missing' | 'found' | 'animals' | 'disasters';
 
 export const FeedPage: React.FC<FeedPageProps> = ({
-  persons, disasters, loading, loadingMore, hasMore, total, counts, searchQuery, onSearchChange, onSelectPerson, onLoadMore
+  persons, disasters, loading, loadingMore, hasMore, total, counts, searchQuery, onSearchChange, onLoadMore
 }) => {
   const [filter, setFilter] = useState<Filter>('missing');
   const sentinelRef = useRef<HTMLDivElement>(null);

@@ -11,7 +11,6 @@ interface HomeGatewayProps {
   onReportar: () => void;    // requiere login (gating en App)
   onDirectorio: () => void;  // público
   onManual: () => void;      // público
-  onMapa: () => void;        // requiere login
 }
 
 interface OptionCardProps {
@@ -41,7 +40,7 @@ const OptionCard: React.FC<OptionCardProps> = ({ icon, title, desc, cta, tone, l
 );
 
 /** Home público: presenta las opciones sobre un fondo de marca. Reportar/Buscar piden login; Directorio/Manual son públicos. */
-export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onDirectorio, onManual, onMapa }) => (
+export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onDirectorio, onManual }) => (
   <div className="public-landing hg">
     <div className="pl__bg" />
     <div className="hg__inner">

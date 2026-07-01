@@ -197,13 +197,11 @@ function App() {
               onReportar={handleReport}
               onDirectorio={() => setActiveView('directorio')}
               onManual={() => setActiveView('manual')}
-              onMapa={() => navigate('map')}
             />
           )
         )}
         {activeView === 'search' && (
           <SearchPage
-            onSelectPerson={(p) => setSelectedPerson(p)}
             onBack={() => setActiveView('home')}
           />
         )}
@@ -220,7 +218,6 @@ function App() {
             counts={counts}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onSelectPerson={setSelectedPerson}
             onLoadMore={loadMore}
           />
         )}

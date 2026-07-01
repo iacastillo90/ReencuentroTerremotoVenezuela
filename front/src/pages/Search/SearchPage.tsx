@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Search, ArrowLeft, User, UserRound, Baby, ShieldCheck, ClipboardList, Mail, Dog } from 'lucide-react';
+import { Search, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Search.css';
-import { api } from '../../services/api';
 import { FeedCard } from '../Feed/components/FeedCard';
 import type { Person } from '../../types';
 
@@ -10,7 +9,6 @@ type AgeCat = 'adulto' | 'adulto_mayor' | 'mascota' | 'nino';
 
 interface SearchPageProps {
   onBack: () => void;
-  onSelectPerson: (person: Person) => void;
 }
 
 
@@ -49,7 +47,7 @@ const MOCK_RESULTS: Record<AgeCat, Person[]> = {
   ] as Person[]
 };
 
-export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onSelectPerson }) => {
+export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
   const [ageCategory, setAgeCategory] = useState<AgeCat>('adulto');
   const [name, setName] = useState('');
   const [estado, setEstado] = useState('');
