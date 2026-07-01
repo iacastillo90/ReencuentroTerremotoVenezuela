@@ -1,0 +1,80 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Variants */
+.btn-primary {
+  background: var(--blue);
+  color: var(--white);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--brand-blue);
+}
+
+.btn-secondary {
+  background: var(--clr-surface);
+  color: var(--white);
+  border: 1px solid var(--clr-border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--clr-hover);
+}
+
+.btn-danger {
+  background: var(--brand-red);
+  color: var(--white);
+}
+.btn-danger:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--text-secondary);
+}
+.btn-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--blue);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(46, 107, 236, 0.1);
+}
+
+/* Sizes */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.btn-md {
+  padding: 10px 16px;
+  font-size: 0.95rem;
+}
+.btn-lg {
+  padding: 14px 24px;
+  font-size: 1.1rem;
+}
+
+/* Full Width */
+.btn-full {
+  width: 100%;
+}
