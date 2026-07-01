@@ -30,7 +30,7 @@ export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
         <div>
           <p className="eyebrow">Fuentes verificadas</p>
           <h2>Directorio de apoyo</h2>
-          <p className="directory-hero-sub">Organizaciones autorizadas y puntos de control de emergencia coordinados. Solo estas instituciones pueden publicar reportes oficiales.</p>
+          <p className="directory-hero-sub">Lista de organizaciones autorizadas y puntos de control de emergencia coordinados.</p>
         </div>
       </header>
 

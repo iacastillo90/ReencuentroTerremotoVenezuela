@@ -12,10 +12,10 @@ interface SearchPageProps {
 }
 
 const AGE_CATS: { key: AgeCat; icon: React.ReactNode; label: string }[] = [
-  { key: 'adulto',       icon: <User size={24} />,      label: 'Adulto' },
+  { key: 'adulto', icon: <User size={24} />, label: 'Adulto' },
   { key: 'adulto_mayor', icon: <UserRound size={24} />, label: 'Adulto Mayor' },
-  { key: 'mascota',      icon: <Dog size={24} />,       label: 'Mascota' },
-  { key: 'nino',         icon: <Baby size={24} />,      label: 'Niño/a' },
+  { key: 'mascota', icon: <Dog size={24} />, label: 'Mascota' },
+  { key: 'nino', icon: <Baby size={24} />, label: 'Niño/a' },
 ];
 
 const ESTADOS_VE = [
@@ -54,11 +54,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
         privacidad de las personas y evitamos el mal uso de los datos.
       </div>
 
-      <div className="srch__field">
-        <Search size={17} />
-        <input placeholder="Nombre de la persona…" value={name} onChange={e => setName(e.target.value)} />
-      </div>
-
       <div className="srch__cats">
         <label style={{ textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em', color: 'var(--clr-text-muted)', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
           ¿A quién buscas?
@@ -78,6 +73,11 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
             Mascota
           </button>
         </div>
+      </div>
+
+      <div className="srch__field">
+        <Search size={17} />
+        <input placeholder="Nombre de la persona…" value={name} onChange={e => setName(e.target.value)} />
       </div>
 
       {isMinorCat ? (
@@ -121,10 +121,10 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
               {ageCategory !== 'mascota' ? (
                 <div className="srch__field-group">
                   <label>Edad aproximada</label>
-                  <input 
-                    type="number" 
-                    placeholder="Ej: 45" 
-                    value={edad} 
+                  <input
+                    type="number"
+                    placeholder="Ej: 45"
+                    value={edad}
                     onChange={e => setEdad(e.target.value)}
                     min="0"
                     max="120"
@@ -133,20 +133,20 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onSearch, onBack }) => {
               ) : (
                 <div className="srch__field-group">
                   <label>Raza o color</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ej: Poodle negro" 
-                    value={raza} 
+                  <input
+                    type="text"
+                    placeholder="Ej: Poodle negro"
+                    value={raza}
                     onChange={e => setRaza(e.target.value)}
                   />
                 </div>
               )}
               <div className="srch__field-group">
-                <label>Fecha de desaparición</label>
-                <input 
-                  type="date" 
-                  value={fecha} 
-                  onChange={e => setFecha(e.target.value)} 
+                <label>Fecha de registro</label>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
                   title="Última vez que se le vio"
                 />
               </div>
