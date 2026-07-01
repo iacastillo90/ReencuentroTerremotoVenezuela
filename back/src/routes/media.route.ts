@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { uploadMedia } from '../services/storage.service';
+import { getAIProvider } from '../services/ai/ai.factory';
 import { ALLOWED_MIME_TYPES, IMAGE_MAX_SIZE, VIDEO_MAX_SIZE, validateMagicBytes, sanitizeFilename } from '../utils/file-validate.util';
 import { auditLog } from '../middlewares/audit.middleware';
 import { requireUser } from '../middlewares/auth.middleware';
@@ -79,6 +80,30 @@ router.post('/', requireUser, mediaUploadLimiter, upload.single('file'), async (
   } catch (error: any) {
     console.error('[MediaRoute] Error subiendo archivo:', error);
     return res.status(500).json({ error: error.message || 'Error interno subiendo archivo' });
+  }
+});
+
+router.post('/analyze-image', requireUser, mediaUploadLimiter, upload.single('image'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ninguna imagen.' });
+    }
+
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'El archivo debe ser una imagen para su análisis.' });
+    }
+
+    const aiProvider = getAIProvider();
+    if (!aiProvider.analyzeImageDraft) {
+      return res.status(501).json({ error: 'Análisis de imagen no soportado por el proveedor de IA actual.' });
+    }
+
+    const analysis = await aiProvider.analyzeImageDraft(req.file.buffer, req.file.mimetype);
+    
+    return res.status(200).json(analysis);
+  } catch (error: any) {
+    console.error('[MediaRoute] Error analizando imagen:', error);
+    return res.status(500).json({ error: error.message || 'Error interno analizando imagen con IA' });
   }
 });
 
