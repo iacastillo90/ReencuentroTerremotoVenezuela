@@ -128,6 +128,10 @@ img { max-width: 100%; display: block; }
 button { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
 
+/* Controles nativos en tema oscuro (evita el desplegable blanco de <select>) */
+input, select, textarea, button { color-scheme: dark; }
+select option { background: var(--clr-surface); color: var(--clr-text); }
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

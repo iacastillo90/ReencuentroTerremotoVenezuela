@@ -99,7 +99,7 @@ Cuando el sistema obtiene datos masivos (ej. desde *VenezuelaReporta* mediante C
 Cuando un usuario envía un reporte manual a través de la UI:
 1. El usuario escribe texto libre ("Mi tía María tiene 40 años y sufre de asma...").
 2. El API recibe el texto y encola un trabajo en **BullMQ**. Retorna al usuario un `202 Accepted`.
-3. El Worker recoge el trabajo y envía el texto a un modelo LLM (Anthropic Anthropic o similares).
+3. El Worker recoge el trabajo y envía el texto a un modelo LLM (proveedor de IA configurable: Anthropic, OpenAI o Gemini).
 4. El modelo extrae un JSON estructurado con (nombre, edad, enfermedades, ubicación).
 5. El Worker guarda la persona estructurada en MongoDB.
 

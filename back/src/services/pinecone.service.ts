@@ -19,13 +19,16 @@ export async function upsertVectorToPinecone(id: string, embedding: number[], me
     if (!pc) return;
 
     const index = pc.Index(getIndexName());
-    await index.upsert([
-      {
-        id,
-        values: embedding,
-        metadata
-      }
-    ]);
+    // SDK Pinecone v8: upsert recibe { records: [...] } (antes era un array directo)
+    await index.upsert({
+      records: [
+        {
+          id,
+          values: embedding,
+          metadata
+        }
+      ]
+    });
     console.log(`[Pinecone] Vector upserted for ID: ${id}`);
   } catch (error) {
     console.error('[Pinecone] Upsert Error:', error);
