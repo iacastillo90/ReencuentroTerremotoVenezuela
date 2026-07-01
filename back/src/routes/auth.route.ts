@@ -44,7 +44,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
   res.cookie('csrf-token', token, {
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24h
   });
   return res.json({ token });
@@ -106,7 +106,7 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
     res.cookie('token', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
     });
 
@@ -137,7 +137,7 @@ function issueSession(res: Response, user: any): string {
   res.cookie('token', authToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
   });
   return authToken;
@@ -261,7 +261,7 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
     res.cookie('token', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
     });
 
