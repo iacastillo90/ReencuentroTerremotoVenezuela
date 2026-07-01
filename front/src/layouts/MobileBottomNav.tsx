@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, PlusCircle, Search, Building2, ShieldCheck, Plus } from 'lucide-react';
+import { Home, PlusCircle, Search, Building2, ShieldCheck } from 'lucide-react';
 
 export type BottomNavView = 'home' | 'search' | 'directorio' | 'manual';
 
@@ -7,8 +7,7 @@ interface MobileBottomNavProps {
   activeView?: BottomNavView | 'report' | string;
   onNavigate: (view: BottomNavView) => void;
   onReport: (e: React.MouseEvent) => void;
-  moreOpen?: boolean;
-  onMoreClick: (e: React.MouseEvent) => void;
+
   className?: string;
 }
 
@@ -16,8 +15,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeView,
   onNavigate,
   onReport,
-  moreOpen,
-  onMoreClick,
+
   className = ''
 }) => {
   return (
@@ -37,9 +35,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <button className={`bottom-nav-item ${activeView === 'manual' ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onNavigate('manual'); }}>
         <ShieldCheck size={28} strokeWidth={2.2} fill={activeView === 'manual' ? 'currentColor' : 'none'} /><span>Manual</span>
       </button>
-      <button className={`bottom-nav-item ${moreOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onMoreClick(e); }}>
-        <Plus size={28} strokeWidth={2.2} /><span>Más</span>
-      </button>
+
     </nav>
   );
 };

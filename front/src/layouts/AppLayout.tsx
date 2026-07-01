@@ -140,8 +140,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         activeView={activeView}
         onNavigate={(v) => go(v as any)}
         onReport={onReport}
-        moreOpen={moreOpen}
-        onMoreClick={() => setMoreOpen(true)}
       />
 
       {/* ─ Hoja "Más" ─ */}
