@@ -18,6 +18,7 @@ partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Resp
     if (status) filter.status = status;
 
     const cases = await PersonModel.find(filter)
+      .select('name status age gender description lastSeen photoUrl aliases contactPerson type metadata.createdAt metadata.updatedAt metadata.source metadata.urgencyScore metadata.confidenceLabel metadata.auditStatus')
       .sort({ 'metadata.createdAt': -1 })
       .skip(offset)
       .limit(limit)

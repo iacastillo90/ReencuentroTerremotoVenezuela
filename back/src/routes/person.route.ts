@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { personPayloadSchema } from '../validators/person.validator';
 import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
@@ -6,7 +7,13 @@ import { PersonModel } from '../models/unified-person.model';
 import { AuditLogModel } from '../models/audit-log.model';
 import { connection as redis } from '../config/redis.config';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
+import { ValidationError } from '../middlewares/error.middleware';
 import { safeRegexQuery } from '../utils/regex-escape.util';
+
+const closeCaseSchema = z.object({
+  resolution: z.enum(['found', 'deceased', 'erroneous']),
+  notes: z.string().max(2000).optional(),
+});
 
 const router = Router();
 
@@ -187,13 +194,14 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response, nex
 router.post('/:idHash/close', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idHash } = req.params;
-    const { resolution, notes } = req.body;
     const userId = (req as any).user.userId;
     const userRole = (req as any).user.role;
 
-    if (!['found', 'deceased', 'erroneous'].includes(resolution)) {
-      return res.status(400).json({ error: 'Resolución inválida.' });
+    const parsed = closeCaseSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Resolución inválida', { errors: parsed.error.issues }));
     }
+    const { resolution, notes } = parsed.data;
 
     const person = await PersonModel.findOne({ idHash });
     if (!person) return res.status(404).json({ error: 'Reporte no encontrado.' });

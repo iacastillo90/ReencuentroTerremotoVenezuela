@@ -1,7 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { CaseContactModel } from '../models/case-contact.model';
 import { PersonModel } from '../models/unified-person.model';
 import { requireUser } from '../middlewares/auth.middleware';
+import { ValidationError } from '../middlewares/error.middleware';
+
+const contactSchema = z.object({
+  reportId: z.string().min(1).max(50),
+  message: z.string().min(1).max(5000),
+});
 
 const router = Router();
 
@@ -9,11 +16,12 @@ const router = Router();
 router.post('/', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const senderId = (req as any).user.userId;
-    const { reportId, message } = req.body;
 
-    if (!reportId || !message) {
-      return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+    const parsed = contactSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Datos de contacto inválidos', { errors: parsed.error.issues }));
     }
+    const { reportId, message } = parsed.data;
 
     const person = await PersonModel.findOne({ idHash: reportId }).lean();
     if (!person) {

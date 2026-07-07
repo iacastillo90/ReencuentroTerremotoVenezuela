@@ -1,7 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { SearchRequestModel } from '../models/search-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
+import { ValidationError } from '../middlewares/error.middleware';
 import { personMatchingQueue } from '../queues/person-matching.queue';
+
+const createSearchRequestSchema = z.object({
+  searchName: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000).optional(),
+  category: z.enum(['menor', 'adulto', 'adulto_mayor', 'mascota']).optional(),
+  isMinor: z.boolean().optional(),
+});
+
+const updateStatusSchema = z.object({
+  status: z.enum(['activa', 'resuelta', 'cancelada']),
+});
 
 const router = Router();
 
@@ -9,11 +22,12 @@ const router = Router();
 router.post('/', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
-    const { searchName, description, category, isMinor } = req.body;
 
-    if (!searchName) {
-      return res.status(400).json({ error: 'El nombre de búsqueda es obligatorio' });
+    const parsed = createSearchRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Datos de solicitud inválidos', { errors: parsed.error.issues }));
     }
+    const { searchName, description, category, isMinor } = parsed.data;
 
     const newRequest = await SearchRequestModel.create({
       user: userId,
@@ -47,11 +61,12 @@ router.patch('/:id/status', requireUser, async (req: Request, res: Response, nex
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
-    const { status } = req.body;
 
-    if (!['activa', 'resuelta', 'cancelada'].includes(status)) {
-       return res.status(400).json({ error: 'Estado inválido' });
+    const parsed = updateStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Estado inválido', { errors: parsed.error.issues }));
     }
+    const { status } = parsed.data;
 
     const request = await SearchRequestModel.findOneAndUpdate(
       { _id: id, user: userId },

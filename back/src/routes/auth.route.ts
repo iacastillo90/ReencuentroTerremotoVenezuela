@@ -7,19 +7,9 @@ import { requireUser } from '../middlewares/auth.middleware';
 import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import { googleAuthSchema, profileUpdateSchema } from '../validators/auth.validator';
 import { auditLog } from '../middlewares/audit.middleware';
+import { JWT_SECRET } from '../utils/jwt-secret.util';
 
 const router = Router();
-
-// JWT_SECRET startup validation — fail-fast in production
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[FATAL] JWT_SECRET is required in production');
-    process.exit(1);
-  }
-  console.warn('[WARN] JWT_SECRET not set. Generated temporary development secret.');
-  return 'dev-secret-do-not-use-in-production';
-})();
 
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
 

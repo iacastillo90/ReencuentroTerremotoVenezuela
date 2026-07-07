@@ -73,6 +73,24 @@ jest.mock('../queues/person-matching.queue', () => {
   };
 });
 
+jest.mock('../queues/ia-process.queue', () => ({
+  iaProcessQueue: {
+    add: jest.fn().mockResolvedValue(undefined),
+    close: jest.fn().mockResolvedValue(undefined),
+  },
+  addJobToIAQueue: jest.fn().mockResolvedValue(undefined),
+  IA_PROCESS_QUEUE_NAME: 'ia-process',
+}));
+
+jest.mock('../queues/manual-audit.queue', () => ({
+  manualAuditQueue: {
+    add: jest.fn().mockResolvedValue(undefined),
+    close: jest.fn().mockResolvedValue(undefined),
+  },
+  addJobToManualAudit: jest.fn().mockResolvedValue(undefined),
+  MANUAL_AUDIT_QUEUE_NAME: 'manual-audit',
+}));
+
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';

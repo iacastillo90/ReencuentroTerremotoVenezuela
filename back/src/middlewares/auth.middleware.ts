@@ -1,20 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { UserModel } from '../models/user.model';
 import { auditLog } from './audit.middleware';
-
-// JWT_SECRET startup validation — fail-fast in production
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[FATAL] JWT_SECRET is required in production');
-    process.exit(1);
-  }
-  const generated = crypto.randomBytes(64).toString('hex');
-  console.warn('[WARN] JWT_SECRET not set. Generated temporary development secret.');
-  return generated;
-})();
+import { JWT_SECRET } from '../utils/jwt-secret.util';
 
 export function getJwtSecret(): string {
   return JWT_SECRET;
