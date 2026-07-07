@@ -2,8 +2,11 @@ import { PersonModel } from '../models/unified-person.model';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { distance } from 'fastest-levenshtein';
 import mongoose from 'mongoose';
+import { runConcurrent } from '../utils/run-concurrent.util';
 
-// Calculamos la similitud en porcentaje entre dos strings usando Levenshtein
+const CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY || '10', 10);
+const CHUNK_SIZE = parseInt(process.env.BATCH_CHUNK_SIZE || '200', 10);
+
 function similarity(a: string, b: string): number {
   if (!a || !b) return 0;
   const maxLen = Math.max(a.length, b.length);
@@ -13,42 +16,67 @@ function similarity(a: string, b: string): number {
 
 export async function runGeospatialCrossover() {
   console.log('[Reconcile] Iniciando cruce geoespacial...');
-  
-  // Buscar personas con coordenadas válidas pero sin desastres vinculados aún
+
   const persons = await PersonModel.find({
     'lastSeen.coordinates': { $exists: true, $ne: null },
     possiblyRelatedDisasters: { $size: 0 }
-  }).limit(500); // Procesar en lotes de 500
+  }).limit(500);
 
-  let updatedCount = 0;
+  const geoMatches: Array<{
+    idHash: string;
+    disasterIds: mongoose.Types.ObjectId[];
+    urgencyBoost: boolean;
+  }> = [];
 
-  for (const person of persons) {
-    if (!person.lastSeen?.coordinates) continue;
+  await runConcurrent(persons, CONCURRENCY, async (person) => {
+    if (!person.lastSeen?.coordinates) return;
 
     const coords = person.lastSeen.coordinates.coordinates;
 
-    // Buscar desastres numéricamente cerca (radio de ~50km)
-    // 50km aprox = 50000 metros en $maxDistance
     const nearbyDisasters = await DisasterEventModel.find({
       coordinates: {
         $near: {
           $geometry: { type: 'Point', coordinates: coords },
-          $maxDistance: 50000 
+          $maxDistance: 50000
         }
       }
     });
 
-    if (nearbyDisasters.length > 0) {
-      person.possiblyRelatedDisasters = nearbyDisasters.map(d => d._id as mongoose.Types.ObjectId);
-      
-      // Aumentar la urgencia si hay un desastre crítico cerca
-      const hasHighSeverity = nearbyDisasters.some(d => d.severity === 'high' || d.severity === 'critical');
-      if (hasHighSeverity) {
-        person.metadata.urgencyScore = Math.min(100, person.metadata.urgencyScore + 15);
-      }
+    if (nearbyDisasters.length === 0) return;
 
-      await person.save();
-      updatedCount++;
+    geoMatches.push({
+      idHash: person.idHash,
+      disasterIds: nearbyDisasters.map(d => d._id as mongoose.Types.ObjectId),
+      urgencyBoost: nearbyDisasters.some(d => d.severity === 'high' || d.severity === 'critical'),
+    });
+  });
+
+  let updatedCount = 0;
+
+  for (let i = 0; i < geoMatches.length; i += CHUNK_SIZE) {
+    const chunk = geoMatches.slice(i, i + CHUNK_SIZE);
+    const operations = chunk.map(m => {
+      const update: Record<string, any> = {
+        $set: { possiblyRelatedDisasters: m.disasterIds },
+      };
+      if (m.urgencyBoost) {
+        update.$inc = { 'metadata.urgencyScore': 15 };
+      }
+      return {
+        updateOne: {
+          filter: { idHash: m.idHash },
+          update,
+          upsert: false,
+        },
+      };
+    });
+
+    try {
+      const result = await PersonModel.bulkWrite(operations);
+      updatedCount += result.modifiedCount;
+      console.log(`[reconcile] Geo chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${result.modifiedCount} updated`);
+    } catch (error) {
+      console.error(`[reconcile] Geo chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed:`, error);
     }
   }
 
@@ -57,39 +85,46 @@ export async function runGeospatialCrossover() {
 
 export async function runFuzzyMatching() {
   console.log('[Reconcile] Iniciando fuzzy matching para detectar duplicados...');
-  
-  // Traer personas que no han sido auditadas todavía
+
   const candidates = await PersonModel.find({
     'metadata.auditStatus': 'clean'
   }).limit(1000).lean();
 
-  let duplicatesFound = 0;
+  const idsToFlag = new Set<string>();
 
   for (let i = 0; i < candidates.length; i++) {
     const current = candidates[i];
-    
-    // Comparar con el resto
     for (let j = i + 1; j < candidates.length; j++) {
       const other = candidates[j];
-      
-      // Mismo status y estado (geográfico) para limitar los falsos positivos
+
       if (current.status !== other.status || current.lastSeen?.state !== other.lastSeen?.state) continue;
 
       const nameSim = similarity(current.normalizedName, other.normalizedName);
-      
-      // Si la similitud es mayor al 85%
+
       if (nameSim > 0.85) {
-        duplicatesFound++;
-        
-        // Aquí deberíamos enviarlo a una cola de revisión (auditQueue), 
-        // por ahora lo marcaremos en la BD
-        await PersonModel.updateMany(
-          { _id: { $in: [current._id, other._id] } },
-          { $set: { 'metadata.auditStatus': 'pending_review' } }
-        );
+        idsToFlag.add(current._id.toString());
+        idsToFlag.add(other._id.toString());
       }
     }
   }
 
-  console.log(`[Reconcile] Fuzzy matching completado. ${duplicatesFound} posibles duplicados detectados (auditStatus = pending_review).`);
+  const idArray = Array.from(idsToFlag).map(id => new mongoose.Types.ObjectId(id));
+  let totalFlagged = 0;
+
+  for (let i = 0; i < idArray.length; i += CHUNK_SIZE) {
+    const chunk = idArray.slice(i, i + CHUNK_SIZE);
+    try {
+      const result = await PersonModel.updateMany(
+        { _id: { $in: chunk } },
+        { $set: { 'metadata.auditStatus': 'pending_review' as const } }
+      );
+      totalFlagged += result.modifiedCount;
+      console.log(`[reconcile] Fuzzy chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${result.modifiedCount} flagged`);
+    } catch (error) {
+      console.error(`[reconcile] Fuzzy chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed:`, error);
+    }
+  }
+
+  const duplicateCount = idsToFlag.size / 2;
+  console.log(`[Reconcile] Fuzzy matching completado. ${duplicateCount} posibles duplicados detectados (auditStatus = pending_review).`);
 }
