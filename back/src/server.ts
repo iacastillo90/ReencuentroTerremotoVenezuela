@@ -4,6 +4,7 @@ import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';
 import { initializeStorage } from './services/storage.service';
 import './workers/disaster-sync.worker';
 import './workers/ia-processor.worker';
+import './workers/matching.worker';
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';

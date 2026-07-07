@@ -1,12 +1,12 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { SearchRequestModel } from '../models/search-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
-import { runMatchingForSearchRequest } from '../services/matcher.service';
+import { personMatchingQueue } from '../queues/person-matching.queue';
 
 const router = Router();
 
 // Crear una solicitud de búsqueda (crear alerta)
-router.post('/', requireUser, async (req: Request, res: Response) => {
+router.post('/', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const { searchName, description, category, isMinor } = req.body;
@@ -23,32 +23,27 @@ router.post('/', requireUser, async (req: Request, res: Response) => {
       isMinor
     });
 
-    // TODO: En el futuro, disparar evento a un Worker para generar embeddings
-    // y buscar coincidencias con reportes existentes.
-    // MVP Matcher (asíncrono, no bloquea la respuesta)
-    runMatchingForSearchRequest(newRequest._id.toString()).catch(console.error);
+    await personMatchingQueue.enqueue({ idHash: newRequest._id.toString(), source: 'search-request' });
 
     return res.status(201).json(newRequest);
   } catch (error) {
-    console.error('[SearchRequestRoute] POST / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Listar solicitudes del usuario
-router.get('/mine', requireUser, async (req: Request, res: Response) => {
+router.get('/mine', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const requests = await SearchRequestModel.find({ user: userId }).sort({ createdAt: -1 }).lean();
     return res.status(200).json(requests);
   } catch (error) {
-    console.error('[SearchRequestRoute] GET /mine Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Cancelar/resolver una solicitud
-router.patch('/:id/status', requireUser, async (req: Request, res: Response) => {
+router.patch('/:id/status', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
@@ -68,8 +63,7 @@ router.patch('/:id/status', requireUser, async (req: Request, res: Response) => 
 
     return res.status(200).json(request);
   } catch (error) {
-    console.error('[SearchRequestRoute] PATCH /:id/status Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 

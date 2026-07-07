@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { uploadMedia } from '../services/storage.service';
@@ -31,13 +31,12 @@ const upload = multer({
   }
 });
 
-router.post('/', mediaUploadLimiter, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', mediaUploadLimiter, upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se envió ningún archivo.' });
     }
 
-    // Magic byte validation
     if (!validateMagicBytes(req.file.buffer, req.file.mimetype)) {
       auditLog({
         eventType: 'validation_failure',
@@ -50,7 +49,6 @@ router.post('/', mediaUploadLimiter, upload.single('file'), async (req: Request,
       return res.status(400).json({ error: 'El archivo no coincide con el tipo declarado.' });
     }
 
-    // Size tier validation
     const isImage = req.file.mimetype.startsWith('image/');
     const maxSize = isImage ? IMAGE_MAX_SIZE : VIDEO_MAX_SIZE;
     if (req.file.size > maxSize) {
@@ -65,7 +63,6 @@ router.post('/', mediaUploadLimiter, upload.single('file'), async (req: Request,
       return res.status(400).json({ error: `El archivo excede el límite de ${isImage ? '5MB' : '20MB'}.` });
     }
 
-    // Sanitize filename
     const safeFilename = sanitizeFilename(req.file.originalname);
 
     const fileUrl = await uploadMedia(
@@ -75,9 +72,8 @@ router.post('/', mediaUploadLimiter, upload.single('file'), async (req: Request,
     );
 
     return res.status(200).json({ url: fileUrl });
-  } catch (error: any) {
-    console.error('[MediaRoute] Error subiendo archivo:', error);
-    return res.status(500).json({ error: error.message || 'Error interno subiendo archivo' });
+  } catch (error) {
+    next(error);
   }
 });
 

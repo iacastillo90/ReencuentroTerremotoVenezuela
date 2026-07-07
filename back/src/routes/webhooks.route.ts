@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { webhookWhatsAppSchema, webhookTelegramSchema } from '../validators/webhooks.validator';
 import { auditLog } from '../middlewares/audit.middleware';
@@ -9,7 +9,7 @@ const router = Router();
 router.use('/n8n', requireWebhookApiKey);
 
 // Endpoint para recibir mensajes de WhatsApp desde n8n
-router.post('/n8n/whatsapp', async (req: Request, res: Response) => {
+router.post('/n8n/whatsapp', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = webhookWhatsAppSchema.safeParse(req.body);
     if (!validation.success) {
@@ -36,7 +36,6 @@ router.post('/n8n/whatsapp', async (req: Request, res: Response) => {
       }
     };
 
-    // Agregar directamente a la cola de procesamiento IA
     await addJobToIAQueue(payload);
 
     auditLog({
@@ -51,13 +50,12 @@ router.post('/n8n/whatsapp', async (req: Request, res: Response) => {
 
     return res.status(202).json({ status: 'queued', message: 'WhatsApp message accepted for AI extraction' });
   } catch (error) {
-    console.error('[Webhooks] WhatsApp Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Endpoint para recibir mensajes de Telegram desde n8n
-router.post('/n8n/telegram', async (req: Request, res: Response) => {
+router.post('/n8n/telegram', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = webhookTelegramSchema.safeParse(req.body);
     if (!validation.success) {
@@ -84,7 +82,6 @@ router.post('/n8n/telegram', async (req: Request, res: Response) => {
       }
     };
 
-    // Agregar directamente a la cola de procesamiento IA
     await addJobToIAQueue(payload);
 
     auditLog({
@@ -99,8 +96,7 @@ router.post('/n8n/telegram', async (req: Request, res: Response) => {
 
     return res.status(202).json({ status: 'queued', message: 'Telegram message accepted for AI extraction' });
   } catch (error) {
-    console.error('[Webhooks] Telegram Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 

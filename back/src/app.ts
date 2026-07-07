@@ -15,6 +15,7 @@ import { partnerRouter } from './routes/partner.route';
 import { localizadoRouter } from './routes/localizado.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
+import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
 
@@ -94,5 +95,8 @@ app.use('/api/localizados', localizadoRouter);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// --- 9. Error handling middleware (must be last) ---
+app.use(errorHandler);
 
 export default app;
