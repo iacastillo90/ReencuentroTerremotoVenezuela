@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { LocalizadoModel } from '../models/localizado.model';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';
 import { localizadoPayloadSchema } from '../validators/localizado.validator';
@@ -16,8 +16,7 @@ function isSafeRegexInput(input: string): boolean {
 
 export const localizadoRouter = Router();
 
-// GET /api/localizados - Búsqueda de personas localizadas en hospitales (abierto al público)
-localizadoRouter.get('/', async (req: Request, res: Response) => {
+localizadoRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { q, location, limit = '100', offset = '0' } = req.query;
     
@@ -60,13 +59,12 @@ localizadoRouter.get('/', async (req: Request, res: Response) => {
 
     return res.status(200).json({ ok: true, total, offset: skip, limit: maxLimit, data });
   } catch (error) {
-    console.error('[LocalizadoRoute] GET / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // POST /api/localizados - Ingesta de listados masivos (solo partners)
-localizadoRouter.post('/', requirePartnerApiKey, async (req: Request, res: Response) => {
+localizadoRouter.post('/', requirePartnerApiKey, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = localizadoPayloadSchema.safeParse(req.body);
     if (!validation.success) {
@@ -83,16 +81,13 @@ localizadoRouter.post('/', requirePartnerApiKey, async (req: Request, res: Respo
 
     const { data } = validation.data;
 
-    // Insertar masivamente para optimizar rendimiento
     const result = await LocalizadoModel.insertMany(data, { ordered: false });
     
     return res.status(201).json({ ok: true, message: 'Localizados ingested successfully', count: result.length });
   } catch (error: any) {
-    // Si hay errores de duplicidad u otros al usar insertMany con ordered:false, lo capturamos
     if (error.code === 11000) {
        return res.status(201).json({ ok: true, message: 'Ingested with some duplicates skipped' });
     }
-    console.error('[LocalizadoRoute] POST / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });

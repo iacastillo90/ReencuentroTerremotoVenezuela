@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { personPayloadSchema } from '../validators/person.validator';
 import { checkSyncState } from '../services/sync-state.service';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
@@ -11,7 +11,7 @@ import { safeRegexQuery } from '../utils/regex-escape.util';
 const router = Router();
 
 // ── GET /counts — Totales por estado (cacheado 5 min) ──────────────────────
-router.get('/counts', async (_req: Request, res: Response) => {
+router.get('/counts', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const CACHE_KEY = 'persons:counts';
     const cached = await redis.get(CACHE_KEY);
@@ -29,14 +29,13 @@ router.get('/counts', async (_req: Request, res: Response) => {
     await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
 
     return res.status(200).json(counts);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET /counts Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
 // ── GET /mine — Obtener reportes del usuario autenticado ───────────────────
-router.get('/mine', requireUser, async (req: Request, res: Response) => {
+router.get('/mine', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const safeProjection = {
@@ -63,17 +62,15 @@ router.get('/mine', requireUser, async (req: Request, res: Response) => {
       .lean();
 
     return res.status(200).json(persons);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET /mine Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { q, status } = req.query;
 
-    // Paginación — máx 200 por página
     const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
     const filter: any = {};
@@ -91,7 +88,6 @@ router.get('/', async (req: Request, res: Response) => {
 
     const cacheKey = `persons:q=${q || ''}:status=${status || ''}:l=${limit}:o=${offset}`;
 
-    // Solo cachear primera página sin búsqueda activa
     if (!q && offset === 0) {
       const cachedData = await redis.get(cacheKey);
       if (cachedData) {
@@ -99,7 +95,6 @@ router.get('/', async (req: Request, res: Response) => {
       }
     }
 
-    // Proyección segura: excluir PII, contactPerson, externalIds
     const safeProjection = {
       idHash: 1,
       name: 1,
@@ -122,7 +117,6 @@ router.get('/', async (req: Request, res: Response) => {
       'metadata.reportedBy': 1
     };
 
-    // Prioridad: con foto primero, luego por urgencia
     const [persons, total] = await Promise.all([
       PersonModel.find(filter)
         .select(safeProjection)
@@ -136,21 +130,18 @@ router.get('/', async (req: Request, res: Response) => {
 
     const responsePayload = { total, limit, offset, persons };
 
-    // Cachear solo primera página sin búsqueda (30s)
     if (!q && offset === 0) {
       await redis.setex(cacheKey, 30, JSON.stringify(responsePayload));
     }
 
     return res.status(200).json(responsePayload);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
-router.post('/', requireProfileComplete, async (req: Request, res: Response) => {
+router.post('/', requireProfileComplete, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1. Validate payload
     const validationResult = personPayloadSchema.safeParse(req.body);
     
     if (!validationResult.success) {
@@ -166,7 +157,6 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
     }
     const updatedAt = payload.date ? new Date(payload.date) : new Date();
 
-    // 2. Check Deduplication / SyncState
     const syncState = await checkSyncState(
       payload.source,
       payload.externalId,
@@ -181,7 +171,6 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
       });
     }
 
-    // 3. Add to Queue for processing
     await addJobToIAQueue(payload);
 
     return res.status(202).json({
@@ -189,14 +178,13 @@ router.post('/', requireProfileComplete, async (req: Request, res: Response) => 
       status: 'queued'
     });
 
-  } catch (error: any) {
-    console.error('[PersonRoute] POST Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
 // ── POST /:idHash/close — Cerrar caso (Fase 4 Auditoría Legal) ───────────────
-router.post('/:idHash/close', requireUser, async (req: Request, res: Response) => {
+router.post('/:idHash/close', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idHash } = req.params;
     const { resolution, notes } = req.body;
@@ -210,7 +198,6 @@ router.post('/:idHash/close', requireUser, async (req: Request, res: Response) =
     const person = await PersonModel.findOne({ idHash });
     if (!person) return res.status(404).json({ error: 'Reporte no encontrado.' });
 
-    // Validar propiedad del reporte o rol admin
     const isOwner = person.metadata?.reportedBy?.toString() === userId;
     if (!isOwner && userRole !== 'admin') {
       return res.status(403).json({ error: 'No tienes permiso para cerrar este caso.' });
@@ -225,7 +212,6 @@ router.post('/:idHash/close', requireUser, async (req: Request, res: Response) =
 
     await person.save();
 
-    // Crear el log de auditoría (Base Legal)
     await AuditLogModel.create({
       eventType: 'admin_action' as const,
       severity: 'info' as const,
@@ -242,13 +228,11 @@ router.post('/:idHash/close', requireUser, async (req: Request, res: Response) =
       timestamp: new Date(),
     });
 
-    // Invalidar caché
     await redis.del('persons:counts');
 
     return res.status(200).json({ message: 'Caso cerrado exitosamente.', status: person.status });
-  } catch (error: any) {
-    console.error('[PersonRoute] POST /:idHash/close Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
