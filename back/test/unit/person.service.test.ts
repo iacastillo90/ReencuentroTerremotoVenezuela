@@ -1,6 +1,12 @@
 import { upsertPerson } from '../../src/services/person.service';
 import { PersonModel } from '../../src/models/unified-person.model';
 
+jest.mock('../../src/queues/person-matching.queue', () => ({
+  personMatchingQueue: {
+    enqueue: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 jest.mock('../../src/models/unified-person.model', () => ({
   PersonModel: {
     findOneAndUpdate: jest.fn()

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { SearchRequestModel } from '../models/search-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
-import { runMatchingForSearchRequest } from '../services/matcher.service';
+import { personMatchingQueue } from '../queues/person-matching.queue';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.post('/', requireUser, async (req: Request, res: Response, next: NextFunc
       isMinor
     });
 
-    runMatchingForSearchRequest(newRequest._id.toString()).catch(console.error);
+    await personMatchingQueue.enqueue({ idHash: newRequest._id.toString(), source: 'search-request' });
 
     return res.status(201).json(newRequest);
   } catch (error) {
