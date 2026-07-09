@@ -1,7 +1,8 @@
 import React from 'react';
-import { Search, PlusCircle, Bell } from 'lucide-react';
+import { Search, Plus, Bell } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
-import { Button } from '../../components/ui/Button';
+import { HomeStats } from '../../components/HomeStats';
+import { HomeActionCard } from '../../components/HomeActionCard';
 import './PublicLanding.css';
 import './HomeGateway.css';
 
@@ -41,98 +42,46 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
       </div>
 
       {/* Stats Section */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2rem',
-        width: '100%',
-        maxWidth: '400px',
-        marginBottom: '3rem',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <strong style={{ fontSize: '2.8rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '8px' }}>
-            {counts?.total || 0}
-          </strong>
-          <span style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Casos reportados</span>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <strong style={{ fontSize: '1.5rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '6px' }}>0</strong>
-            <span style={{ fontSize: '0.8rem', color: '#a1a1aa', lineHeight: 1.2, display: 'block' }}>
-              Medios<br />registrados
-            </span>
-          </div>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <strong style={{ fontSize: '1.5rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '6px' }}>4</strong>
-            <span style={{ fontSize: '0.8rem', color: '#a1a1aa', lineHeight: 1.2, display: 'block' }}>
-              Organizaciones<br />registradas
-            </span>
-          </div>
-        </div>
+      <div style={{ marginBottom: '3rem', width: '100%' }}>
+        <HomeStats counts={counts as any} />
       </div>
 
       {/* Action Buttons */}
-      <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-        <Button 
-          fullWidth 
-          size="lg" 
-          onClick={onReportar} 
-          style={{ 
-            backgroundColor: '#3b82f6', 
-            color: 'white', 
-            borderRadius: '999px', 
-            padding: '1.1rem',
-            border: 'none',
-            fontSize: '1rem',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
-        >
-          <PlusCircle size={20} /> Reportar caso
-        </Button>
-        
-        <Button 
-          fullWidth 
-          size="lg" 
-          variant="outline" 
-          onClick={onBuscar} 
-          style={{ 
-            borderRadius: '999px', 
-            padding: '1.1rem', 
-            borderColor: '#3b82f6', 
-            color: '#fff',
-            fontSize: '1rem',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            backgroundColor: 'transparent'
-          }}
-        >
-          <Search size={20} /> Buscar personas o mascotas
-        </Button>
+      <div style={{ width: '100%', maxWidth: '358px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <HomeActionCard 
+          icon={<Plus size={18} strokeWidth={2} />}
+          title="Reportar caso"
+          onClick={onReportar}
+          style={{ backgroundColor: '#3b82f6', border: '1px solid #3b82f6', color: '#111' }}
+        />
+        <HomeActionCard 
+          icon={<Search size={18} strokeWidth={2} />}
+          title="Buscar personas o mascotas"
+          onClick={onBuscar}
+          style={{ backgroundColor: 'transparent', border: '1px solid #3b82f6', color: '#fff' }}
+        />
       </div>
 
       {/* Communications Link */}
       <div style={{ marginTop: '3rem' }}>
-        <Button 
-          variant="ghost" 
+        <button 
           onClick={onManual} 
           style={{ 
             color: '#3b82f6',
             fontWeight: 500,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '8px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            textDecoration: 'none'
           }}
         >
-          <Bell size={18} /> Ver últimos comunicados
-        </Button>
+          <Bell size={20} /> Ver últimos comunicados
+        </button>
       </div>
       
     </div>
