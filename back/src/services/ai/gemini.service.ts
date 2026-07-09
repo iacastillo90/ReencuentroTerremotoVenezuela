@@ -35,12 +35,19 @@ export class GeminiProvider implements IAIProvider {
         model: 'gemini-2.5-flash',
         contents: [
           {
-            inlineData: {
-              data: audioBuffer.toString('base64'),
-              mimeType: mimeType
-            }
-          },
-          { text: "Eres un experto transcribiendo audio. Transcribe todo lo que escuches en el audio adjunto palabra por palabra. Si el audio está vacío, en silencio, o solo hay ruido, responde exactamente con: 'No se detectó voz clara en el audio.'" }
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  data: audioBuffer.toString('base64'),
+                  mimeType: mimeType
+                }
+              },
+              {
+                text: 'Transcribe exactamente lo que se dice en este audio, palabra por palabra, en el idioma en que fue hablado. Solo devuelve el texto transcrito, sin comentarios adicionales.'
+              }
+            ]
+          }
         ]
       });
 
