@@ -299,3 +299,194 @@
   .navbar { padding: 0 2.5rem; }
   :root { --sidebar-w: 400px; }
 }
+
+/* ─── Notification System ─── */
+.nav-notifications-menu {
+  position: relative;
+}
+
+.nav-notifications-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-notifications-btn:hover,
+.nav-notifications-btn[aria-expanded="true"] {
+  color: var(--clr-text);
+  background: var(--clr-hover);
+  border-color: var(--clr-border);
+}
+
+.notifications-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--brand-red);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--clr-bg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  animation: bounce 0.5s ease infinite alternate;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 220;
+  width: 320px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.notifications-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--clr-text);
+}
+
+.notifications-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.notifications-actions button {
+  background: transparent;
+  border: none;
+  color: var(--brand-blue-soft);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.notifications-actions button:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.notifications-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+}
+
+.notification-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.notification-item.unread {
+  background: rgba(46, 107, 236, 0.05);
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-blue-soft);
+}
+
+.notification-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.notification-accent.success { background: var(--clr-success, #10b981); }
+.notification-accent.warning { background: var(--clr-warning, #f59e0b); }
+.notification-accent.danger { background: var(--brand-red, #ef4444); }
+.notification-accent.info { background: var(--brand-blue-soft, #3b82f6); }
+
+.notification-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--clr-text);
+  padding-left: 4px;
+}
+
+.notification-msg {
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  line-height: 1.3;
+  padding-left: 4px;
+}
+
+.notification-time {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  padding-left: 4px;
+  margin-top: 2px;
+}
+
+.notifications-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--clr-text-muted);
+  font-size: 0.82rem;
+  gap: 8px;
+}

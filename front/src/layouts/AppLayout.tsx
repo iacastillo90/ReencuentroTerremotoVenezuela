@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   Settings, Map, X, User as UserIcon, LogOut,
-  Home, Search, ShieldCheck, Building2, Truck, LogIn, ChevronDown
+  Home, Search, ShieldCheck, Building2, Truck, LogIn, ChevronDown, Bell, BellOff
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
+import { useSocket } from '../store/SocketContext';
 import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/ui/Button';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -32,7 +33,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { notifications, unreadCount, markAllAsRead, clearNotifications } = useSocket();
 
 
   // Destinos secundarios agrupados en "Más"
@@ -81,17 +84,79 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           <span className="sos-pill hide-mobile" title="Canal de emergencia activo">
             <span className="sos-dot" /> Canal SOS
           </span>
-          {user && (
-            <button className="nav-profile-mobile hide-desktop" onClick={() => go('profile')} title="Mi perfil">
-              <Settings size={18} />
-            </button>
-          )}
           {user ? (
             <>
+              {/* Notification Center */}
+              <div className="nav-notifications-menu">
+                <button
+                  className="nav-notifications-btn"
+                  onClick={() => {
+                    setNotifOpen(prev => !prev);
+                    setUserMenuOpen(false);
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={notifOpen}
+                  title="Notificaciones"
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="notifications-badge">{unreadCount}</span>
+                  )}
+                </button>
+                
+                {notifOpen && (
+                  <div className="notifications-dropdown">
+                    <div className="notifications-header">
+                      <h4>Notificaciones</h4>
+                      <div className="notifications-actions">
+                        {notifications.length > 0 && (
+                          <>
+                            <button onClick={markAllAsRead}>Marcar leídas</button>
+                            <button onClick={clearNotifications}>Limpiar</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="notifications-list">
+                      {notifications.length === 0 ? (
+                        <div className="notifications-empty">
+                          <BellOff size={24} />
+                          <span>No tienes notificaciones</span>
+                        </div>
+                      ) : (
+                        notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            className={`notification-item ${!notif.read ? 'unread' : ''}`}
+                            onClick={() => {
+                              // Mark this notification as read on click
+                              notif.read = true;
+                              setNotifOpen(false);
+                              go('profile');
+                            }}
+                          >
+                            <span className={`notification-accent ${notif.type}`} />
+                            <strong className="notification-title">{notif.title}</strong>
+                            <span className="notification-msg">{notif.message}</span>
+                            <span className="notification-time">
+                              {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="nav-user-menu hide-mobile">
                 <button
                   className="nav-user"
-                  onClick={() => setUserMenuOpen(open => !open)}
+                  onClick={() => {
+                    setUserMenuOpen(open => !open);
+                    setNotifOpen(false);
+                  }}
                   aria-haspopup="menu"
                   aria-expanded={userMenuOpen}
                 >
@@ -110,9 +175,26 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   </div>
                 )}
               </div>
-              <Button variant="ghost" size="sm" onClick={closeSession} className="flex-center hide-desktop nav-logout-mobile" title="Cerrar sesión">
-                <LogOut size={20} />
-              </Button>
+              <button 
+                className="hide-desktop" 
+                onClick={() => go('profile')} 
+                title="Mi perfil"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: 'none',
+                  color: '#e2e8f0',
+                  cursor: 'pointer',
+                  marginLeft: '0.5rem'
+                }}
+              >
+                <UserIcon size={20} />
+              </button>
             </>
           ) : (
             <Button variant="danger" size="sm" onClick={() => go('login')} className="flex-center nav-login-btn">
