@@ -1,9 +1,20 @@
+import 'dotenv/config';
+import mongoose from 'mongoose';
 import { Worker, Job } from 'bullmq';
 import { processAndReconcilePerson } from '../services/reconciliation.service';
 import { connection } from '../config/redis.config';
 import { getAIProvider } from '../services/ai/ai.factory';
 import { upsertVectorToPinecone } from '../services/pinecone.service';
 import { emitToUser } from '../services/socket.service';
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
+
+if (mongoose.connection.readyState === 0) {
+  console.log(`[ia-processor] Conectando a MongoDB en ${MONGO_URI}...`);
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log('[ia-processor] MongoDB Conectado exitosamente.'))
+    .catch((err) => console.error('[ia-processor] Error al conectar a MongoDB:', err));
+}
 
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
