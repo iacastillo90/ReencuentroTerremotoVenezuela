@@ -119,6 +119,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      disable: true
     # El worker puede escalar horizontalmente si hay alta demanda:
     # docker compose up -d --scale worker=3
 

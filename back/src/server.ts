@@ -1,11 +1,11 @@
 import 'dotenv/config'; // Carga back/.env ANTES que cualquier módulo lea process.env (JWT_SECRET, etc.)
 import mongoose from 'mongoose';
+import http from 'http';
 import app from './app';
 import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';
 import { initializeStorage } from './services/storage.service';
 import { UserModel } from './models/user.model';
-import './workers/disaster-sync.worker';
-import './workers/ia-processor.worker';
+import { initializeSocketServer } from './services/socket.service';
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
@@ -22,9 +22,11 @@ async function bootstrap() {
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
 
-    // Alinea los índices del modelo User con el esquema: reemplaza un índice viejo
-    // de googleId (único no-parcial) por el parcial actual y evita el error
-    // E11000 { googleId: null } al registrar por correo. No bloquea el arranque.
+    // Importar workers después de establecer conexión a DB
+    require('./workers/disaster-sync.worker');
+    require('./workers/ia-processor.worker');
+
+    // Alinea los índices del modelo User con el esquema
     try {
       await UserModel.syncIndexes();
       console.log('[Server] Índices de User sincronizados.');
@@ -32,9 +34,19 @@ async function bootstrap() {
       console.warn('[Server] No se pudieron sincronizar los índices de User:', (err as Error).message);
     }
 
-    // El servidor abre el puerto de inmediato; las tareas pesadas (storage e
-    // ingesta/sincronización) corren en segundo plano para NO bloquear el arranque.
-    app.listen(PORT, () => {
+    // Crear el servidor HTTP sobre Express
+    const server = http.createServer(app);
+
+    // Inicializar Socket.IO con las mismas políticas CORS
+    const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4000')
+      .split(',')
+      .map(s => s.trim().replace(/\/$/, ''));
+    
+    initializeSocketServer(server, corsOrigins);
+    console.log('[Server] Servidor Socket.IO inicializado.');
+
+    // El servidor abre el puerto de inmediato
+    server.listen(PORT, () => {
       console.log(`[Server] Backend de Reencuentro Terremoto Venezuela corriendo en http://localhost:${PORT}`);
 
       initializeStorage()
