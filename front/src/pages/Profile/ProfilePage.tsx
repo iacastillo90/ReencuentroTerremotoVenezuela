@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../store/AuthContext';
+import { useSocket } from '../../store/SocketContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
-import { User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut, FileText, ShieldAlert, CheckCircle, MessageCircle } from 'lucide-react';
+import {
+  User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut,
+  FileText, ShieldAlert, CheckCircle, MessageCircle, Send, X
+} from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Profile.css';
 
@@ -10,13 +14,26 @@ interface ProfilePageProps {
   onSelectPerson: (p: Person) => void;
 }
 
+interface ActiveConversation {
+  reportId: string;
+  otherUserId: string;
+}
+
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const { user, logout } = useAuth();
+  const { socket } = useSocket();
+  
   const [myReports, setMyReports] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<any[]>([]);
+  const [sentMessages, setSentMessages] = useState<any[]>([]);
   const [requestNotes, setRequestNotes] = useState('');
   const [showRequestForm, setShowRequestForm] = useState(false);
+
+  // Chat states
+  const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleRequestVerification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,23 +46,53 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     }
   };
 
+  const fetchData = async () => {
+    try {
+      const res = await api.get<Person[]>('/persons/mine');
+      setMyReports(res.data);
+      const msgs = await api.get('/contacts/received');
+      setMessages(msgs.data);
+      const sent = await api.get('/contacts/sent');
+      setSentMessages(sent.data);
+    } catch (err) {
+      console.error('Error fetching data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMyReports = async () => {
-      try {
-        const res = await api.get<Person[]>('/persons/mine');
-        setMyReports(res.data);
-        const msgs = await api.get('/contacts/received');
-        setMessages(msgs.data);
-      } catch (err) {
-        console.error('Error fetching data', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     if (user) {
-      fetchMyReports();
+      fetchData();
     }
   }, [user]);
+
+  // Real-time socket message handler
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveMessage = (msg: any) => {
+      console.log('[ProfilePage] New real-time message received via socket:', msg);
+      // Append to incoming messages if not already present
+      setMessages(prev => {
+        if (prev.some(m => m._id === msg._id)) return prev;
+        return [msg, ...prev];
+      });
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+
+    return () => {
+      socket.off('receive_message', handleReceiveMessage);
+    };
+  }, [socket]);
+
+  // Auto scroll to bottom of chat
+  useEffect(() => {
+    if (activeConversation) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [activeConversation, messages, sentMessages]);
 
   if (!user) {
     return (
@@ -54,6 +101,67 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       </div>
     );
   }
+
+  // Combine and sort all messages chronologically
+  const allMessages = [...messages, ...sentMessages].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  // Group messages into conversations (threads)
+  // key: reportId_otherUserId
+  const conversationsMap = new Map<string, any>();
+  
+  // Go through all messages to build unique conversation threads
+  allMessages.forEach(msg => {
+    const isSender = msg.senderId === user._id;
+    const otherUserId = isSender ? msg.receiverId : msg.senderId;
+    if (!otherUserId) return; // Ignore if no other party
+    
+    const key = `${msg.reportId}_${otherUserId}`;
+    if (!conversationsMap.has(key)) {
+      conversationsMap.set(key, {
+        reportId: msg.reportId,
+        otherUserId: otherUserId,
+        lastMessage: msg,
+        messages: [],
+      });
+    }
+    conversationsMap.get(key).messages.push(msg);
+    conversationsMap.get(key).lastMessage = msg;
+  });
+
+  const conversationList = Array.from(conversationsMap.values()).sort(
+    (a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+  );
+
+  // Get active thread messages
+  const activeThreadMessages = activeConversation
+    ? allMessages.filter(
+        msg =>
+          msg.reportId === activeConversation.reportId &&
+          ((msg.senderId === user._id && msg.receiverId === activeConversation.otherUserId) ||
+            (msg.senderId === activeConversation.otherUserId && msg.receiverId === user._id))
+      )
+    : [];
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !activeConversation) return;
+
+    try {
+      const res = await api.post('/contacts', {
+        reportId: activeConversation.reportId,
+        receiverId: activeConversation.otherUserId,
+        message: replyText,
+      });
+
+      // Add to local state immediately
+      setSentMessages(prev => [...prev, res.data]);
+      setReplyText('');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Error al enviar mensaje');
+    }
+  };
 
   return (
     <div className="profile-page">
@@ -118,25 +226,37 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         </div>
       )}
 
+      {/* Real-time Chats / Messages List */}
       <div className="profile-content">
-        <h3><MessageCircle size={18} /> Mensajes Recibidos ({messages.length})</h3>
-        {messages.length === 0 ? (
+        <h3><MessageCircle size={18} /> Conversaciones de la Comunidad ({conversationList.length})</h3>
+        {conversationList.length === 0 ? (
           <div className="profile-empty">
-            <p>No tienes mensajes de la comunidad.</p>
+            <p>No tienes mensajes ni conversaciones activas.</p>
           </div>
         ) : (
           <div className="my-reports-list">
-            {messages.map(msg => (
-              <div key={msg._id} className="report-card report-card-message">
+            {conversationList.map(conv => (
+              <div
+                key={`${conv.reportId}_${conv.otherUserId}`}
+                className="report-card report-card-message"
+                onClick={() => setActiveConversation({ reportId: conv.reportId, otherUserId: conv.otherUserId })}
+              >
                 <div className="report-card-header">
-                  <h4>Mensaje sobre reporte: {msg.reportId}</h4>
-                  <span className={`status-badge found`}>Nuevo</span>
+                  <h4>Caso: {conv.reportId}</h4>
+                  <span className={`status-badge found`}>
+                    {conv.messages.filter((m: any) => !m.isRead && m.senderId !== user._id).length > 0
+                      ? 'Nuevos'
+                      : 'Activo'}
+                  </span>
                 </div>
                 <div className="report-card-body">
-                  <p><Clock size={12} /> {new Date(msg.createdAt).toLocaleDateString('es-VE')}</p>
+                  <p><Clock size={12} /> Último mensaje: {new Date(conv.lastMessage.createdAt).toLocaleDateString('es-VE')}</p>
                   <p className="report-desc report-message-text">
-                    "{msg.message}"
+                    "{conv.lastMessage.message}"
                   </p>
+                </div>
+                <div className="report-card-footer">
+                  <span>Abrir Chat <ArrowRight size={14} /></span>
                 </div>
               </div>
             ))}
@@ -175,6 +295,59 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
           </div>
         )}
       </div>
+
+      {/* Real-time 2-way Chat Modal Overlay */}
+      {activeConversation && (
+        <div className="chat-modal-overlay" onClick={() => setActiveConversation(null)}>
+          <div className="chat-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="chat-header">
+              <div className="chat-header-info">
+                <h4>Conversación sobre el reporte</h4>
+                <p>ID Reporte: {activeConversation.reportId}</p>
+              </div>
+              <button className="chat-close-btn" onClick={() => setActiveConversation(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="chat-messages-area">
+              {activeThreadMessages.map(msg => {
+                const isSender = msg.senderId === user._id;
+                return (
+                  <div
+                    key={msg._id}
+                    className={`chat-bubble-container ${isSender ? 'sender' : 'receiver'}`}
+                  >
+                    <div className="chat-bubble">
+                      {msg.message}
+                      <span className="chat-time">
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="chat-input-area">
+              <form onSubmit={handleSendMessage} className="chat-form">
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Escribe un mensaje de respuesta..."
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  required
+                />
+                <button type="submit" className="chat-send-btn">
+                  <Send size={18} />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
