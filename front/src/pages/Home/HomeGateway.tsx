@@ -1,7 +1,7 @@
 import React from 'react';
-import { Search, PlusCircle, Building2, ShieldCheck, Lock, ArrowRight, Unlock } from 'lucide-react';
+import { Search, PlusCircle, Bell } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
-import reunionHero from '../../assets/home-reunion-venezuela.png';
+import { Button } from '../../components/ui/Button';
 import './PublicLanding.css';
 import './HomeGateway.css';
 
@@ -13,87 +13,128 @@ interface HomeGatewayProps {
   onManual: () => void;      // público
 }
 
-interface OptionCardProps {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  cta: string;
-  tone: 'red' | 'blue' | 'green';
-  locked: boolean;
-  onClick: () => void;
-}
-
-const OptionCard: React.FC<OptionCardProps> = ({ icon, title, desc, cta, tone, locked, onClick }) => (
-  <button className={`hg-card tone-${tone}`} onClick={onClick}>
-    <span className="hg-card__ico">{icon}</span>
-    <span className="hg-card__body">
-      <span className="hg-card__head">
-        <strong>{title}</strong>
-        <span className={`hg-badge ${locked ? 'locked' : 'open'}`}>
-          {locked ? <><Lock size={11} /> Requiere sesión</> : <><Unlock size={11} /> Acceso libre</>}
-        </span>
-      </span>
-      <span className="hg-card__desc">{desc}</span>
-      <span className="hg-card__cta">{cta} <ArrowRight size={15} /></span>
-    </span>
-  </button>
-);
-
-/** Home público: presenta las opciones sobre un fondo de marca. Reportar/Buscar piden login; Directorio/Manual son públicos. */
-export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onDirectorio, onManual }) => (
-  <div className="public-landing hg">
+/** Home público simplificado y centrado para encajar en una vista */
+export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onManual }) => (
+  <div className="public-landing hg" style={{ height: '100%', minHeight: '100%', backgroundColor: '#070c14', overflow: 'hidden' }}>
     <div className="pl__bg" />
-    <div className="hg__inner">
-      <div className="hg__hero" style={{ backgroundImage: `url(${reunionHero})` }}>
-        <div className="hg__hero-copy">
-          <div className="hg__brand">
-          <BrandMark size={40} />
-          <div className="hg__brand-text">
-            <span className="hg__brand-name">Reencuentros <em>Venezuela</em></span>
-            <small>JUNTOS TE ENCONTRAMOS</small>
-          </div>
+    <div className="hg__inner" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100%',
+      padding: '1rem',
+      textAlign: 'center'
+    }}>
+      
+      {/* Brand Header */}
+      <div className="hg__brand" style={{ justifyContent: 'center', marginBottom: '2.5rem' }}>
+        <BrandMark size={44} />
+        <div className="hg__brand-text" style={{ textAlign: 'left', marginLeft: '12px' }}>
+          <span className="hg__brand-name" style={{ fontSize: '1.3rem' }}>
+            Reencuentros <span style={{ color: '#3b82f6', fontWeight: 500 }}>Venezuela</span>
+          </span>
+          <small style={{ fontSize: '0.7rem', letterSpacing: '1px', opacity: 0.8 }}>
+            JUNTOS TE ENCONTRAMOS
+          </small>
         </div>
-        <p className="eyebrow">Tecnología humanitaria</p>
-        <h1 className="hg__title">Juntos <span>te encontramos</span></h1>
-        <p className="hg__sub">Conectamos familias, comunidades y organizaciones para reencontrar personas desaparecidas durante emergencias y desastres.</p>
-
-        {counts && counts.total > 0 && (
-          <div className="hg__stats">
-            <div><strong>{counts.total}</strong><span>Casos reportados</span></div>
-            <div><strong>0</strong><span>Medios</span></div>
-            <div><strong>4</strong><span>Organizaciones</span></div>
-          </div>
-        )}
-        </div>
-
       </div>
 
-      <div className="hg__cards">
-        <OptionCard
-          icon={<PlusCircle size={22} />} tone="red" locked
-          title="Reportar caso" cta="Iniciar sesión"
-          desc="Informa sobre una persona o mascota."
-          onClick={onReportar}
-        />
-        <OptionCard
-          icon={<Search size={22} />} tone="blue" locked
-          title="Buscar persona" cta="Iniciar sesión"
-          desc="Consulta reportes y posibles coincidencias."
-          onClick={onBuscar}
-        />
-        <OptionCard
-          icon={<Building2 size={22} />} tone="green" locked={false}
-          title="Directorio" cta="Ver contactos"
-          desc="Organizaciones y teléfonos de apoyo."
-          onClick={onDirectorio}
-        />
-        <OptionCard
-          icon={<ShieldCheck size={22} />} tone="blue" locked={false}
-          title="Manual y políticas" cta="Leer guía"
-          desc="Normativas y guías de uso de la plataforma."
-          onClick={onManual}
-        />
+      {/* Stats Section */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2rem',
+        width: '100%',
+        maxWidth: '400px',
+        marginBottom: '3rem',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <strong style={{ fontSize: '2.8rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '8px' }}>
+            {counts?.total || 0}
+          </strong>
+          <span style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Casos reportados</span>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <strong style={{ fontSize: '1.5rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '6px' }}>0</strong>
+            <span style={{ fontSize: '0.8rem', color: '#a1a1aa', lineHeight: 1.2, display: 'block' }}>
+              Medios<br />registrados
+            </span>
+          </div>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <strong style={{ fontSize: '1.5rem', fontWeight: 400, display: 'block', lineHeight: 1, marginBottom: '6px' }}>4</strong>
+            <span style={{ fontSize: '0.8rem', color: '#a1a1aa', lineHeight: 1.2, display: 'block' }}>
+              Organizaciones<br />registradas
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Action Buttons */}
+      <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <Button 
+          fullWidth 
+          size="lg" 
+          onClick={onReportar} 
+          style={{ 
+            backgroundColor: '#3b82f6', 
+            color: 'white', 
+            borderRadius: '999px', 
+            padding: '1.1rem',
+            border: 'none',
+            fontSize: '1rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          <PlusCircle size={20} /> Reportar caso
+        </Button>
+        
+        <Button 
+          fullWidth 
+          size="lg" 
+          variant="outline" 
+          onClick={onBuscar} 
+          style={{ 
+            borderRadius: '999px', 
+            padding: '1.1rem', 
+            borderColor: '#3b82f6', 
+            color: '#fff',
+            fontSize: '1rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            backgroundColor: 'transparent'
+          }}
+        >
+          <Search size={20} /> Buscar personas o mascotas
+        </Button>
+      </div>
+
+      {/* Communications Link */}
+      <div style={{ marginTop: '3rem' }}>
+        <Button 
+          variant="ghost" 
+          onClick={onManual} 
+          style={{ 
+            color: '#3b82f6',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Bell size={18} /> Ver últimos comunicados
+        </Button>
+      </div>
+      
     </div>
   </div>
 );
