@@ -20,36 +20,43 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
   
   try {
-    // 1. Fase de Análisis IA
-    const aiProvider = getAIProvider();
-    
-    // Send the full raw data or text to the AI for extraction
-    const rawTextToAnalyze = typeof rawData.text === 'string' 
-      ? rawData.text 
-      : JSON.stringify(rawData);
-    
-    let aiResult: any = null;
-    try {
-      aiResult = await aiProvider.processRecord(rawTextToAnalyze);
-    } catch (error) {
-      console.error('[ia-processor] Gemini API Error (quota or auth), falling back to manual fields:', error);
-    }
-    
-    // 2. Extracted Data
-    const aiProcessedText = aiResult?.safeDescription || rawData.text || 'Sin descripción'; 
-    const urgencyScore = aiResult?.urgencyScore || 1;
-    const personName = aiResult?.name || rawData.name || 'Desconocido';
-    const personState = aiResult?.estado || rawData.estado || 'Desconocido';
-    const personAge = aiResult?.age || (rawData.data?.age ? Number(rawData.data.age) : undefined);
-    
-    // Generar Embedding Vectorial (Fase 3)
+    const isMinor = rawData.isMinor === true;
+    let aiProcessedText = rawData.text || 'Sin descripción';
+    let urgencyScore = isMinor ? 10 : 1; // Menores siempre alta urgencia
+    let personName = rawData.name || 'Desconocido';
+    let personState = rawData.estado || 'Desconocido';
+    let personAge = rawData.data?.age ? Number(rawData.data.age) : undefined;
     let embedding: number[] | undefined = undefined;
-    if (aiProvider.generateEmbedding) {
-      const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
+
+    if (!isMinor) {
+      // 1. Fase de Análisis IA (Solo si NO es menor)
+      const aiProvider = getAIProvider();
+      
+      const rawTextToAnalyze = typeof rawData.text === 'string' 
+        ? rawData.text 
+        : JSON.stringify(rawData);
+      
+      let aiResult: any = null;
       try {
-        embedding = await aiProvider.generateEmbedding(textToEmbed);
-      } catch (e) {
-        console.warn('[ia-processor] Error generando embedding, ignorando:', e);
+        aiResult = await aiProvider.processRecord(rawTextToAnalyze);
+      } catch (error) {
+        console.error('[ia-processor] Gemini API Error (quota or auth), falling back to manual fields:', error);
+      }
+      
+      aiProcessedText = aiResult?.safeDescription || aiProcessedText; 
+      urgencyScore = aiResult?.urgencyScore || urgencyScore;
+      personName = aiResult?.name || personName;
+      personState = aiResult?.estado || personState;
+      personAge = aiResult?.age || personAge;
+      
+      // Generar Embedding Vectorial solo para adultos
+      if (aiProvider.generateEmbedding) {
+        const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
+        try {
+          embedding = await aiProvider.generateEmbedding(textToEmbed);
+        } catch (e) {
+          console.warn('[ia-processor] Error generando embedding, ignorando:', e);
+        }
       }
     }
     
@@ -73,8 +80,9 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
           urgencyScore: urgencyScore,
           confidenceScore: rawData.confidence_score,
           confidenceLabel: rawData.confidence_label,
-          aiProcessed: true,
-          auditStatus: 'clean',
+          aiProcessed: !isMinor,
+          isMinor: isMinor,
+          auditStatus: (!rawData.source || rawData.source === 'manual') ? 'pending_moderation' : 'clean',
           createdAt: new Date(),
           updatedAt: new Date(),
           lastSync: new Date(),

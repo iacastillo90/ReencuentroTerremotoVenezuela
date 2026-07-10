@@ -82,11 +82,21 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
       </div>
 
       {/* Footer */}
-      <div className="feed-card-footer">
+      <div className="feed-card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--clr-text-muted)' }}>
           <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'}</div>
           <div>📍 <strong>Ubicación:</strong> {person.lastSeen?.description || person.lastSeen?.state || 'Ubicación no precisada'}</div>
         </div>
+
+        {isProtected && (
+          <button 
+            type="button" 
+            onClick={() => alert("Próximamente: El chat seguro con el equipo de moderación se abrirá aquí.")}
+            style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <ShieldAlert size={16} /> Contactar Moderador para aportar información
+          </button>
+        )}
       </div>
     </article>
   );

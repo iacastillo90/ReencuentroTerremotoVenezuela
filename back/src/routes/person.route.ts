@@ -18,12 +18,12 @@ router.get('/counts', async (_req: Request, res: Response) => {
     if (cached) return res.status(200).json(JSON.parse(cached));
 
     const [missing, found, total, pending, manual, animals] = await Promise.all([
-      PersonModel.countDocuments({ status: 'missing', type: { $ne: 'animal' } }),
-      PersonModel.countDocuments({ status: 'found', type: { $ne: 'animal' } }),
-      PersonModel.countDocuments({}),
+      PersonModel.countDocuments({ status: 'missing', type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
+      PersonModel.countDocuments({ status: 'found', type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
+      PersonModel.countDocuments({ 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
       PersonModel.countDocuments({ 'metadata.auditStatus': 'pending_review' }),
       PersonModel.countDocuments({ 'metadata.source': 'manual' }),
-      PersonModel.countDocuments({ type: 'animal' })
+      PersonModel.countDocuments({ type: 'animal', 'metadata.auditStatus': { $ne: 'pending_moderation' } })
     ]);
 
     const counts = { missing, found, total, pending, manual, animals };
@@ -78,7 +78,7 @@ router.get('/', async (req: Request, res: Response) => {
     // Paginación — máx 200 por página
     const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
-    const filter: any = {};
+    const filter: any = { 'metadata.auditStatus': { $ne: 'pending_moderation' } };
 
     if (status) {
       filter.status = status;
@@ -144,11 +144,12 @@ router.get('/', async (req: Request, res: Response) => {
       'data.verificado_por': 1,
       'metadata.createdAt': 1,
       'metadata.urgencyScore': 1,
-      'metadata.reportedBy': 1
+      'metadata.reportedBy': 1,
+      'metadata.isMinor': 1
     };
 
     // Prioridad: con foto primero, luego por urgencia
-    const [persons, total] = await Promise.all([
+    const [rawPersons, total] = await Promise.all([
       PersonModel.find(filter)
         .select(safeProjection)
         .populate('metadata.reportedBy', 'name')
@@ -158,6 +159,20 @@ router.get('/', async (req: Request, res: Response) => {
         .lean(),
       PersonModel.countDocuments(filter)
     ]);
+
+    // Ocultar datos de menores (LOPNNA)
+    const persons = rawPersons.map((p: any) => {
+      if (p.metadata?.isMinor) {
+        return {
+          ...p,
+          name: 'Caso Protegido',
+          photoUrl: undefined,
+          description: 'Por protección legal (LOPNNA), los detalles de este caso están reservados solo para moderadores y familiares directos. Presione el botón "Contactar Moderador" para aportar o recibir información.',
+          'lastSeen.coordinates': undefined
+        };
+      }
+      return p;
+    });
 
     const responsePayload = { total, limit, offset, persons };
 

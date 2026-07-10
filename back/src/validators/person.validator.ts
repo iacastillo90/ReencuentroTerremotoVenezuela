@@ -14,6 +14,7 @@ export const personPayloadSchema = z.object({
   confidence_label: sanitizedStringOptional,
   reportedBy: sanitizedStringOptional,
   isAnonymous: z.boolean().optional(),
+  isMinor: z.boolean().optional(),
   reporterIp: z.string().optional(),
   reporterLocation: z.object({
     lat: z.number(),

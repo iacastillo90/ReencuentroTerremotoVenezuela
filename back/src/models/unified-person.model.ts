@@ -47,7 +47,8 @@ export interface UnifiedPerson extends Document {
     confidenceScore?: number;
     confidenceLabel?: string;
     aiProcessed: boolean;
-    auditStatus: 'clean' | 'pending_review' | 'merged' | 'dismissed';
+    isMinor?: boolean;
+    auditStatus: 'clean' | 'pending_review' | 'merged' | 'dismissed' | 'pending_moderation';
     reportedBy?: Types.ObjectId | string;
     reporterIp?: string;
     reporterLocation?: { lat: number; lng: number };
@@ -94,7 +95,8 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     confidenceScore: Number,
     confidenceLabel: String,
     aiProcessed: { type: Boolean, default: false },
-    auditStatus: { type: String, enum: ['clean', 'pending_review', 'merged', 'dismissed'], default: 'clean' },
+    isMinor: { type: Boolean, default: false },
+    auditStatus: { type: String, enum: ['clean', 'pending_review', 'merged', 'dismissed', 'pending_moderation'], default: 'clean' },
     reportedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     reporterIp: String,
     reporterLocation: {
