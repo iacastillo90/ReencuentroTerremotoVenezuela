@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Loader2, MapPin, ShieldAlert, Sparkles, Video, Plus, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Loader2, MapPin, ShieldAlert, Sparkles, Video, Plus, X, WifiOff } from 'lucide-react';
 import { api } from '../../services/api';
+import { db } from '../../db/offlineDb';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
 import './ReportModal.css';
@@ -92,12 +93,14 @@ const CustomSelect = ({ label, options, value, onChange, placeholder }: any) => 
 };
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(2); // Inicia directamente en el formulario manual
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isOfflineSaved, setIsOfflineSaved] = useState(false);
 
-  // Step 1
+  // Step 1 / General Description
   const [audioText, setAudioText] = useState('');
+  const [nombreCompleto, setNombreCompleto] = useState('');
 
   // Step 2
   const [categoria, setCategoria] = useState('');
@@ -144,6 +147,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     setReporterLocation(null);
     setLocationSuccess(false);
     setCalleEstado('');
+    setIsOfflineSaved(false);
   };
 
   const toggleSena = (val: string) => {
@@ -200,8 +204,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
         photoUrl = uploadRes.data.url;
       }
       
-      const payloadText = `[REPORTE ASISTIDO IA]
-Descripción Audio: ${audioText}
+      const payloadText = `[REPORTE ${step === 0 || audioText === '' ? 'MANUAL' : 'ASISTIDO IA'}]
+Nombre: ${nombreCompleto || 'Desconocido'}
+Descripción / Audio: ${audioText}
 Categoría: ${categoria}
 Género: ${genero}
 Complexión: ${complexion}
@@ -215,13 +220,33 @@ Ubicación: ${calleEstado}`;
         source: 'manual',
         externalId: `reporte_${Date.now()}`,
         type: categoria === 'mascota' ? 'animal' : 'person',
-        name: 'Reporte Anónimo (Asistente)',
+        name: nombreCompleto || (audioText ? 'Reporte Anónimo (Asistente)' : 'Reporte Manual'),
         estado: calleEstado,
         text: payloadText,
         date: new Date().toISOString(),
+        isMinor: categoria === 'niño/a o adolescente',
         reporterLocation
       };
-      if (photoUrl) payload.photoUrl = photoUrl;
+
+      if (!navigator.onLine) {
+        // Save to IndexedDB (Offline Draft)
+        await db.offlineReports.add({
+          reportData: payload,
+          photoFile: file || undefined,
+          status: 'draft_offline',
+          createdAt: Date.now()
+        });
+        setIsOfflineSaved(true);
+        setStep(6);
+        return;
+      }
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await api.post('/media', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        payload.photoUrl = uploadRes.data.url;
+      }
 
       await api.post('/persons', payload);
       setStep(6);
@@ -342,7 +367,7 @@ Ubicación: ${calleEstado}`;
       case 1:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Paso 1: Descripción de la persona</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Descripción de la persona</h3>
             <div className="ai-notice" style={{ padding: '1rem', backgroundColor: 'rgba(59,130,246,0.1)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '2rem', display: 'flex', gap: '12px' }}>
               <Sparkles size={24} color="#3b82f6" style={{ flexShrink: 0 }} />
               <p style={{ margin: 0, fontSize: '0.95rem', color: '#60a5fa', lineHeight: 1.4 }}>
@@ -359,7 +384,7 @@ Ubicación: ${calleEstado}`;
             <textarea 
               value={audioText}
               onChange={(e) => setAudioText(e.target.value)}
-              placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara, tatuajes en los brazos, anda con lentes, color de piel moreno, color de ojos marrón claro, color de cabello castaño, camisa azul, jean azul claro, zapatos negros, gorra negra."
+              placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
               style={{ 
                 marginTop: '1rem', 
                 padding: '1rem', 
@@ -374,8 +399,9 @@ Ubicación: ${calleEstado}`;
                 resize: 'vertical'
               }}
             />
-            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-              <Button fullWidth size="lg" onClick={() => setStep(2)}>ACEPTAR</Button>
+            <div style={{ marginTop: 'auto', paddingTop: '2rem', display: 'flex', gap: '1rem' }}>
+              <Button variant="outline" size="lg" onClick={() => setStep(2)}>ATRÁS</Button>
+              <Button fullWidth size="lg" onClick={() => setStep(2)}>SIGUIENTE</Button>
             </div>
           </div>
         );
@@ -383,8 +409,32 @@ Ubicación: ${calleEstado}`;
       case 2:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Paso 2: Características</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Características Generales</h3>
             
+            {audioText ? (
+              <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.85rem 1rem', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399' }}>
+                   <CheckCircle size={18} /> <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Audio registrado con éxito</span>
+                </div>
+                <button type="button" onClick={() => setStep(1)} style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
+                  Editar Audio
+                </button>
+              </div>
+            ) : (
+              <button 
+                type="button" 
+                onClick={() => setStep(1)}
+                style={{ width: '100%', padding: '1rem', marginBottom: '1.5rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                <Sparkles size={20} /> Reportar con Asistente IA
+              </button>
+            )}
+            
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>NOMBRE (Opcional)</label>
+              <input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} placeholder="¿Conoces el nombre de esta persona?" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff' }} />
+            </div>
+
             <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'block' }}>CATEGORÍA Y GÉNERO</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
               {['niño/a o adolescente', 'adulto', 'adulto mayor', 'mascota'].map(c => (
@@ -420,7 +470,7 @@ Ubicación: ${calleEstado}`;
       case 3:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Paso 3: Vestimenta</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Vestimenta</h3>
             
             <div className="form-group" style={{ opacity: sinVestimenta ? 0.4 : 1, pointerEvents: sinVestimenta ? 'none' : 'auto' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>PRENDA SUPERIOR</label>
@@ -452,7 +502,7 @@ Ubicación: ${calleEstado}`;
       case 4:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Paso 4: Señas particulares</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Señas Particulares</h3>
             
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '1.5rem' }}>
               {SENAS.map(s => {
@@ -482,13 +532,13 @@ Ubicación: ${calleEstado}`;
               })}
             </div>
 
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>DETALLE ADICIONAL</label>
-            <input 
-              type="text" 
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>DETALLE ADICIONAL / DESCRIPCIÓN</label>
+            <textarea 
+              rows={3}
               value={detalleAdicional} 
               onChange={e => setDetalleAdicional(e.target.value)} 
-              placeholder="Ej. Cicatriz en antebrazo derecho..." 
-              style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff' }} 
+              placeholder="Ej. Cicatriz en antebrazo derecho, llevaba un bolso negro..." 
+              style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', resize: 'vertical' }} 
             />
 
             <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
@@ -500,14 +550,24 @@ Ubicación: ${calleEstado}`;
       case 5:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Paso 5: Grabar video / Tomar foto</h3>
+            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Ubicación y Envío</h3>
             
-            <label style={{ display: 'block', width: '100%', border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '16px', padding: '3rem 1rem', textAlign: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', marginBottom: '2rem', position: 'relative' }}>
-              <input type="file" accept="image/*,video/mp4" onChange={handleFileChange} style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', cursor: 'pointer' }} />
-              <Video size={48} color="#94a3b8" style={{ margin: '0 auto 1rem' }} />
-              <strong style={{ display: 'block', color: '#fff', fontSize: '1rem', marginBottom: '4px' }}>Subir Evidencia</strong>
-              <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{file ? file.name : 'Toca para abrir la cámara o galería'}</span>
-            </label>
+            {categoria === 'niño/a o adolescente' ? (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '16px', padding: '1.5rem', textAlign: 'center', marginBottom: '2rem' }}>
+                <ShieldAlert size={36} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
+                <strong style={{ display: 'block', color: '#fff', fontSize: '1rem', marginBottom: '8px' }}>Protección al Menor (LOPNNA)</strong>
+                <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: 0, lineHeight: 1.4 }}>
+                  Por ley, no está permitido adjuntar fotografías o videos de menores de edad. Su reporte será enviado directamente a las autoridades correspondientes para un manejo confidencial.
+                </p>
+              </div>
+            ) : (
+              <label style={{ display: 'block', width: '100%', border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '16px', padding: '3rem 1rem', textAlign: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', marginBottom: '2rem', position: 'relative' }}>
+                <input type="file" accept="image/*,video/mp4" onChange={handleFileChange} style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', cursor: 'pointer' }} />
+                <Video size={48} color="#94a3b8" style={{ margin: '0 auto 1rem' }} />
+                <strong style={{ display: 'block', color: '#fff', fontSize: '1rem', marginBottom: '4px' }}>Subir Evidencia (Foto o Video)</strong>
+                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{file ? file.name : 'Toca para abrir la cámara o galería'}</span>
+              </label>
+            )}
 
             <button 
               type="button" 
@@ -538,11 +598,23 @@ Ubicación: ${calleEstado}`;
       case 6:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingTop: '4rem' }}>
-            <CheckCircle size={80} color="#10b981" style={{ marginBottom: '1.5rem' }} />
-            <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 800, color: '#fff' }}>¡Tu reporte se ha realizado exitosamente!</h3>
-            <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '3rem' }}>
-              Nos comunicaremos contigo en caso de necesitar información extra.
-            </p>
+            {isOfflineSaved ? (
+              <>
+                <WifiOff size={80} color="#f59e0b" style={{ marginBottom: '1.5rem' }} />
+                <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 800, color: '#fff' }}>Guardado en Modo Sin Conexión</h3>
+                <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '3rem' }}>
+                  El reporte ha sido guardado de manera local. Se sincronizará automáticamente tan pronto como tu dispositivo recupere conexión a Internet.
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle size={80} color="#10b981" style={{ marginBottom: '1.5rem' }} />
+                <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 800, color: '#fff' }}>¡Tu reporte se ha realizado exitosamente!</h3>
+                <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '3rem' }}>
+                  Nos comunicaremos contigo en caso de necesitar información extra.
+                </p>
+              </>
+            )}
 
             <div style={{ width: '100%', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <Button fullWidth size="lg" onClick={onClose} style={{ backgroundColor: '#fff', color: '#000', fontWeight: 800 }}>FINALIZAR</Button>
@@ -562,15 +634,19 @@ Ubicación: ${calleEstado}`;
     <div className="report-modal-overlay">
       <div className="report-modal-content">
         <header className="report-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'rgba(15,23,42,0.95)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {step > 1 && step < 6 ? (
+          {step > 2 && step < 6 ? (
             <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+              <ArrowLeft size={20} />
+            </button>
+          ) : step === 1 ? (
+            <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
               <ArrowLeft size={20} />
             </button>
           ) : (
             <div style={{ width: 20 }} />
           )}
           <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '2px' }}>
-            {step < 6 ? `PASO ${step} DE 5` : 'FINALIZADO'}
+            {step < 6 ? 'CREAR REPORTE' : 'FINALIZADO'}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
             <X size={24} />
