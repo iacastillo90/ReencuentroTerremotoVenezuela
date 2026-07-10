@@ -1,19 +1,33 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { SearchRequestModel } from '../models/search-request.model';
 import { requireUser } from '../middlewares/auth.middleware';
-import { runMatchingForSearchRequest } from '../services/matcher.service';
+import { ValidationError } from '../middlewares/error.middleware';
+import { personMatchingQueue } from '../queues/person-matching.queue';
+
+const createSearchRequestSchema = z.object({
+  searchName: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000).optional(),
+  category: z.enum(['menor', 'adulto', 'adulto_mayor', 'mascota']).optional(),
+  isMinor: z.boolean().optional(),
+});
+
+const updateStatusSchema = z.object({
+  status: z.enum(['activa', 'resuelta', 'cancelada']),
+});
 
 const router = Router();
 
 // Crear una solicitud de búsqueda (crear alerta)
-router.post('/', requireUser, async (req: Request, res: Response) => {
+router.post('/', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
-    const { searchName, description, category, isMinor } = req.body;
 
-    if (!searchName) {
-      return res.status(400).json({ error: 'El nombre de búsqueda es obligatorio' });
+    const parsed = createSearchRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Datos de solicitud inválidos', { errors: parsed.error.issues }));
     }
+    const { searchName, description, category, isMinor } = parsed.data;
 
     const newRequest = await SearchRequestModel.create({
       user: userId,
@@ -23,40 +37,36 @@ router.post('/', requireUser, async (req: Request, res: Response) => {
       isMinor
     });
 
-    // TODO: En el futuro, disparar evento a un Worker para generar embeddings
-    // y buscar coincidencias con reportes existentes.
-    // MVP Matcher (asíncrono, no bloquea la respuesta)
-    runMatchingForSearchRequest(newRequest._id.toString()).catch(console.error);
+    await personMatchingQueue.enqueue({ idHash: newRequest._id.toString(), source: 'search-request' });
 
     return res.status(201).json(newRequest);
   } catch (error) {
-    console.error('[SearchRequestRoute] POST / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Listar solicitudes del usuario
-router.get('/mine', requireUser, async (req: Request, res: Response) => {
+router.get('/mine', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const requests = await SearchRequestModel.find({ user: userId }).sort({ createdAt: -1 }).lean();
     return res.status(200).json(requests);
   } catch (error) {
-    console.error('[SearchRequestRoute] GET /mine Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Cancelar/resolver una solicitud
-router.patch('/:id/status', requireUser, async (req: Request, res: Response) => {
+router.patch('/:id/status', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     const { id } = req.params;
-    const { status } = req.body;
 
-    if (!['activa', 'resuelta', 'cancelada'].includes(status)) {
-       return res.status(400).json({ error: 'Estado inválido' });
+    const parsed = updateStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return next(new ValidationError('Estado inválido', { errors: parsed.error.issues }));
     }
+    const { status } = parsed.data;
 
     const request = await SearchRequestModel.findOneAndUpdate(
       { _id: id, user: userId },
@@ -68,8 +78,7 @@ router.patch('/:id/status', requireUser, async (req: Request, res: Response) => 
 
     return res.status(200).json(request);
   } catch (error) {
-    console.error('[SearchRequestRoute] PATCH /:id/status Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 

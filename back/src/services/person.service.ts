@@ -1,7 +1,7 @@
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
 import { generateIdHash } from '../utils/hash.util';
 import { findNearbyDisasters, calculateDisasterUrgencyBonus } from './disaster.service';
-import { runMatchingForNewPerson } from './matcher.service';
+import { personMatchingQueue } from '../queues/person-matching.queue';
 
 export async function upsertPerson(
   source: string,
@@ -74,8 +74,8 @@ export async function upsertPerson(
     { upsert: true, new: true, runValidators: true }
   );
 
-  // Ejecutar matching asíncrono
-  runMatchingForNewPerson(idHash).catch(console.error);
+  // Encolar matching asíncrono con retry
+  await personMatchingQueue.enqueue({ idHash, source: 'person-service' });
 
   return result as UnifiedPerson;
 }

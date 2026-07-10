@@ -1,15 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import { UserModel } from '../models/user.model';
 import { auditLog } from './audit.middleware';
-
-// JWT_SECRET startup validation — fail-fast
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  console.error('[FATAL] JWT_SECRET is required');
-  process.exit(1);
-})();
+import { JWT_SECRET } from '../utils/jwt-secret.util';
 
 export function getJwtSecret(): string {
   return JWT_SECRET;

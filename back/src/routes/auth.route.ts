@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
@@ -8,16 +8,9 @@ import { generateCsrfToken } from '../middlewares/csrf.middleware';
 import { googleAuthSchema, profileUpdateSchema, registerSchema, loginSchema } from '../validators/auth.validator';
 import { auditLog } from '../middlewares/audit.middleware';
 import { hashPassword, verifyPassword } from '../utils/password.util';
+import { JWT_SECRET } from '../utils/jwt-secret.util';
 
 const router = Router();
-
-// JWT_SECRET startup validation — fail-fast
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  console.error('[FATAL] JWT_SECRET is required');
-  process.exit(1);
-})();
-
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -50,7 +43,7 @@ router.get('/csrf-token', (req: Request, res: Response) => {
   return res.json({ token });
 });
 
-router.post('/google', authLimiter, async (req: Request, res: Response) => {
+router.post('/google', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = googleAuthSchema.safeParse(req.body);
     if (!validation.success) {
@@ -69,7 +62,6 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
     let payload: any;
 
     try {
-      // Verify Google token
       const ticket = await client.verifyIdToken({
         idToken: token,
         audience: GOOGLE_CLIENT_ID,
@@ -105,7 +97,6 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
-    // Set httpOnly cookie
     res.cookie('token', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -123,9 +114,8 @@ router.post('/google', authLimiter, async (req: Request, res: Response) => {
     });
 
     return res.status(200).json({ token: authToken, user });
-  } catch (error: any) {
-    console.error('[AuthRoute] Google Auth Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -147,7 +137,7 @@ function issueSession(res: Response, user: any): string {
 }
 
 // ── Registro con correo/contraseña ───────────────────────────────────────────
-router.post('/register', authLimiter, async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
@@ -187,13 +177,12 @@ router.post('/register', authLimiter, async (req: Request, res: Response) => {
     });
     return res.status(201).json({ token: authToken, user });
   } catch (error) {
-    console.error('[AuthRoute] POST /register Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // ── Login con correo/contraseña ──────────────────────────────────────────────
-router.post('/login', authLimiter, async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
@@ -224,22 +213,21 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     });
     return res.status(200).json({ token: authToken, user });
   } catch (error) {
-    console.error('[AuthRoute] POST /login Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
-router.get('/me', requireUser, async (req: Request, res: Response) => {
+router.get('/me', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await UserModel.findById((req as any).user.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.status(200).json({ user });
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
-router.post('/profile', requireUser, async (req: Request, res: Response) => {
+router.post('/profile', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = profileUpdateSchema.safeParse(req.body);
     if (!validation.success) {
@@ -263,7 +251,6 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
-    // Set httpOnly cookie
     res.cookie('token', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -273,12 +260,12 @@ router.post('/profile', requireUser, async (req: Request, res: Response) => {
 
     return res.status(200).json({ token: authToken, user });
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Logout — increment tokenVersion to invalidate all existing JWTs
-router.post('/logout', requireUser, async (req: Request, res: Response) => {
+router.post('/logout', requireUser, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user.userId;
     await UserModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
@@ -295,7 +282,7 @@ router.post('/logout', requireUser, async (req: Request, res: Response) => {
 
     return res.json({ message: 'Logged out successfully' });
   } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 

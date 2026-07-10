@@ -25,6 +25,7 @@ async function bootstrap() {
     // Importar workers después de establecer conexión a DB
     require('./workers/disaster-sync.worker');
     require('./workers/ia-processor.worker');
+    require('./workers/matching.worker');
 
     // Alinea los índices del modelo User con el esquema
     try {

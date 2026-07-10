@@ -21,36 +21,55 @@ if (mongoose.connection.readyState === 0) {
     .then(() => console.log('[disaster-sync] MongoDB Conectado exitosamente.'))
     .catch((err) => console.error('[disaster-sync] Error al conectar a MongoDB:', err));
 }
+
+interface SyncJob {
+  name: string;
+  handler: () => Promise<void>;
+}
+
+function getConcurrency(): number {
+  const envVal = process.env.DISASTER_SYNC_CONCURRENCY;
+  if (envVal === undefined) return 3;
+  const parsed = parseInt(envVal, 10);
+  if (isNaN(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
+const syncJobs: SyncJob[] = [
+  { name: 'USGS Earthquakes', handler: fetchUSGSEarthquakes },
+  { name: 'FIRMS Fires', handler: fetchFIRMSFires },
+  { name: 'GDACS', handler: fetchGDACS },
+  { name: 'Reencuentro Persons', handler: fetchReencuentroPersons },
+  { name: 'Venezuela Reporta', handler: fetchVenezuelaReporta },
+  { name: 'FUNVISIS', handler: runFunvisisJob },
+  { name: 'INAMEH', handler: runInamehJob },
+  { name: 'CORPOELEC', handler: runCorpoelecJob },
+  { name: 'Proteccion Civil', handler: runProteccionCivilJob },
+  { name: 'Cruz Roja', handler: runCruzRojaJob },
+];
+
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
-  if (job.name === 'sync-usgs') {
-    console.log(`[Worker] Starting USGS Sync Job ${job.id}`);
-    await fetchUSGSEarthquakes();
-  } else if (job.name === 'sync-firms') {
-    console.log(`[Worker] Starting FIRMS Sync Job ${job.id}`);
-    await fetchFIRMSFires();
-  } else if (job.name === 'sync-gdacs') {
-    console.log(`[Worker] Starting GDACS Sync Job ${job.id}`);
-    await fetchGDACS();
-  } else if (job.name === 'sync-reencuentro') {
-    console.log(`[Worker] Starting Reencuentro Sync Job ${job.id}`);
-    await fetchReencuentroPersons();
-  } else if (job.name === 'sync-venezuelareporta') {
-    console.log(`[Worker] Starting VenezuelaReporta Sync Job ${job.id}`);
-    await fetchVenezuelaReporta();
-  } else if (job.name === 'sync-funvisis') {
-    console.log(`[Worker] Starting FUNVISIS Sync Job ${job.id}`);
-    await runFunvisisJob();
-  } else if (job.name === 'sync-inameh') {
-    console.log(`[Worker] Starting INAMEH Sync Job ${job.id}`);
-    await runInamehJob();
-  } else if (job.name === 'sync-corpoelec') {
-    console.log(`[Worker] Starting CORPOELEC Sync Job ${job.id}`);
-    await runCorpoelecJob();
-  } else if (job.name === 'sync-proteccion-civil') {
-    console.log(`[Worker] Starting PROTECCION CIVIL Sync Job ${job.id}`);
-    await runProteccionCivilJob();
-  } else if (job.name === 'sync-cruz-roja') {
-    console.log(`[Worker] Starting CRUZ ROJA Sync Job ${job.id}`);
-    await runCruzRojaJob();
+  const results = await Promise.allSettled(
+    syncJobs.map(async (syncJob) => {
+      try {
+        await syncJob.handler();
+        return { name: syncJob.name, status: 'fulfilled' as const };
+      } catch (error) {
+        return { name: syncJob.name, status: 'rejected' as const, error };
+      }
+    })
+  );
+
+  const successCount = results.filter(r => r.status === 'fulfilled').length;
+  const failCount = results.filter(r => r.status === 'rejected').length;
+  console.log(`[disaster-sync] Job ${job.id}: ${successCount}/${syncJobs.length} sources synced`);
+
+  if (failCount > 0) {
+    results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .forEach(r => console.error(`[disaster-sync] Failed: ${(r.reason as any)?.name || 'unknown'}`, r.reason));
   }
-}, { connection: connection as any });
+}, {
+  connection: connection as any,
+  concurrency: getConcurrency(),
+});

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { PersonModel } from '../models/unified-person.model';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';
 import { connection as redis } from '../config/redis.config';
@@ -8,7 +8,7 @@ import { auditLog } from '../middlewares/audit.middleware';
 export const partnerRouter = Router();
 
 // Endpoint exclusivo para Partners: Extraer TODOS los datos (incluyendo PII sensible)
-partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Response) => {
+partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
     const offset = parseInt(req.query.offset as string) || 0;
@@ -17,9 +17,8 @@ partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Resp
     const filter: any = {};
     if (status) filter.status = status;
 
-    // A diferencia de la ruta pública, aquí NO aplicamos safeProjection
-    // Se envía toda la información sensible (Contactos, Teléfonos, Coordenadas exactas, Cédulas completas)
     const cases = await PersonModel.find(filter)
+      .select('name status age gender description lastSeen photoUrl aliases contactPerson type metadata.createdAt metadata.updatedAt metadata.source metadata.urgencyScore metadata.confidenceLabel metadata.auditStatus')
       .sort({ 'metadata.createdAt': -1 })
       .skip(offset)
       .limit(limit)
@@ -29,13 +28,12 @@ partnerRouter.get('/cases', requirePartnerApiKey, async (req: Request, res: Resp
 
     return res.status(200).json({ data: cases, total, offset, limit });
   } catch (error) {
-    console.error('[PartnerRoute] GET /cases Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Endpoint exclusivo para Partners: Inyectar datos al sistema (Bidireccional)
-partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Response) => {
+partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validation = partnerCasesPayloadSchema.safeParse(req.body);
     if (!validation.success) {
@@ -78,7 +76,6 @@ partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Res
       insertedIds.push(newCase._id);
     }
 
-    // Invalida la cache pública al inyectar nuevos casos
     await redis.keys('persons:*').then(keys => {
       if (keys.length > 0) return redis.del(...keys);
     });
@@ -94,7 +91,6 @@ partnerRouter.post('/cases', requirePartnerApiKey, async (req: Request, res: Res
 
     return res.status(201).json({ message: 'Cases successfully ingested', insertedIds });
   } catch (error) {
-    console.error('[PartnerRoute] POST /cases Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });

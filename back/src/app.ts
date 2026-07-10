@@ -20,6 +20,7 @@ import { matchesRouter } from './routes/matches.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
 import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { csrfProtection } from './middlewares/csrf.middleware';
+import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
 
@@ -118,5 +119,8 @@ app.use('/api/matches', matchesRouter);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+// --- 9. Error handling middleware (must be last) ---
+app.use(errorHandler);
 
 export default app;

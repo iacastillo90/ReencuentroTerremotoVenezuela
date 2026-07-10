@@ -11,6 +11,10 @@ jest.mock('../../src/config/redis.config', () => ({
   connection: {} // mock redis connection
 }));
 
+jest.mock('../../src/services/pinecone.service', () => ({
+  upsertVectorToPinecone: jest.fn()
+}));
+
 jest.mock('../../src/services/ai/ai.factory', () => ({
   getAIProvider: jest.fn().mockReturnValue({
     processRecord: jest.fn().mockResolvedValue({

@@ -6,13 +6,20 @@ import path from 'path';
 const rawEndpoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
 const cleanEndpoint = rawEndpoint.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
+const minioAccessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
+const minioSecretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
+
+if (minioAccessKey === 'minioadmin' || minioSecretKey === 'minioadmin') {
+  console.warn('[MinIO] Using default credentials. Set MINIO_ACCESS_KEY and MINIO_SECRET_KEY for production.');
+}
+
 // Configuración cliente MinIO local/cloud
 export const minioClient = new Client({
   endPoint: cleanEndpoint,
   port: parseInt(process.env.MINIO_PORT || '9000'),
   useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin'
+  accessKey: minioAccessKey,
+  secretKey: minioSecretKey
 });
 
 const BUCKET_NAME = process.env.MINIO_BUCKET || 'reencuentro-media';

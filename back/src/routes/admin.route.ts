@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { manualAuditQueue } from '../queues/manual-audit.queue';
 import { upsertPerson } from '../services/person.service';
 import { PersonModel } from '../models/unified-person.model';
@@ -66,7 +66,7 @@ router.post('/merge/:id1/:id2', async (req: Request, res: Response) => {
 });
 
 // Endpoint para listar posibles duplicados
-router.get('/audit', async (req: Request, res: Response) => {
+router.get('/audit', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const jobs = await manualAuditQueue.getWaiting();
     const formattedJobs = jobs.map(job => ({
@@ -78,13 +78,12 @@ router.get('/audit', async (req: Request, res: Response) => {
     
     return res.status(200).json(formattedJobs);
   } catch (error) {
-    console.error('[AdminRoute] GET /audit Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Endpoint para fusionar registros (confirmar que son la misma persona)
-router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
+router.post('/audit/:jobId/merge', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const jobId = req.params.jobId as string;
 
@@ -102,14 +101,12 @@ router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
 
     const { incoming } = job.data;
     
-    // Buscar la persona original para mantener su nombre y preservar el idHash
     const existingPerson = await PersonModel.findOne({ idHash: targetIdHash });
     
     if (!existingPerson) {
        return res.status(404).json({ error: 'Target person not found in database' });
     }
 
-    // Unificar usando los datos entrantes pero reteniendo las llaves maestras del registro previo
     const mergedPerson = await upsertPerson(
       incoming.source,
       incoming.externalId,
@@ -125,7 +122,7 @@ router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
       }
     );
 
-    await job.remove(); // Sacarlo de la cola
+    await job.remove();
 
     auditLog({
       eventType: 'admin_action',
@@ -139,13 +136,12 @@ router.post('/audit/:jobId/merge', async (req: Request, res: Response) => {
 
     return res.status(200).json({ status: 'merged', idHash: mergedPerson.idHash });
   } catch (error) {
-    console.error('[AdminRoute] POST /audit/:jobId/merge Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Endpoint para descartar (son personas diferentes, insertar como nuevo)
-router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
+router.post('/audit/:jobId/dismiss', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const jobId = req.params.jobId as string;
 
@@ -156,7 +152,6 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
 
     const { incoming } = job.data;
 
-    // Forzamos inserción como un nuevo registro
     const newPerson = await upsertPerson(
       incoming.source,
       incoming.externalId,
@@ -169,7 +164,7 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
       }
     );
 
-    await job.remove(); // Sacarlo de la cola
+    await job.remove();
 
     auditLog({
       eventType: 'admin_action',
@@ -182,13 +177,12 @@ router.post('/audit/:jobId/dismiss', async (req: Request, res: Response) => {
 
     return res.status(200).json({ status: 'inserted_as_new', idHash: newPerson.idHash });
   } catch (error) {
-    console.error('[AdminRoute] POST /audit/:jobId/dismiss Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
 // Cambiar estado de una persona (missing <-> found)
-router.patch('/persons/:idHash/status', async (req: Request, res: Response) => {
+router.patch('/persons/:idHash/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idHash } = req.params;
 
@@ -221,8 +215,7 @@ router.patch('/persons/:idHash/status', async (req: Request, res: Response) => {
 
     return res.status(200).json({ status: updated.status, idHash: updated.idHash });
   } catch (error) {
-    console.error('[AdminRoute] PATCH /persons/:idHash/status Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    next(error);
   }
 });
 
