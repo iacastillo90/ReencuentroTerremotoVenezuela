@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, ChevronDown, Info, Loader2, MapPin, ShieldAlert, Sparkles, Video, Plus, X, WifiOff } from 'lucide-react';
+import { ArrowLeft, Baby, CheckCircle, ChevronDown, Dog, Heart, Info, Loader2, MapPin, ShieldAlert, Sparkles, Star, User, Video, Plus, X, WifiOff } from 'lucide-react';
 import { api } from '../../services/api';
 import { db } from '../../db/offlineDb';
 import { AudioRecorder } from './AudioRecorder';
@@ -59,7 +59,7 @@ const CustomSelect = ({ label, options, value, onChange, placeholder }: any) => 
   const [open, setOpen] = useState(false);
   const selected = options.find((o: any) => o.val === value);
   return (
-    <div className="figma-select-field" style={{ position: 'relative' }}>
+    <div className="figma-select-field">
       <label>{label}</label>
       <div className="figma-select-trigger" onClick={() => setOpen(!open)} tabIndex={0} onKeyDown={e => e.key === 'Enter' && setOpen(!open)}>
         {selected ? (
@@ -74,7 +74,7 @@ const CustomSelect = ({ label, options, value, onChange, placeholder }: any) => 
       </div>
       {open && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setOpen(false)} />
+          <div className="figma-select-backdrop" onClick={() => setOpen(false)} />
           <div className="figma-select-dropdown">
             {options.map((o: any) => (
               <div key={o.val} onClick={() => { onChange(o.val); setOpen(false); }} className={`figma-select-option ${value === o.val ? 'selected' : ''}`}>
@@ -90,7 +90,7 @@ const CustomSelect = ({ label, options, value, onChange, placeholder }: any) => 
 };
 
 export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
-  const [step, setStep] = useState(2); // Inicia directamente en el formulario manual
+  const [step, setStep] = useState(1); // Inicia en selección de categoría
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
@@ -98,6 +98,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
   // Step 1 / General Description
   const [audioText, setAudioText] = useState('');
   const [nombreCompleto, setNombreCompleto] = useState('');
+  const [edad, setEdad] = useState('');
 
   // Step 2
   const [categoria, setCategoria] = useState('');
@@ -127,6 +128,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
 
   const resetFields = () => {
     setAudioText('');
+    setNombreCompleto('');
+    setEdad('');
     setCategoria('');
     setGenero('');
     setComplexion('');
@@ -203,6 +206,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
       
       const payloadText = `[REPORTE ${step === 0 || audioText === '' ? 'MANUAL' : 'ASISTIDO IA'}]
 Nombre: ${nombreCompleto || 'Desconocido'}
+Edad Aproximada: ${edad || 'No especificada'}
 Descripción / Audio: ${audioText}
 Categoría: ${categoria}
 Género: ${genero}
@@ -234,7 +238,7 @@ Ubicación: ${calleEstado}`;
           createdAt: Date.now()
         });
         setIsOfflineSaved(true);
-        setStep(6);
+        setStep(7);
         return;
       }
 
@@ -246,7 +250,7 @@ Ubicación: ${calleEstado}`;
       }
 
       await api.post('/persons', payload);
-      setStep(6);
+      setStep(7);
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.error || 'Error al enviar reporte.');
@@ -363,8 +367,44 @@ Ubicación: ${calleEstado}`;
     switch (step) {
       case 1:
         return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Descripción de la persona</h3>
+          <div className="report-step-content">
+            <div className="category-grid-2x2">
+              {[
+                { val: 'niño/a o adolescente', icon: Baby, label: 'Niño/a o\nadolescente' },
+                { val: 'adulto', icon: User, label: 'Adulto' },
+                { val: 'adulto mayor', icon: Heart, label: 'Adulto\nmayor' },
+                { val: 'mascota', icon: Dog, label: 'Mascota' },
+              ].map(c => {
+                const Icon = c.icon;
+                const active = categoria === c.val;
+                return (
+                  <button key={c.val} type="button" onClick={() => setCategoria(c.val)} className={`category-microcard ${active ? 'selected' : ''}`}>
+                    <div className="card-icon"><Icon size={28} /></div>
+                    <span className="card-label">{c.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button type="button" onClick={() => setStep(2)} className="btn-ai-assist">
+              <Sparkles size={20} /> Reportar con Asistente IA
+            </button>
+
+            <div className="sticky-bottom-action">
+              <div className="report-footer-privacy">
+                <Info size={14} />
+                <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+              </div>
+              <div className="step-submit-row">
+                <Button fullWidth size="lg" onClick={() => setStep(3)} disabled={!categoria}>SIGUIENTE</Button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="report-step-content">
             <div className="ai-notification-card">
               <div className="card-title">
                 <Sparkles size={20} color="#4497D6" />
@@ -379,70 +419,32 @@ Ubicación: ${calleEstado}`;
                 setAudioText(txt);
               }} 
             />
-            <textarea 
-              value={audioText}
-              onChange={(e) => setAudioText(e.target.value)}
-              placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
-              style={{ 
-                marginTop: '1rem', 
-                padding: '1rem', 
-                background: '#374151', 
-                borderRadius: '12px', 
-                fontSize: '0.82rem', 
-                lineHeight: '1.4',
-                color: '#f8fafc', 
-                border: '1px solid #4b5563',
-                width: '100%',
-                minHeight: '150px',
-                resize: 'vertical'
-              }}
-            />
-            <div className="report-footer-privacy">
-              <Info size={14} />
-              <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+            <div className="figma-input-field">
+              <label>DESCRIPCIÓN (o transcribe con el asistente de voz)</label>
+              <textarea 
+                value={audioText}
+                onChange={(e) => setAudioText(e.target.value)}
+                placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
+                rows={6}
+              />
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '2rem', display: 'flex', gap: '1rem' }}>
-              <Button variant="outline" size="lg" onClick={() => setStep(2)}>ATRÁS</Button>
-              <Button fullWidth size="lg" onClick={() => setStep(2)}>SIGUIENTE</Button>
+            <div className="sticky-bottom-action">
+              <div className="report-footer-privacy">
+                <Info size={14} />
+                <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+              </div>
+              <div className="step-submit-row-flex">
+                <Button variant="outline" size="lg" onClick={() => setStep(1)}>ATRÁS</Button>
+                <Button fullWidth size="lg" onClick={() => setStep(3)}>SIGUIENTE</Button>
+              </div>
             </div>
           </div>
         );
 
-      case 2:
+      case 3:
         return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="step-indicator">
-              <span className="step-number">2</span>
-              <span className="step-divider">•</span>
-              <span className="step-name">Características</span>
-            </div>
+          <div className="report-step-content">
             
-            {audioText ? (
-              <div className="ai-notification-card">
-                <div className="card-title">
-                  <CheckCircle size={20} color="#34d399" />
-                  <span>Audio registrado con éxito</span>
-                </div>
-                <p className="card-description">El asistente IA ha procesado tu nota de voz y extraído la información disponible. Puedes editar el audio si necesitas corregir algo.</p>
-                <button className="card-btn" onClick={() => setStep(1)}>
-                  Editar Audio
-                </button>
-              </div>
-            ) : (
-              <button 
-                type="button" 
-                onClick={() => setStep(1)}
-                className="btn-ai-assist"
-              >
-                <Sparkles size={20} /> Reportar con Asistente IA
-              </button>
-            )}
-            
-            <div className="figma-input-field">
-              <label>NOMBRE (Opcional)</label>
-              <input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} placeholder="¿Conoces el nombre de esta persona?" />
-            </div>
-
             <div className="figma-section">
               <label className="figma-section-label">Género</label>
               <div className="figma-card-group">
@@ -452,13 +454,14 @@ Ubicación: ${calleEstado}`;
               </div>
             </div>
 
-            <div className="figma-section">
-              <label className="figma-section-label">Categoría</label>
-              <div className="figma-card-grid">
-                {['niño/a o adolescente', 'adulto', 'adulto mayor', 'mascota'].map(c => (
-                  <button key={c} type="button" onClick={() => setCategoria(c)} className={`figma-card ${categoria === c ? 'selected' : ''}`} style={{ textTransform: 'capitalize' }}>{c}</button>
-                ))}
-              </div>
+            <div className="figma-input-field">
+              <label>NOMBRE (Opcional)</label>
+              <input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} placeholder="¿Conoces el nombre de esta persona?" />
+            </div>
+
+            <div className="figma-input-field">
+              <label>EDAD APROXIMADA (Opcional)</label>
+              <input type="number" value={edad} onChange={e => setEdad(e.target.value)} placeholder="Ej. 25" />
             </div>
 
             <div className="figma-section">
@@ -481,39 +484,7 @@ Ubicación: ${calleEstado}`;
               <Info size={14} />
               <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-              <Button fullWidth size="lg" onClick={() => setStep(3)}>ACEPTAR</Button>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Vestimenta</h3>
-            
-            <div className="form-group" style={{ opacity: sinVestimenta ? 0.4 : 1, pointerEvents: sinVestimenta ? 'none' : 'auto' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>PRENDA SUPERIOR</label>
-              <input type="text" list="prenda-sup-opts" value={prendaSup} onChange={e => setPrendaSup(e.target.value)} placeholder="Ej: Camisa, sueter..." style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', marginBottom: '1rem' }} />
-              <datalist id="prenda-sup-opts"><option value="Camisa"/><option value="Sueter"/><option value="Sin camisa"/><option value="Franela"/><option value="Camisa sin manga"/></datalist>
-              
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>COLOR PRENDA SUPERIOR</label>
-              <input type="text" value={colorSup} onChange={e => setColorSup(e.target.value)} placeholder="Ej: Rojo, Azul marino..." style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', marginBottom: '1.5rem' }} />
-
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>PRENDA INFERIOR</label>
-              <input type="text" list="prenda-inf-opts" value={prendaInf} onChange={e => setPrendaInf(e.target.value)} placeholder="Ej: Pantalón, short..." style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', marginBottom: '1rem' }} />
-              <datalist id="prenda-inf-opts"><option value="Pantalon"/><option value="Short"/><option value="Jean"/><option value="Mono"/><option value="Licra"/><option value="Falda"/></datalist>
-
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>COLOR PRENDA INFERIOR</label>
-              <input type="text" value={colorInf} onChange={e => setColorInf(e.target.value)} placeholder="Ej: Negro, Azul claro..." style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', marginBottom: '1rem' }} />
-            </div>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginTop: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-              <input type="checkbox" checked={sinVestimenta} onChange={e => setSinVestimenta(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#3b82f6' }} />
-              <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>No tengo información de esto</span>
-            </label>
-
-            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+            <div className="step-submit-row">
               <Button fullWidth size="lg" onClick={() => setStep(4)}>ACEPTAR</Button>
             </div>
           </div>
@@ -521,47 +492,34 @@ Ubicación: ${calleEstado}`;
 
       case 4:
         return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Señas Particulares</h3>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '1.5rem' }}>
-              {SENAS.map(s => {
-                const active = senasSelected.includes(s.val);
-                return (
-                  <button 
-                    key={s.val} 
-                    type="button" 
-                    onClick={() => toggleSena(s.val)}
-                    style={{ 
-                      width: '100%', 
-                      padding: '1rem', 
-                      borderRadius: '50px', 
-                      border: active ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.2)', 
-                      background: active ? 'rgba(59,130,246,0.1)' : 'transparent', 
-                      color: '#fff', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <strong style={{ fontSize: '0.95rem', marginBottom: '2px' }}>{s.label}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{s.desc}</span>
-                  </button>
-                )
-              })}
+          <div className="report-step-content">
+            <div className={sinVestimenta ? 'figma-muted-group' : ''}>
+              <div className="figma-input-field">
+                <label>PRENDA SUPERIOR</label>
+                <input type="text" list="prenda-sup-opts" value={prendaSup} onChange={e => setPrendaSup(e.target.value)} placeholder="Ej: Camisa, sueter..." />
+                <datalist id="prenda-sup-opts"><option value="Camisa"/><option value="Sueter"/><option value="Sin camisa"/><option value="Franela"/><option value="Camisa sin manga"/></datalist>
+              </div>
+              <div className="figma-input-field">
+                <label>COLOR PRENDA SUPERIOR</label>
+                <input type="text" value={colorSup} onChange={e => setColorSup(e.target.value)} placeholder="Ej: Rojo, Azul marino..." />
+              </div>
+              <div className="figma-input-field">
+                <label>PRENDA INFERIOR</label>
+                <input type="text" list="prenda-inf-opts" value={prendaInf} onChange={e => setPrendaInf(e.target.value)} placeholder="Ej: Pantalón, short..." />
+                <datalist id="prenda-inf-opts"><option value="Pantalon"/><option value="Short"/><option value="Jean"/><option value="Mono"/><option value="Licra"/><option value="Falda"/></datalist>
+              </div>
+              <div className="figma-input-field">
+                <label>COLOR PRENDA INFERIOR</label>
+                <input type="text" value={colorInf} onChange={e => setColorInf(e.target.value)} placeholder="Ej: Negro, Azul claro..." />
+              </div>
             </div>
 
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>DETALLE ADICIONAL / DESCRIPCIÓN</label>
-            <textarea 
-              rows={3}
-              value={detalleAdicional} 
-              onChange={e => setDetalleAdicional(e.target.value)} 
-              placeholder="Ej. Cicatriz en antebrazo derecho, llevaba un bolso negro..." 
-              style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff', resize: 'vertical' }} 
-            />
+            <label className="figma-checkbox-row">
+              <input type="checkbox" checked={sinVestimenta} onChange={e => setSinVestimenta(e.target.checked)} />
+              <span>No tengo información de esto</span>
+            </label>
 
-            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+            <div className="step-submit-row">
               <Button fullWidth size="lg" onClick={() => setStep(5)}>ACEPTAR</Button>
             </div>
           </div>
@@ -569,45 +527,76 @@ Ubicación: ${calleEstado}`;
 
       case 5:
         return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Ubicación y Envío</h3>
-            
+          <div className="report-step-content">
+            <div className="figma-feature-btn-group">
+              {SENAS.map(s => {
+                const active = senasSelected.includes(s.val);
+                return (
+                  <button key={s.val} type="button" onClick={() => toggleSena(s.val)} className={`figma-feature-btn ${active ? 'active' : ''}`}>
+                    <div className="radio-circle" />
+                    <div className="feature-text">
+                      <strong>{s.label}</strong>
+                      <span>{s.desc}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="figma-input-field">
+              <label>DETALLE ADICIONAL / DESCRIPCIÓN</label>
+              <textarea rows={3} value={detalleAdicional} onChange={e => setDetalleAdicional(e.target.value)} placeholder="Ej. Cicatriz en antebrazo derecho, llevaba un bolso negro..." />
+            </div>
+
+            <div className="step-submit-row">
+              <Button fullWidth size="lg" onClick={() => setStep(6)}>ACEPTAR</Button>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="report-step-content">
             {categoria === 'niño/a o adolescente' ? (
-              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '16px', padding: '1.5rem', textAlign: 'center', marginBottom: '2rem' }}>
-                <ShieldAlert size={36} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
-                <strong style={{ display: 'block', color: '#fff', fontSize: '1rem', marginBottom: '8px' }}>Protección al Menor (LOPNNA)</strong>
-                <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: 0, lineHeight: 1.4 }}>
-                  Por ley, no está permitido adjuntar fotografías o videos de menores de edad. Su reporte será enviado directamente a las autoridades correspondientes para un manejo confidencial.
-                </p>
+              <div className="figma-alert-danger">
+                <ShieldAlert size={36} color="#ef4444" className="centered-icon" />
+                <strong>Protección al Menor (LOPNNA)</strong>
+                <p>Por ley, no está permitido adjuntar fotografías o videos de menores de edad. Su reporte será enviado directamente a las autoridades correspondientes para un manejo confidencial.</p>
               </div>
             ) : (
-              <label style={{ display: 'block', width: '100%', border: '2px dashed rgba(255,255,255,0.2)', borderRadius: '16px', padding: '3rem 1rem', textAlign: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.02)', marginBottom: '2rem', position: 'relative' }}>
-                <input type="file" accept="image/*,video/mp4" onChange={handleFileChange} style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', cursor: 'pointer' }} />
-                <Video size={48} color="#94a3b8" style={{ margin: '0 auto 1rem' }} />
-                <strong style={{ display: 'block', color: '#fff', fontSize: '1rem', marginBottom: '4px' }}>Subir Evidencia (Foto o Video)</strong>
-                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{file ? file.name : 'Toca para abrir la cámara o galería'}</span>
+              <label className="figma-upload-area">
+                <input type="file" accept="image/*,video/mp4" onChange={handleFileChange} />
+                <Video size={48} color="#94a3b8" className="centered-icon" />
+                <strong>Subir Evidencia (Foto o Video)</strong>
+                <span>{file ? file.name : 'Toca para abrir la cámara o galería'}</span>
               </label>
             )}
 
-            <button 
-              type="button" 
-              onClick={requestLocation}
-              disabled={isRequestingLocation || locationSuccess}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '1rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: locationSuccess ? '#10b981' : '#fff', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginBottom: '1rem' }}
-            >
+            <button type="button" onClick={requestLocation} disabled={isRequestingLocation || locationSuccess} className={`figma-location-btn ${locationSuccess ? 'success' : ''}`}>
               {isRequestingLocation ? <Loader2 className="spinner" size={20} /> : <MapPin size={20} />}
               {locationSuccess ? 'Ubicación Adjuntada' : 'Añadir mi Ubicación actual'}
             </button>
 
-            <input 
-              type="text" 
-              value={calleEstado} 
-              onChange={e => setCalleEstado(e.target.value)} 
-              placeholder="Calle y estado..." 
-              style={{ width: '100%', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff' }} 
-            />
+            <div className="figma-input-field">
+              <label>CALLE Y ESTADO (Opcional)</label>
+              <input type="text" value={calleEstado} onChange={e => setCalleEstado(e.target.value)} placeholder="Calle y estado..." />
+            </div>
 
-            <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+            {reporterLocation && (
+              <div style={{ marginTop: '1rem', padding: '12px', background: '#1c1c1e', borderRadius: '8px', border: '1px solid #333', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', background: '#333', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MapPin size={24} color="#34d399" />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Ubicación adjunta</span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>Lat: {reporterLocation.lat.toFixed(4)} | Lng: {reporterLocation.lng.toFixed(4)}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>IP: Obtenida por el sistema</span>
+                </div>
+                <CheckCircle size={20} color="#34d399" />
+              </div>
+            )}
+
+            <div className="step-submit-row">
               <Button fullWidth size="lg" onClick={submitReport} disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="spinner" size={20} /> : 'SUBIR'}
               </Button>
@@ -615,30 +604,26 @@ Ubicación: ${calleEstado}`;
           </div>
         );
 
-      case 6:
+      case 7:
         return (
-          <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center', justifyContent: 'center', textAlign: 'center', paddingTop: '4rem' }}>
+          <div className="report-step-content-centered">
             {isOfflineSaved ? (
               <>
-                <WifiOff size={80} color="#f59e0b" style={{ marginBottom: '1.5rem' }} />
-                <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 800, color: '#fff' }}>Guardado en Modo Sin Conexión</h3>
-                <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '3rem' }}>
-                  El reporte ha sido guardado de manera local. Se sincronizará automáticamente tan pronto como tu dispositivo recupere conexión a Internet.
-                </p>
+                <WifiOff size={80} color="#f59e0b" className="success-hero-icon" />
+                <h3 className="success-heading">Guardado en Modo Sin Conexión</h3>
+                <p className="success-description">El reporte ha sido guardado de manera local. Se sincronizará automáticamente tan pronto como tu dispositivo recupere conexión a Internet.</p>
               </>
             ) : (
               <>
-                <CheckCircle size={80} color="#10b981" style={{ marginBottom: '1.5rem' }} />
-                <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', fontWeight: 800, color: '#fff' }}>¡Tu reporte se ha realizado exitosamente!</h3>
-                <p style={{ fontSize: '1rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '3rem' }}>
-                  Nos comunicaremos contigo en caso de necesitar información extra.
-                </p>
+                <CheckCircle size={80} color="#10b981" className="success-hero-icon" />
+                <h3 className="success-heading">¡Tu reporte se ha realizado exitosamente!</h3>
+                <p className="success-description">Nos comunicaremos contigo en caso de necesitar información extra.</p>
               </>
             )}
 
-            <div style={{ width: '100%', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <Button fullWidth size="lg" onClick={onClose} style={{ backgroundColor: '#fff', color: '#000', fontWeight: 800 }}>FINALIZAR</Button>
-              <Button fullWidth size="lg" variant="outline" onClick={() => { setStep(1); resetFields(); }} style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent' }}>
+            <div className="success-actions">
+              <Button fullWidth size="lg" onClick={onClose} className="btn-finalize">FINALIZAR</Button>
+              <Button fullWidth size="lg" variant="outline" onClick={() => { setStep(1); resetFields(); }} className="btn-new-report">
                 <Plus size={20} /> Hacer nuevo reporte
               </Button>
             </div>
@@ -650,17 +635,22 @@ Ubicación: ${calleEstado}`;
     }
   };
 
+  const stepInfo = step < 7 ? {
+    1: { dot: 1, paso: 'Paso 1', title: '¿Qué categoría quieres reportar?' },
+    2: { dot: 1, paso: 'Paso 1', title: 'Descripción de la persona' },
+    3: { dot: 2, paso: 'Paso 2', title: 'Características' },
+    4: { dot: 3, paso: 'Paso 3', title: 'Vestimenta' },
+    5: { dot: 4, paso: 'Paso 4', title: 'Señas particulares' },
+    6: { dot: 5, paso: 'Paso 5', title: 'Ubicación y envío' },
+  }[step] : null;
+
   return (
-    <div className="report-modal-overlay">
+    <div className="report-modal-overlay" role="dialog" aria-modal="true" aria-label={step < 7 ? 'Crear reporte' : 'Reporte finalizado'}>
       <div className="report-modal-content">
         <header className="report-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {step > 2 && step < 6 ? (
-              <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
-                <ArrowLeft size={20} />
-              </button>
-            ) : step === 1 ? (
-              <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
+            {step > 1 && step < 7 ? (
+              <button onClick={() => { if (step === 2) setStep(1); else if (step === 3) setStep(audioText ? 2 : 1); else setStep(s => s - 1); }} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
                 <ArrowLeft size={20} />
               </button>
             ) : null}
@@ -678,17 +668,41 @@ Ubicación: ${calleEstado}`;
             <X size={18} />
           </button>
         </header>
-        <div className="report-modal-body" style={{ height: 'calc(100dvh - 60px)', padding: '1.5rem', overflowY: 'auto', paddingBottom: 'calc(var(--bottom-nav-h, 70px) + 2rem)' }}>
-          {renderStep()}
+
+        {step < 7 && (
+          <>
+            <div className="step-progress">
+              {[1, 2, 3, 4, 5].map(d => (
+                <div key={d} className={`step-dot ${stepInfo && d <= stepInfo.dot ? 'active' : ''}`} />
+              ))}
+            </div>
+            <div className="step-header">
+              <div className="step-paso">{stepInfo?.paso}</div>
+              <div className="step-title">{stepInfo?.title}</div>
+            </div>
+            {step === 1 && (
+              <div className="report-notification">
+                <WifiOff className="notif-icon" size={20} />
+                <div className="notif-content">
+                  <div className="notif-title">Información importante</div>
+                  <div className="notif-text">El reporte lo puedes hacer incluso si no tienes señal.</div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="report-modal-body">
+          <div key={step} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>{renderStep()}</div>
         </div>
       </div>
       {error && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-          <div style={{ background: '#1e293b', border: '1px solid #ef4444', borderRadius: '16px', padding: '2rem', textAlign: 'center', width: '100%', maxWidth: '400px' }}>
-            <ShieldAlert size={40} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
-            <strong style={{ display: 'block', fontSize: '1.2rem', marginBottom: '1rem', color: '#fff' }}>Atención</strong>
-            <p style={{ color: '#cbd5e1', marginBottom: '2rem' }}>{error}</p>
-            <Button fullWidth onClick={() => setError('')} style={{ background: '#ef4444' }}>Cerrar</Button>
+        <div className="error-overlay">
+          <div className="error-card">
+            <ShieldAlert size={40} color="#ef4444" className="error-card-icon" />
+            <strong className="error-card-title">Atención</strong>
+            <p className="error-card-message">{error}</p>
+            <Button fullWidth onClick={() => setError('')} className="error-card-btn">Cerrar</Button>
           </div>
         </div>
       )}
