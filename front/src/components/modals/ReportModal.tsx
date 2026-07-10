@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Loader2, MapPin, ShieldAlert, Sparkles, Video, Plus, X, WifiOff } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ChevronDown, Info, Loader2, MapPin, ShieldAlert, Sparkles, Video, Plus, X, WifiOff } from 'lucide-react';
 import { api } from '../../services/api';
 import { db } from '../../db/offlineDb';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
+import { BrandMark } from '../BrandMark';
 import './ReportModal.css';
 
 interface ReportModalProps {
@@ -58,31 +59,27 @@ const CustomSelect = ({ label, options, value, onChange, placeholder }: any) => 
   const [open, setOpen] = useState(false);
   const selected = options.find((o: any) => o.val === value);
   return (
-    <div className="form-group" style={{ position: 'relative', marginBottom: '1rem' }}>
-      <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>{label}</label>
-      <div 
-        onClick={() => setOpen(!open)}
-        style={{ padding: '0.85rem 1rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.03)' }}
-      >
+    <div className="figma-select-field" style={{ position: 'relative' }}>
+      <label>{label}</label>
+      <div className="figma-select-trigger" onClick={() => setOpen(!open)} tabIndex={0} onKeyDown={e => e.key === 'Enter' && setOpen(!open)}>
         {selected ? (
           <>
-            {selected.hex && <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: selected.hex, border: '1px solid rgba(255,255,255,0.2)' }} />}
-            <span style={{ color: '#fff', fontWeight: 500 }}>{selected.label}</span>
+            {selected.hex && <div className="swatch" style={{ backgroundColor: selected.hex }} />}
+            <span className="select-label">{selected.label}</span>
           </>
-        ) : <span style={{ color: '#64748b' }}>{placeholder}</span>}
+        ) : (
+          <span className="select-placeholder">{placeholder}</span>
+        )}
+        <ChevronDown size={16} className={`chevron ${open ? 'open' : ''}`} />
       </div>
       {open && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setOpen(false)} />
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', zIndex: 10, maxHeight: 220, overflowY: 'auto', borderRadius: '12px', marginTop: '4px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
+          <div className="figma-select-dropdown">
             {options.map((o: any) => (
-              <div 
-                key={o.val} 
-                onClick={() => { onChange(o.val); setOpen(false); }}
-                style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', background: value === o.val ? 'rgba(59,130,246,0.1)' : 'transparent' }}
-              >
-                {o.hex && <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: o.hex, border: '1px solid rgba(255,255,255,0.2)' }} />}
-                <span style={{ color: '#fff', fontWeight: value === o.val ? 600 : 400 }}>{o.label}</span>
+              <div key={o.val} onClick={() => { onChange(o.val); setOpen(false); }} className={`figma-select-option ${value === o.val ? 'selected' : ''}`}>
+                {o.hex && <div className="option-swatch" style={{ backgroundColor: o.hex }} />}
+                <span>{o.label}</span>
               </div>
             ))}
           </div>
@@ -368,11 +365,12 @@ Ubicación: ${calleEstado}`;
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Descripción de la persona</h3>
-            <div className="ai-notice" style={{ padding: '1rem', backgroundColor: 'rgba(59,130,246,0.1)', borderRadius: '12px', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '2rem', display: 'flex', gap: '12px' }}>
-              <Sparkles size={24} color="#3b82f6" style={{ flexShrink: 0 }} />
-              <p style={{ margin: 0, fontSize: '0.95rem', color: '#60a5fa', lineHeight: 1.4 }}>
-                Usa el asistente de voz. Trata de mencionar detalles como si es niño/adulto, cómo está vestido y características físicas.
-              </p>
+            <div className="ai-notification-card">
+              <div className="card-title">
+                <Sparkles size={20} color="#4497D6" />
+                <span>Asistente IA de Voz</span>
+              </div>
+              <p className="card-description">Usa el asistente de voz. Trata de mencionar detalles como si es niño/adulto, cómo está vestido y características físicas.</p>
             </div>
             <AudioRecorder 
               currentText={audioText}
@@ -399,6 +397,10 @@ Ubicación: ${calleEstado}`;
                 resize: 'vertical'
               }}
             />
+            <div className="report-footer-privacy">
+              <Info size={14} />
+              <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+            </div>
             <div style={{ marginTop: 'auto', paddingTop: '2rem', display: 'flex', gap: '1rem' }}>
               <Button variant="outline" size="lg" onClick={() => setStep(2)}>ATRÁS</Button>
               <Button fullWidth size="lg" onClick={() => setStep(2)}>SIGUIENTE</Button>
@@ -409,14 +411,20 @@ Ubicación: ${calleEstado}`;
       case 2:
         return (
           <div className="report-step-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', fontWeight: 800 }}>Características Generales</h3>
+            <div className="step-indicator">
+              <span className="step-number">2</span>
+              <span className="step-divider">•</span>
+              <span className="step-name">Características</span>
+            </div>
             
             {audioText ? (
-              <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '0.85rem 1rem', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399' }}>
-                   <CheckCircle size={18} /> <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Audio registrado con éxito</span>
+              <div className="ai-notification-card">
+                <div className="card-title">
+                  <CheckCircle size={20} color="#34d399" />
+                  <span>Audio registrado con éxito</span>
                 </div>
-                <button type="button" onClick={() => setStep(1)} style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline' }}>
+                <p className="card-description">El asistente IA ha procesado tu nota de voz y extraído la información disponible. Puedes editar el audio si necesitas corregir algo.</p>
+                <button className="card-btn" onClick={() => setStep(1)}>
                   Editar Audio
                 </button>
               </div>
@@ -424,43 +432,55 @@ Ubicación: ${calleEstado}`;
               <button 
                 type="button" 
                 onClick={() => setStep(1)}
-                style={{ width: '100%', padding: '1rem', marginBottom: '1.5rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: 'pointer', transition: 'all 0.2s' }}
+                className="btn-ai-assist"
               >
                 <Sparkles size={20} /> Reportar con Asistente IA
               </button>
             )}
             
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px', display: 'block' }}>NOMBRE (Opcional)</label>
-              <input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} placeholder="¿Conoces el nombre de esta persona?" style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', color: '#fff' }} />
+            <div className="figma-input-field">
+              <label>NOMBRE (Opcional)</label>
+              <input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} placeholder="¿Conoces el nombre de esta persona?" />
             </div>
 
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'block' }}>CATEGORÍA Y GÉNERO</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-              {['niño/a o adolescente', 'adulto', 'adulto mayor', 'mascota'].map(c => (
-                <button key={c} type="button" onClick={() => setCategoria(c)} style={{ padding: '0.75rem', borderRadius: '12px', border: categoria === c ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', background: categoria === c ? 'rgba(59,130,246,0.1)' : 'transparent', color: '#fff', textTransform: 'capitalize', fontWeight: 500, fontSize: '0.9rem' }}>{c}</button>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '1.5rem' }}>
-              {['Masculino', 'Femenino'].map(g => (
-                <button key={g} type="button" onClick={() => setGenero(g)} style={{ padding: '0.75rem', borderRadius: '12px', border: genero === g ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', background: genero === g ? 'rgba(59,130,246,0.1)' : 'transparent', color: '#fff', fontWeight: 500, fontSize: '0.9rem' }}>{g}</button>
-              ))}
+            <div className="figma-section">
+              <label className="figma-section-label">Género</label>
+              <div className="figma-card-group">
+                {['Masculino', 'Femenino'].map(g => (
+                  <button key={g} type="button" onClick={() => setGenero(g)} className={`figma-card-gender ${genero === g ? 'selected' : ''}`}>{g}</button>
+                ))}
+              </div>
             </div>
 
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'block' }}>COMPLEXIÓN</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '8px', marginBottom: '1.5rem' }}>
-              {COMPLEXION.map(c => (
-                <button key={c.val} type="button" onClick={() => setComplexion(c.val)} style={{ padding: '0.75rem 0.5rem', borderRadius: '12px', border: complexion === c.val ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)', background: complexion === c.val ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.02)', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '4px' }}>
-                  <strong style={{ fontSize: '0.9rem' }}>{c.title}</strong>
-                  <span style={{ fontSize: '0.68rem', color: '#94a3b8', lineHeight: 1.2 }}>{c.desc}</span>
-                </button>
-              ))}
+            <div className="figma-section">
+              <label className="figma-section-label">Categoría</label>
+              <div className="figma-card-grid">
+                {['niño/a o adolescente', 'adulto', 'adulto mayor', 'mascota'].map(c => (
+                  <button key={c} type="button" onClick={() => setCategoria(c)} className={`figma-card ${categoria === c ? 'selected' : ''}`} style={{ textTransform: 'capitalize' }}>{c}</button>
+                ))}
+              </div>
             </div>
 
-            <CustomSelect label="COLOR DE PIEL" options={COLORS_PIEL} value={piel} onChange={setPiel} placeholder="Seleccionar color" />
-            <CustomSelect label="COLOR DE CABELLO" options={COLORS_CABELLO} value={cabello} onChange={setCabello} placeholder="Seleccionar color" />
-            <CustomSelect label="COLOR DE OJOS" options={COLORS_OJOS} value={ojos} onChange={setOjos} placeholder="Seleccionar color" />
+            <div className="figma-section">
+              <label className="figma-section-label">Complexión</label>
+              <div className="figma-card-group">
+                {COMPLEXION.map(c => (
+                  <button key={c.val} type="button" onClick={() => setComplexion(c.val)} className={`figma-card ${complexion === c.val ? 'selected' : ''}`}>
+                    <strong>{c.title}</strong>
+                    <span>{c.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
+            <CustomSelect label="Color de piel" options={COLORS_PIEL} value={piel} onChange={setPiel} placeholder="Seleccionar color" />
+            <CustomSelect label="Color de cabello" options={COLORS_CABELLO} value={cabello} onChange={setCabello} placeholder="Seleccionar color" />
+            <CustomSelect label="Color de ojos" options={COLORS_OJOS} value={ojos} onChange={setOjos} placeholder="Seleccionar color" />
+
+            <div className="report-footer-privacy">
+              <Info size={14} />
+              <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+            </div>
             <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
               <Button fullWidth size="lg" onClick={() => setStep(3)}>ACEPTAR</Button>
             </div>
@@ -633,23 +653,29 @@ Ubicación: ${calleEstado}`;
   return (
     <div className="report-modal-overlay">
       <div className="report-modal-content">
-        <header className="report-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', background: 'rgba(15,23,42,0.95)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {step > 2 && step < 6 ? (
-            <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <ArrowLeft size={20} />
-            </button>
-          ) : step === 1 ? (
-            <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-              <ArrowLeft size={20} />
-            </button>
-          ) : (
-            <div style={{ width: 20 }} />
-          )}
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '2px' }}>
-            {step < 6 ? 'CREAR REPORTE' : 'FINALIZADO'}
+        <header className="report-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {step > 2 && step < 6 ? (
+              <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
+                <ArrowLeft size={20} />
+              </button>
+            ) : step === 1 ? (
+              <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
+                <ArrowLeft size={20} />
+              </button>
+            ) : null}
+
+            <div className="nav-brand" style={{ margin: 0, padding: 0 }}>
+              <BrandMark size={34} />
+              <span className="nav-brand-text">
+                <strong>Reencuentros<span>Venezuela</span></strong>
+                <small>Juntos te encontramos</small>
+              </span>
+            </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
-            <X size={24} />
+
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}>
+            <X size={18} />
           </button>
         </header>
         <div className="report-modal-body" style={{ height: 'calc(100dvh - 60px)', padding: '1.5rem', overflowY: 'auto', paddingBottom: 'calc(var(--bottom-nav-h, 70px) + 2rem)' }}>
