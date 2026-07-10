@@ -128,7 +128,7 @@ La API RESTful responde bajo el prefijo `/api` y utiliza HTTP status codes está
 
 Si te acaban de asignar un ticket o *feature*, sigue estos pasos:
 
-1. **Variables de Entorno:** Pide al administrador el archivo `.env` o créalo basado en el `.env.example`. Si usas los contenedores locales (Docker), las variables por defecto ya funcionan.
+1. **Variables de Entorno:** Pide al administrador el archivo `.env` o créalo basado en el `.env.example`. Si usas los contenedores locales (Docker), las variables de infraestructura (Mongo/Redis/MinIO) por defecto ya funcionan; las claves de seguridad (`JWT_SECRET`, `ADMIN_API_KEY`, `PARTNER_API_KEY`, `WEBHOOK_API_KEY`) vienen en blanco en la plantilla y debes generar valores propios (las rutas protegidas deniegan el acceso si faltan).
 2. **Lógica de Negocio:**
    - Si debes cambiar cómo la IA extrae datos, ve a `back/src/workers/ia-processor.worker.ts`.
    - Si debes modificar el UI de las tarjetas del Feed, ve a `front/src/pages/Feed/components/FeedCard.tsx`.
