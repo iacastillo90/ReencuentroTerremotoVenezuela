@@ -3,6 +3,7 @@ import { Search, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Search.css';
 import { FeedCard } from '../Feed/components/FeedCard';
+import { api } from '../../services/api';
 import type { Person } from '../../types';
 
 type AgeCat = 'adulto' | 'adulto_mayor' | 'mascota' | 'nino';
@@ -58,16 +59,29 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
   
   const [results, setResults] = useState<Person[] | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // IA Search State
+  const [searchMode, setSearchMode] = useState<'normal' | 'ai'>('normal');
+  const [iaQuery, setIaQuery] = useState('');
+  const [isFallback, setIsFallback] = useState(false);
 
   const isMinorCat = ageCategory === 'nino';
 
   const buscar = async () => {
     setLoading(true);
     setResults(null);
+    setIsFallback(false);
     try {
-      // MVP: Simulamos retardo y usamos los MOCK_RESULTS para no exponer info de la DB real.
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setResults(MOCK_RESULTS[ageCategory] || []);
+      if (searchMode === 'ai') {
+        if (!iaQuery.trim()) return;
+        const res = await api.post('/api/search/vector', { query: iaQuery });
+        setResults(res.data.matches || []);
+        setIsFallback(res.data.fallback);
+      } else {
+        // MVP: Simulamos retardo y usamos los MOCK_RESULTS para no exponer info de la DB real.
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setResults(MOCK_RESULTS[ageCategory] || []);
+      }
     } catch (err) {
       console.error(err);
       setResults([]);
@@ -110,18 +124,37 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="srch__field">
-        <Search size={17} />
-        <input placeholder="Nombre de la persona…" value={name} onChange={e => setName(e.target.value)} />
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <Button 
+          variant={searchMode === 'normal' ? 'primary' : 'outline'} 
+          onClick={() => setSearchMode('normal')}
+          style={{ flex: 1 }}
+        >
+          Búsqueda Normal
+        </Button>
+        <Button 
+          variant={searchMode === 'ai' ? 'primary' : 'outline'} 
+          onClick={() => setSearchMode('ai')}
+          style={{ flex: 1, background: searchMode === 'ai' ? 'linear-gradient(135deg, var(--clr-primary), #8B5CF6)' : '', color: searchMode === 'ai' ? '#fff' : '' }}
+        >
+          ✨ Búsqueda con IA
+        </Button>
       </div>
 
-      {isMinorCat && (
-        <div className="minor-notice__alert" style={{ marginBottom: '1rem', padding: '0.8rem', borderRadius: '8px', fontSize: '0.85rem' }}>
-          Por protección LOPNNA, los datos mostrados son limitados en el MVP.
-        </div>
-      )}
+      {searchMode === 'normal' ? (
+        <>
+          <div className="srch__field">
+            <Search size={17} />
+            <input placeholder="Nombre de la persona…" value={name} onChange={e => setName(e.target.value)} />
+          </div>
 
-      <div className="srch__filters">
+          {isMinorCat && (
+            <div className="minor-notice__alert" style={{ marginBottom: '1rem', padding: '0.8rem', borderRadius: '8px', fontSize: '0.85rem' }}>
+              Por protección LOPNNA, los datos mostrados son limitados en el MVP.
+            </div>
+          )}
+
+          <div className="srch__filters">
             <span className="srch__label">Filtros de búsqueda (opcionales)</span>
             <div className="srch__field-group">
               <label>Estado / Provincia</label>
@@ -169,6 +202,19 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
               </div>
             </div>
           </div>
+        </>
+      ) : (
+        <div className="srch__ai-box">
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Describe a la persona con el mayor detalle posible:</label>
+          <textarea 
+            placeholder="Ej: Busco a un hombre mayor de contextura delgada, andaba de camisa azul, jean oscuro, usa lentes y tiene una cicatriz en el brazo derecho..."
+            value={iaQuery}
+            onChange={e => setIaQuery(e.target.value)}
+            style={{ width: '100%', minHeight: '120px', padding: '1rem', borderRadius: '8px', border: '1px solid var(--clr-border)', backgroundColor: 'var(--clr-surface)', color: 'var(--clr-text)', resize: 'vertical' }}
+          />
+          <p style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginTop: '0.5rem' }}>Nuestra IA analizará la descripción física y buscará en la base de datos reportes "Anónimos" o identificados que coincidan semánticamente.</p>
+        </div>
+      )}
           <Button fullWidth size="lg" onClick={buscar} disabled={loading} className="flex-center gap-2">
             {loading ? <div className="spinner" style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> : <Search size={18} />} 
             {loading ? 'Buscando...' : 'Buscar'}
@@ -179,6 +225,12 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
               <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--clr-text)' }}>
                 Resultados ({results.length})
               </h3>
+              
+              {isFallback && searchMode === 'ai' && (
+                <div style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid #eab308', color: '#eab308', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                  <strong>Aviso:</strong> El motor de inteligencia artificial vectorial no está disponible en este momento. Se mostraron los mejores resultados por coincidencia de texto convencional.
+                </div>
+              )}
               {results.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {results.map(p => (

@@ -62,9 +62,15 @@ export async function requireProfileComplete(req: Request, res: Response, next: 
 
 export function requireAdminApiKey(req: Request, res: Response, next: NextFunction) {
   // First: try JWT with admin role
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
+  }
+
+  if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       if (decoded.role === 'admin') {

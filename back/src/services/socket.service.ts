@@ -3,6 +3,8 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../middlewares/auth.middleware';
 import { UserModel } from '../models/user.model';
+import { PersonModel } from '../models/unified-person.model';
+import { MatchModel } from '../models/match.model';
 
 let ioInstance: Server | null = null;
 
@@ -92,6 +94,53 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
       socket.join('moderators');
       console.log(`[Socket] Moderator joined: ${userId}`);
     }
+
+    socket.on('request_match_chat', async (data: { matchId: string }) => {
+      try {
+        const { matchId } = data;
+        const match = await MatchModel.findById(matchId).lean();
+        if (!match || !match.matchedPersonId) {
+          socket.emit('chat_error', { message: 'Match no encontrado o inválido' });
+          return;
+        }
+
+        const matchedPerson = await PersonModel.findOne({ idHash: match.matchedPersonId }).lean();
+        if (!matchedPerson) {
+          socket.emit('chat_error', { message: 'Persona no encontrada' });
+          return;
+        }
+
+        const isMinor = matchedPerson.age !== undefined && matchedPerson.age < 18;
+
+        if (isMinor) {
+          // Protocolo de Menores
+          const roomName = `room_mediation_${matchId}`;
+          socket.join(roomName);
+          socket.emit('chat_room_joined', { room: roomName, type: 'mediation', message: 'Esperando a un moderador para iniciar la mediación...' });
+          
+          // Notificar a los admins
+          emitToModerators('new_mediation_request', {
+            matchId,
+            room: roomName,
+            requesterId: userId,
+            requesterEmail: user.email,
+            minorId: matchedPerson.idHash
+          });
+          console.log(`[Socket] Mediation room created for minor: ${roomName}`);
+        } else {
+          // Chat 1:1 Normal
+          const roomName = `room_match_${matchId}`;
+          socket.join(roomName);
+          socket.emit('chat_room_joined', { room: roomName, type: 'direct', message: 'Sala de chat 1:1 creada.' });
+          
+          // Here we would also notify the creator of the matched report to join the room
+          // emitToUser(matchedPerson.metadata.reportedBy, 'chat_invite', { room: roomName })
+        }
+      } catch (err) {
+        console.error('[Socket] Error in request_match_chat:', err);
+        socket.emit('chat_error', { message: 'Error interno al procesar el chat' });
+      }
+    });
 
     socket.on('disconnect', () => {
       console.log(`[Socket] User disconnected: ${userId} - Socket: ${socket.id}`);

@@ -8,6 +8,7 @@ import { ReportModal } from './components/modals/ReportModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { useAuth } from './store/AuthContext';
+import { useBackgroundSync } from './hooks/useBackgroundSync';
 import type { Person, Disaster } from './types';
 
 import { LibraryPage } from './pages/Library/LibraryPage';
@@ -43,6 +44,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const isFetchingRef = useRef(false);
   const { user } = useAuth();
+
+  // Activar sincronización en segundo plano de PWA/IndexedDB
+  useBackgroundSync();
 
   // Función base para obtener datos
   const fetchPersons = async (query: string, newOffset: number, append: boolean = false) => {

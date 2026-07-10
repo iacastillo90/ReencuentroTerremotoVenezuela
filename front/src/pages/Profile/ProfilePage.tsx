@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import type { Person } from '../../types';
 import {
   User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut,
-  FileText, ShieldAlert, CheckCircle, MessageCircle, Send, X
+  FileText, ShieldAlert, CheckCircle, MessageCircle, Send, X, AlertTriangle, Shield
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import './Profile.css';
@@ -29,6 +29,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const [sentMessages, setSentMessages] = useState<any[]>([]);
   const [requestNotes, setRequestNotes] = useState('');
   const [showRequestForm, setShowRequestForm] = useState(false);
+  
+  // Matches state
+  const [myMatches, setMyMatches] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'reports' | 'matches' | 'chats'>('reports');
 
   // Chat states
   const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
@@ -60,6 +64,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      if (myReports.length > 0) {
+        try {
+          const allMatches = [];
+          for (const report of myReports) {
+            const matchRes = await api.get(`/matches/${report.idHash}`);
+            if (matchRes.data && matchRes.data.length > 0) {
+              allMatches.push(...matchRes.data.map((m: any) => ({ ...m, originalReportName: report.name })));
+            }
+          }
+          setMyMatches(allMatches);
+        } catch (err) {
+          console.error('Error fetching matches', err);
+        }
+      }
+    };
+    fetchMatches();
+  }, [myReports]);
 
   useEffect(() => {
     if (user) {
@@ -94,6 +118,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     }
   }, [activeConversation, messages, sentMessages]);
 
+  const handleRequestMediation = (match: any) => {
+    if (!socket) return alert('Desconectado del servidor de chat');
+    socket.emit('request_match_chat', { matchId: match._id });
+    alert('Se ha solicitado la sala de mediación. Un moderador se unirá pronto.');
+  };
+
+  const handleStartDirectChat = (match: any) => {
+    if (!socket) return alert('Desconectado del servidor de chat');
+    socket.emit('request_match_chat', { matchId: match._id });
+    alert('Sala de chat directo solicitada.');
+  };
+
   if (!user) {
     return (
       <div className="profile-page flex-center">
@@ -102,9 +138,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     );
   }
 
-  // Combine and sort all messages chronologically
-  const allMessages = [...messages, ...sentMessages].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  // Combine, deduplicate, and sort all messages chronologically
+  const uniqueMessagesMap = new Map();
+  [...messages, ...sentMessages].forEach(msg => uniqueMessagesMap.set(msg._id, msg));
+  const allMessages = Array.from(uniqueMessagesMap.values()).sort(
+    (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
   // Group messages into conversations (threads)
@@ -226,8 +264,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         </div>
       )}
 
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--clr-border)', paddingBottom: '0.5rem' }}>
+        <button 
+          onClick={() => setActiveTab('reports')} 
+          style={{ background: 'none', border: 'none', color: activeTab === 'reports' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'reports' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem' }}
+        >
+          Mis Reportes ({myReports.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('matches')} 
+          style={{ background: 'none', border: 'none', color: activeTab === 'matches' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'matches' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem', position: 'relative' }}
+        >
+          Posibles Coincidencias 
+          {myMatches.length > 0 && <span style={{ marginLeft: '8px', background: 'var(--clr-danger)', color: '#fff', borderRadius: '50%', padding: '2px 8px', fontSize: '0.75rem' }}>{myMatches.length}</span>}
+        </button>
+        <button 
+          onClick={() => setActiveTab('chats')} 
+          style={{ background: 'none', border: 'none', color: activeTab === 'chats' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'chats' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem' }}
+        >
+          Conversaciones ({conversationList.length})
+        </button>
+      </div>
+
       {/* Real-time Chats / Messages List */}
-      <div className="profile-content">
+      {activeTab === 'chats' && (
+        <div className="profile-content">
         <h3><MessageCircle size={18} /> Conversaciones de la Comunidad ({conversationList.length})</h3>
         {conversationList.length === 0 ? (
           <div className="profile-empty">
@@ -263,8 +324,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
           </div>
         )}
       </div>
+      )}
 
-      <div className="profile-content">
+      {activeTab === 'reports' && (
+        <div className="profile-content">
         <h3><FileText size={18} /> Mis reportes ({myReports.length})</h3>
         
         {loading ? (
@@ -295,6 +358,69 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
           </div>
         )}
       </div>
+      )}
+
+      {activeTab === 'matches' && (
+        <div className="profile-content">
+          <h3><ShieldAlert size={18} /> Sugerencias de la IA ({myMatches.length})</h3>
+          
+          {loading ? (
+            <div className="profile-loading">Buscando coincidencias...</div>
+          ) : myMatches.length === 0 ? (
+            <div className="profile-empty">
+              <p>Aún no hay coincidencias detectadas para tus reportes.</p>
+            </div>
+          ) : (
+            <div className="my-reports-list">
+              {myMatches.map(match => {
+                const p = match.matchedPerson;
+                if (!p) return null;
+                const isMinor = p.age !== undefined && p.age < 18;
+                const scorePercent = Math.round(match.score * 100);
+                const scoreColor = scorePercent > 90 ? '#10b981' : scorePercent > 80 ? '#f59e0b' : '#3b82f6';
+                
+                return (
+                  <div key={match._id} className="report-card" style={{ borderLeft: `4px solid ${scoreColor}` }}>
+                    <div className="report-card-header">
+                      <h4>Posible Match para: {match.originalReportName}</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: `${scoreColor}20`, color: scoreColor, padding: '4px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        Confiabilidad: {scorePercent}%
+                      </div>
+                    </div>
+                    <div className="report-card-body">
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '0.5rem' }}>
+                        {p.photoUrl ? (
+                          <img src={p.photoUrl} alt="Foto" style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: 60, height: 60, borderRadius: '8px', backgroundColor: 'var(--clr-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <User size={24} color="var(--clr-text-muted)" />
+                          </div>
+                        )}
+                        <div>
+                          <p style={{ fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>{p.name}</p>
+                          <p className="report-desc" style={{ margin: 0 }}>{p.lastSeen?.description || p.description}</p>
+                          {p.data?.origen && <p style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginTop: '0.25rem' }}><MapPin size={10} /> Registrado en: {p.data.origen}</p>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="report-card-footer" style={{ borderTop: '1px solid var(--clr-border)', paddingTop: '0.75rem', marginTop: '0.75rem' }}>
+                      {isMinor ? (
+                        <Button variant="outline" size="sm" onClick={() => handleRequestMediation(match)} style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderColor: '#f59e0b', color: '#f59e0b' }}>
+                          <Shield size={16} /> Solicitar Mediación para Menor
+                        </Button>
+                      ) : (
+                        <Button variant="primary" size="sm" onClick={() => handleStartDirectChat(match)} style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                          <MessageCircle size={16} /> Contactar Institución
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Real-time 2-way Chat Modal Overlay */}
       {activeConversation && (

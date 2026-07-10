@@ -52,10 +52,12 @@ export async function upsertPerson(
   // Flatten the fields for $set
   const fieldsToUpdate: Record<string, any> = { ...rest, possiblyRelatedDisasters: relatedDisasterIds };
   for (const [key, value] of Object.entries(updatedMetadata)) {
+    if (key === 'createdAt') continue; // Exclude createdAt from $set to avoid MongoServerError: ConflictingUpdateOperators
     fieldsToUpdate[`metadata.${key}`] = value;
   }
   
-  // ensure idHash is set if it's an insert
+  // ensure updatedAt is updated and idHash is set if it's an insert
+  fieldsToUpdate['metadata.updatedAt'] = new Date();
   fieldsToUpdate.idHash = idHash;
 
   const result = await PersonModel.findOneAndUpdate(
