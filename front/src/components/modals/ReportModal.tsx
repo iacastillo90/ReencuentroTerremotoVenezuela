@@ -622,8 +622,8 @@ Ubicación: ${calleEstado}`;
             )}
 
             <div className="success-actions">
-              <Button fullWidth size="lg" onClick={onClose} className="btn-finalize">FINALIZAR</Button>
-              <Button fullWidth size="lg" variant="outline" onClick={() => { setStep(1); resetFields(); }} className="btn-new-report">
+              <Button fullWidth size="lg" onClick={onClose}>FINALIZAR</Button>
+              <Button fullWidth size="lg" variant="outline" onClick={() => { setStep(1); resetFields(); }}>
                 <Plus size={20} /> Hacer nuevo reporte
               </Button>
             </div>

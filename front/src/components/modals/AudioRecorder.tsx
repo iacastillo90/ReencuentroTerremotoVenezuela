@@ -175,7 +175,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       )}
 
       {errorMsg && (
-        <div style={{ padding: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', borderRadius: '8px', color: '#ef4444', marginTop: '10px', fontSize: '0.82rem' }}>
+        <div className="audio-recorder-error">
           {errorMsg}
         </div>
       )}

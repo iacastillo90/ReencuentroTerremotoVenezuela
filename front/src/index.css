@@ -139,6 +139,8 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 
 /* ─── Utility Classes ────────────────────────────────────── */
 .spinner { animation: spin 0.8s linear infinite; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.gap-2 { gap: 0.5rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @keyframes fadeIn {

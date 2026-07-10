@@ -1428,22 +1428,19 @@ textarea::placeholder {
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
+  padding-top: 2rem;
 }
-.btn-finalize {
-  background-color: #fff !important;
-  color: #000 !important;
-  font-weight: 800 !important;
-}
-.btn-new-report {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-}
-.btn-new-report.btn-outline {
-  border: none;
+.success-actions .btn-outline {
   background: transparent;
+  color: #FAFAFA;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 50px;
+}
+.success-actions .btn-outline:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
 }
 
 /* --- Error Overlay --- */
