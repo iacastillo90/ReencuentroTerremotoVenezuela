@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Baby, CheckCircle, ChevronDown, Dog, Heart, Info, Loader2, MapPin, ShieldAlert, Sparkles, Star, User, Video, Plus, X, WifiOff } from 'lucide-react';
+import { ArrowLeft, Baby, CheckCircle, ChevronDown, Dog, Heart, Info, Loader2, MapPin, ShieldAlert, Sparkles, User, Video, Plus, X, WifiOff } from 'lucide-react';
 import { api } from '../../services/api';
 import { db } from '../../db/offlineDb';
 import { AudioRecorder } from './AudioRecorder';
@@ -196,13 +196,6 @@ export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => {
     setIsSubmitting(true);
     setError('');
     try {
-      let photoUrl = '';
-      if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        const uploadRes = await api.post('/media', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-        photoUrl = uploadRes.data.url;
-      }
       
       const payloadText = `[REPORTE ${step === 0 || audioText === '' ? 'MANUAL' : 'ASISTIDO IA'}]
 Nombre: ${nombreCompleto || 'Desconocido'}
@@ -583,16 +576,16 @@ Ubicación: ${calleEstado}`;
             </div>
 
             {reporterLocation && (
-              <div style={{ marginTop: '1rem', padding: '12px', background: '#1c1c1e', borderRadius: '8px', border: '1px solid #333', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ width: '48px', height: '48px', background: '#333', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="location-card">
+                <div className="location-card-icon">
                   <MapPin size={24} color="#34d399" />
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>Ubicación adjunta</span>
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>Lat: {reporterLocation.lat.toFixed(4)} | Lng: {reporterLocation.lng.toFixed(4)}</span>
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>IP: Obtenida por el sistema</span>
+                <div className="location-card-body">
+                  <span className="location-card-title">Ubicación adjunta</span>
+                  <span className="location-card-meta">Lat: {reporterLocation.lat.toFixed(4)} | Lng: {reporterLocation.lng.toFixed(4)}</span>
+                  <span className="location-card-meta">IP: Obtenida por el sistema</span>
                 </div>
-                <CheckCircle size={20} color="#34d399" />
+                <CheckCircle size={20} color="#34d399" className="location-card-check" />
               </div>
             )}
 
@@ -648,14 +641,14 @@ Ubicación: ${calleEstado}`;
     <div className="report-modal-overlay" role="dialog" aria-modal="true" aria-label={step < 7 ? 'Crear reporte' : 'Reporte finalizado'}>
       <div className="report-modal-content">
         <header className="report-modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="header-left-group">
             {step > 1 && step < 7 ? (
-              <button onClick={() => { if (step === 2) setStep(1); else if (step === 3) setStep(audioText ? 2 : 1); else setStep(s => s - 1); }} style={{ background: 'none', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', cursor: 'pointer', zIndex: 10 }}>
+              <button onClick={() => { if (step === 2) setStep(1); else if (step === 3) setStep(audioText ? 2 : 1); else setStep(s => s - 1); }} className="header-back-btn">
                 <ArrowLeft size={20} />
               </button>
             ) : null}
 
-            <div className="nav-brand" style={{ margin: 0, padding: 0 }}>
+            <div className="nav-brand">
               <BrandMark size={34} />
               <span className="nav-brand-text">
                 <strong>Reencuentros<span>Venezuela</span></strong>
@@ -664,7 +657,7 @@ Ubicación: ${calleEstado}`;
             </div>
           </div>
 
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}>
+          <button onClick={onClose} className="header-close-btn">
             <X size={18} />
           </button>
         </header>
@@ -693,7 +686,7 @@ Ubicación: ${calleEstado}`;
         )}
 
         <div className="report-modal-body">
-          <div key={step} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>{renderStep()}</div>
+          <div key={step} className="step-animated-container">{renderStep()}</div>
         </div>
       </div>
       {error && (
