@@ -19,8 +19,9 @@
 
 /* Variants */
 .btn-primary {
-  background: var(--blue);
+  background: #4497D6;
   color: var(--white);
+  border-radius: 50px;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--brand-blue);
@@ -38,6 +39,7 @@
 .btn-danger {
   background: var(--brand-red);
   color: var(--white);
+  border-radius: 50px;
 }
 .btn-danger:hover:not(:disabled) {
   opacity: 0.9;
@@ -70,7 +72,7 @@
   font-size: 0.95rem;
 }
 .btn-lg {
-  padding: 14px 24px;
+  padding: 16px 24px;
   font-size: 1.1rem;
 }
 
