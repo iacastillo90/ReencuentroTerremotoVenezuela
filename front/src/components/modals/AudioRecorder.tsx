@@ -1,3 +1,28 @@
+/**
+ * components/modals/AudioRecorder.tsx — Grabación de voz con transcripción
+ *
+ * PROPÓSITO:
+ *   Permite al usuario grabar audio para describir a una persona desaparecida.
+ *   Soporta dos caminos:
+ *     1. Web Speech API (navegador → texto en tiempo real, sin servidor)
+ *     2. Backend fallback (MediaRecorder → Gemini/Whisper → texto)
+ *
+ * ¿POR QUÉ DOS CAMINOS?
+ *   - Web Speech API: gratuito, instantáneo, offline. Pero falla en iOS/Safari
+ *     y en algunos navegadores móviles.
+ *   - Backend: más preciso (Gemini), funciona donde falla Web Speech, pero
+ *     requiere conexión y un viaje HTTP.
+ *
+ * FILTRO DE RESPUESTAS BASURA (AI_JUNK_PHRASES):
+ *   El backend Gemini a veces responde con texto meta como
+ *   "Como soy un modelo de lenguaje..." en vez de transcribir el audio.
+ *   Detectamos y descartamos esas respuestas automáticamente.
+ *
+ * ÉTICA:
+ *   - Nunca guardamos el audio bruto en el frontend (solo el texto).
+ *   - El usuario ve exactamente lo que se va a enviar.
+ *   - Puede editar la transcripción manualmente antes de continuar.
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { Mic, Square, Loader2 } from 'lucide-react';
@@ -10,7 +35,8 @@ interface AudioRecorderProps {
   currentText?: string;
 }
 
-// Filtros para respuestas inválidas de la IA de servidor
+// Frases que la IA del servidor devuelve cuando no entiende el audio
+// en vez de transcribirlo correctamente. Las descartamos silenciosamente.
 const AI_JUNK_PHRASES = [
   'hola quetal', 'hola que tal', 'pues aqui en mi casa',
   'subtitulos realizados por', 'subtitulos por la comunidad',
@@ -37,18 +63,22 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // MediaRecorder refs (backend fallback)
+  // Referencias para el MediaRecorder (backend fallback)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const baseTextRef = useRef<string>('');
 
-  // --- Browser Speech Recognition path ---
+  // ─── Detectar si el navegador soporta Web Speech ───
+  // Si no, cambiamos automáticamente al backend fallback.
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
       setUseBackend(true);
     }
   }, [browserSupportsSpeechRecognition]);
 
+  // ─── Sincronizar transcripción en tiempo real al padre ───
+  // Cada vez que el transcript cambia (Web Speech), lo enviamos al padre
+  // combinado con el texto que había antes (para grabaciones continuas).
   useEffect(() => {
     if (transcript && !useBackend) {
       const combined = baseTextRef.current
@@ -59,10 +89,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
+  // ─── Iniciar grabación por Web Speech ───
   const startBrowserRecording = () => {
     setErrorMsg('');
-    baseTextRef.current = '';      // cada grabación empieza desde cero
-    onTranscription('');           // limpia el cajón de texto en el padre
+    baseTextRef.current = '';
+    onTranscription('');
     resetTranscript();
     SpeechRecognition.startListening({
       continuous: true,
@@ -75,10 +106,10 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     SpeechRecognition.stopListening();
   };
 
-  // --- Backend (Gemini/Whisper) fallback path ---
+  // ─── Iniciar grabación por backend (MediaRecorder + API) ───
   const startBackendRecording = async () => {
     setErrorMsg('');
-    onTranscription('');           // limpia el cajón de texto en el padre
+    onTranscription('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -109,6 +140,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
   };
 
+  // ─── Enviar audio al backend para transcripción ───
   const transcribeWithBackend = async (blob: Blob) => {
     setIsTranscribing(true);
     try {
@@ -132,7 +164,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
   };
 
-  // --- Unified controls ---
+  // ─── Controles unificados (detectan qué camino usar) ───
   const isRecording = useBackend ? !!(mediaRecorderRef.current?.state === 'recording') : listening;
 
   const handleStart = () => useBackend ? startBackendRecording() : startBrowserRecording();
@@ -167,6 +199,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </div>
       </div>
 
+      {/* Indicador visual de grabación activa */}
       {(listening || isRecording) && !isTranscribing && (
         <div className="audio-recorder-status">
           <div className="audio-recorder-pulse" />

@@ -1,3 +1,17 @@
+/* ═══════════════════════════
+   ReportModal.css — Modal de 7 pasos para reportar
+   ═══════════════════════════
+   El archivo CSS más grande del proyecto (~1570 líneas). Cubre:
+   - Overlay + content con animación de entrada
+   - Header con brand + back + close
+   - Step progress bar (5 dots)
+   - Cada paso tiene su propio layout (categorías, voz,
+     características, vestimenta, señas, ubicación, éxito)
+   - Error overlay con diseño de tarjeta (ShieldAlert)
+   - Selectores visuales de color (piel, cabello, ojos)
+   - Upload area, location button, loader spinner
+   - Responsive: mobile-first con sticky bottom actions
+   ═══════════════════════════ */
 .report-modal-overlay {
   position: fixed;
   top: 0;

@@ -1,7 +1,38 @@
+/**
+ * components/modals/PersonDetailModal.tsx — Perfil detallado de una persona
+ *
+ * PROPÓSITO:
+ *   Muestra toda la información disponible sobre una persona reportada.
+ *   Se abre desde el Feed, el Mapa, o la Búsqueda.
+ *
+ * PRIVACIDAD Y SEGURIDAD:
+ *   - Si la persona ya fue LOCALIZADA (status !== 'missing'), los datos
+ *     sensibles (ubicación exacta, refugio) están ocultos tras un muro
+ *     de verificación por cédula de identidad.
+ *   - canViewSensitive = true solo si:
+ *       a) La persona sigue desaparecida (necesitamos ayuda para encontrarla)
+ *       b) El usuario ingresó la cédula correcta (es familiar)
+ *       c) El usuario es admin/verifier
+ *   - El formulario de contacto es "enmascarado": el mensaje pasa por
+ *     nuestro servidor, que lo reenvía sin revelar datos de contacto.
+ *
+ * CIERRE DE CASO (Fase 4):
+ *   - Solo el reportante original (isOwner) o un admin puede cerrar un caso.
+ *   - El cierre es un acto legal: queda sellado con timestamp + IP.
+ *   - Tres resoluciones: localizado, fallecido, o reporte erróneo.
+ *
+ * BOTONES DE ACCIÓN PRINCIPAL:
+ *   - "Contactar" → formulario de mensaje enmascarado
+ *   - "Tengo información" → abre ReportModal para añadir datos
+ *   - "Cerrar Caso" → formulario de cierre (solo owner/admin)
+ *
+ * RECURSOS DE EMERGENCIA:
+ *   Números de contacto venezolanos visibles siempre (171, 911, Protección Civil).
+ */
 import React, { useState } from 'react';
 import type { Person } from '../../types';
-import { 
-  X, MapPin, User, CheckCircle, Heart, 
+import {
+  X, MapPin, User, CheckCircle, Heart,
   MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
@@ -17,28 +48,31 @@ interface PersonDetailModalProps {
 
 export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport }) => {
   const isMissing = person.status === 'missing';
-  
-  // Security
+
+  // ─── Control de acceso a datos sensibles ───
   const { user } = useAuth();
   const [cedulaInput, setCedulaInput] = useState('');
   const [cedulaMatched, setCedulaMatched] = useState(false);
 
   const canViewSensitive = isMissing || cedulaMatched || user?.role === 'admin' || user?.role === 'verifier';
 
-  // Contact
+  // ─── Formulario de contacto enmascarado ───
   const [showContactForm, setShowContactForm] = useState(false);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Close Case (Phase 4)
+  // ─── Cierre de caso (solo owner/admin) ───
   const [showCloseCase, setShowCloseCase] = useState(false);
   const [closeResolution, setCloseResolution] = useState<'found' | 'deceased' | 'erroneous'>('found');
   const [closeNotes, setCloseNotes] = useState('');
   const [closing, setClosing] = useState(false);
-  
-  // Is Owner logic (we compare IDs if available, or just allow if admin)
-  const isOwner = user?.role === 'admin' || ((person.metadata?.reportedBy as any)?._id === user?._id) || ((person.metadata?.reportedBy as any) === user?._id);
 
+  // Determina si el usuario actual es el dueño del reporte
+  const isOwner = user?.role === 'admin' ||
+    ((person.metadata?.reportedBy as any)?._id === user?._id) ||
+    ((person.metadata?.reportedBy as any) === user?._id);
+
+  // ─── Enviar mensaje enmascarado al reportante ───
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -58,6 +92,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     }
   };
 
+  // ─── Cerrar caso (sello legal) ───
   const handleCloseCase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -68,7 +103,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         notes: closeNotes
       });
       alert('Caso cerrado y sellado exitosamente bajo la Ley de Protección de Datos.');
-      window.location.reload(); // Quick refresh to show new status
+      window.location.reload();
     } catch (e: any) {
       alert(e.response?.data?.error || 'Error al cerrar el caso');
     } finally {
@@ -76,6 +111,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     }
   };
 
+  // ─── Verificar cédula para acceder a datos protegidos ───
   const handleCedulaMatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (person.data?.cedula && cedulaInput.trim() === person.data.cedula) {
@@ -98,16 +134,16 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     return 'No especificado';
   };
 
-  const formattedDate = person.lastSeen?.date 
-    ? new Date(person.lastSeen.date).toLocaleDateString('es-VE', { 
-        year: 'numeric', month: 'long', day: 'numeric' 
+  const formattedDate = person.lastSeen?.date
+    ? new Date(person.lastSeen.date).toLocaleDateString('es-VE', {
+        year: 'numeric', month: 'long', day: 'numeric'
       })
     : 'Fecha desconocida';
 
   return (
     <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal-content" role="dialog" aria-modal="true">
-        
+
         <header className="modal-header">
           <div className="modal-title-group">
             <h2>{person.name}</h2>
@@ -118,6 +154,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         </header>
 
         <div className="modal-body">
+          {/* ─── Hero: foto + badge + metadatos básicos ─── */}
           <div className="person-hero">
             <div className="hero-image-wrapper">
               {person.photoUrl ? (
@@ -126,7 +163,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <User size={48} color="var(--text-secondary)" />
               )}
             </div>
-            
+
             <div className="hero-info">
               <span className={`hero-badge ${isMissing ? 'missing' : 'found'}`}>
                 {isMissing ? 'Aún sin contacto' : 'Localizado / A Salvo'}
@@ -135,6 +172,8 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <span><MapPin size={14} className="inline-icon" /> {person.lastSeen?.state || 'Ubicación desconocida'}</span>
                 <span>Última actualización: {formattedDate}</span>
                 {person.age && <span>Edad aproximada: {person.age} años</span>}
+
+                {/* Datos visibles solo si canViewSensitive */}
                 {canViewSensitive ? (
                   <>
                     {person.data?.origen && <span>Fuente: {person.data.origen}</span>}
@@ -158,11 +197,14 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   </span>
                 )}
 
-                {person.metadata?.reportedBy && <span><User size={12} className="inline-icon" /> Reportado por: {person.metadata.reportedBy.name}</span>}
+                {person.metadata?.reportedBy && (
+                  <span><User size={12} className="inline-icon" /> Reportado por: {person.metadata.reportedBy.name}</span>
+                )}
               </div>
             </div>
           </div>
 
+          {/* ─── Botones de acción principales ─── */}
           <div className="action-buttons">
             <button className="btn-main-action btn-contact" onClick={() => setShowContactForm(!showContactForm)}>
               <MessageCircle size={18} />
@@ -182,17 +224,19 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             )}
           </div>
 
+          {/* ─── Formulario de cierre de caso ─── */}
           {showCloseCase && (
             <div className="person-modal-close-case-card">
               <h4 className="person-modal-close-case-title">
                 <ShieldCheck size={16} /> Auditoría y Cierre de Caso
               </h4>
               <p className="person-modal-desc-text">
-                Al cerrar este caso, tu dirección IP y marca de tiempo quedarán selladas criptográficamente para cumplir con el artículo 43 de la LOPNNA y la Ley de Protección de Datos.
+                Al cerrar este caso, tu dirección IP y marca de tiempo quedarán selladas
+                criptográficamente para cumplir con el artículo 43 de la LOPNNA y la Ley de Protección de Datos.
               </p>
               <form onSubmit={handleCloseCase} className="person-modal-form">
-                <select 
-                  value={closeResolution} 
+                <select
+                  value={closeResolution}
                   onChange={e => setCloseResolution(e.target.value as any)}
                   className="person-modal-input"
                 >
@@ -200,15 +244,15 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   <option value="deceased">La persona ha sido hallada sin vida</option>
                   <option value="erroneous">El reporte original era falso o duplicado</option>
                 </select>
-                
-                <textarea 
+
+                <textarea
                   placeholder="Detalles del reencuentro o resolución (Opcional)..."
                   value={closeNotes}
                   onChange={e => setCloseNotes(e.target.value)}
                   className="person-modal-input"
                   style={{ minHeight: '60px' }}
                 />
-                
+
                 <div className="person-modal-form-actions">
                   <button type="submit" disabled={closing} className="btn-success">
                     {closing ? 'Sellando...' : 'Sellar y Cerrar Caso'}
@@ -221,14 +265,16 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </div>
           )}
 
+          {/* ─── Formulario de contacto enmascarado ─── */}
           {showContactForm && (
             <div className="person-modal-contact-card">
               <h4 className="person-modal-contact-title"><Lock size={16} color="var(--clr-amber)" /> Comunicación Segura</h4>
               <p className="person-modal-desc-text">
-                Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto iniciales. El equipo de Reencuentro Terremoto Venezuela intermediará si es necesario.
+                Tu mensaje será enviado al familiar/reportante sin revelar tus datos de contacto
+                iniciales. El equipo de Reencuentro Terremoto Venezuela intermediará si es necesario.
               </p>
               <form onSubmit={handleSendMessage} className="person-modal-form">
-                <textarea 
+                <textarea
                   placeholder="Escribe aquí tu mensaje sobre esta persona..."
                   value={message}
                   onChange={e => setMessage(e.target.value)}
@@ -248,6 +294,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </div>
           )}
 
+          {/* ─── Información detallada ─── */}
           <div className="info-section">
             <h3><Info size={18} /> Información y Señas</h3>
             <div className="info-grid">
@@ -270,15 +317,18 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 {canViewSensitive ? (
                   <p>{person.lastSeen?.description || person.description || 'Sin descripción adicional proporcionada por la fuente.'}</p>
                 ) : (
+                  /* Muro de protección: pedir cédula para ver datos */
                   <div className="person-modal-protected-box">
                     <p className="person-modal-protected-desc">
                       <Lock size={16} className="inline-icon" />
-                      Esta persona fue localizada. Por su seguridad, la ubicación exacta y el detalle del refugio están protegidos. Si eres familiar, introduce su cédula para ver los datos:
+                      Esta persona fue localizada. Por su seguridad, la ubicación exacta
+                      y el detalle del refugio están protegidos. Si eres familiar, introduce
+                      su cédula para ver los datos:
                     </p>
                     <form onSubmit={handleCedulaMatch} className="person-modal-protected-form">
-                      <input 
-                        type="text" 
-                        placeholder="Cédula de Identidad" 
+                      <input
+                        type="text"
+                        placeholder="Cédula de Identidad"
                         value={cedulaInput}
                         onChange={e => setCedulaInput(e.target.value)}
                         className="person-modal-protected-input"
@@ -293,6 +343,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </div>
           </div>
 
+          {/* ─── Avisos de la comunidad ─── */}
           <div className="info-section info-section-warning">
             <h3 className="info-section-warning-title"><AlertCircle size={18} /> Avisos de la comunidad</h3>
             <p className="person-modal-desc-text">
@@ -303,6 +354,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </p>
           </div>
 
+          {/* ─── Recursos de emergencia ─── */}
           <div className="resources-box">
             <h4><Heart size={18} /> Recursos de Emergencia</h4>
             <div className="emergency-grid">
@@ -325,6 +377,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
             </div>
           </div>
 
+          {/* ─── Compartir en redes ─── */}
           <div className="social-share">
             <p>Cuantas más personas conozcan el registro, a más gente ayuda.</p>
             <div className="share-buttons">

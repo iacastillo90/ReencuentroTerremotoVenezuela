@@ -1,3 +1,15 @@
+/* ═══════════════════════════
+   PersonDetailModal.css — Perfil detallado de persona
+   ═══════════════════════════
+   Modal de pantalla completa con scroll. Contiene:
+   - Hero (foto + badge + metadatos)
+   - Botones de acción principales (contactar, info, cerrar caso)
+   - Cards de formularios (contacto enmascarado, cierre legal)
+   - Grid de información y señas
+   - Muro de verificación por cédula (LOPNNA)
+   - Recursos de emergencia
+   - Botones de compartir
+   ═══════════════════════════ */
 .modal-overlay {
   position: fixed;
   top: 0;
