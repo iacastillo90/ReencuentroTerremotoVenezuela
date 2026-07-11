@@ -1,3 +1,18 @@
+/**
+ * __tests__/App.test.tsx — Tests del componente raíz App
+ *
+ * PROPÓSITO:
+ *   Verifica que App.tsx renderice correctamente:
+ *   - Muestra el loader (LoadingScreen) al inicio.
+ *   - Hace fetch de datos (persons, disasters, counts) al montar.
+ *   - Renderiza AppLayout + vistas después de cargar.
+ *   - Muestra las estadísticas (HomeStats) con los conteos correctos.
+ *
+ * MOCKS:
+ *   - api.get() para simular las 3 llamadas iniciales.
+ *   - AuthContext mockeado para simular usuario autenticado/no autenticado.
+ *   - react-leaflet mockeado (Leaflet no funciona en JSDOM).
+ */
 import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 import { api } from '../services/api';

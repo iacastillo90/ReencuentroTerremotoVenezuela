@@ -1,3 +1,17 @@
+/**
+ * __tests__/AuthContext.test.tsx — Tests del contexto de autenticación
+ *
+ * PROPÓSITO:
+ *   Verifica que AuthProvider + useAuth funcionen correctamente:
+ *   - login(user): actualiza el estado del usuario.
+ *   - logout(): limpia el estado y llama a api.post('/auth/logout').
+ *   - Estado inicial: user = null.
+ *   - Persistencia: al montar, checkea /auth/me para restaurar sesión.
+ *
+ * MOCKS:
+ *   - api.get y api.post mockeados con vi.hoisted().
+ *   - El hook renderHook de testing-library envuelve en AuthProvider.
+ */
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../store/AuthContext';
