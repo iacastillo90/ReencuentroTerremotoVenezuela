@@ -1,3 +1,9 @@
+/* ═══════════════════════════
+   Map.css — Estilos del InteractiveMap (Leaflet)
+   ═══════════════════════════
+   Contenedor del mapa, popups, status badges y
+   layout responsive (el mapa ocupa todo el espacio disponible).
+   ═══════════════════════════ */
 .map-container {
   height: 100%;
   width: 100%;

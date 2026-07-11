@@ -1,3 +1,11 @@
+/* ═══════════════════════════
+   MapLegend.css — Leyenda colapsable del mapa
+   ═══════════════════════════
+   Panel en la esquina inferior izquierda. En mobile (<768px)
+   se colapsa tras 4s si no hay interacción. Cada ítem
+   tiene un icono circular con color distintivo (person, quake,
+   flood, zap, fire). Los ítems inactivos se atenúan.
+   ═══════════════════════════ */
 .map-legend {
   position: absolute;
   bottom: 2rem;
@@ -158,7 +166,15 @@
 
 /* Responsividad */
 @media (max-width: 768px) {
-  .map-legend {
+/* ═══════════════════════════
+   MapLegend.css — Leyenda colapsable del mapa
+   ═══════════════════════════
+   Panel en la esquina inferior izquierda. En mobile (<768px)
+   se colapsa tras 4s si no hay interacción. Cada ítem
+   tiene un icono circular con color distintivo (person, quake,
+   flood, zap, fire). Los ítems inactivos se atenúan.
+   ═══════════════════════════ */
+.map-legend {
     bottom: 5rem; /* Subir por encima del nav inferior */
     left: 1rem;
     width: auto;

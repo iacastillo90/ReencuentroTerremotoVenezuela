@@ -1,3 +1,24 @@
+/**
+ * pages/Map/MapPage.tsx — Página del mapa interactivo
+ *
+ * PROPÓSITO:
+ *   Contenedor que orquesta los componentes del mapa:
+ *   MapFilters (chips de capas) + InteractiveMap (Leaflet).
+ *   Mantiene el estado de las capas visibles.
+ *
+ * FLUJO:
+ *   1. MapPage recibe persons[] y disasters[] del padre (App.tsx).
+ *   2. Mantiene un estado local layers (MapLayers) con qué capas
+ *      están activas. Por defecto, todas activas.
+ *   3. toggleLayer cambia el estado de una capa (true ↔ false).
+ *   4. Pasa layers + toggleLayer tanto a MapFilters como a InteractiveMap.
+ *   5. InteractiveMap filtra disasters según layers y solo renderiza
+ *      los que coinciden con capas activas.
+ *
+ * PERSONAS SIEMPRE VISIBLES:
+ *   A diferencia de disasters, el filtro de persons se aplica a nivel
+ *   de MarkerClusterGroup (dentro de InteractiveMap), no aquí.
+ */
 import React from 'react';
 import { InteractiveMap } from '../../components/map/Map';
 import { MapFilters } from '../../components/map/MapFilters';

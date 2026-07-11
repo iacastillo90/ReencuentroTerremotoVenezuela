@@ -1,3 +1,36 @@
+/**
+ * components/map/Map.tsx — Mapa interactivo Leaflet
+ *
+ * PROPÓSITO:
+ *   Renderiza un mapa de Venezuela con:
+ *   - Marcadores agrupados (MarkerCluster) de personas.
+ *   - Marcadores + círculos de desastres activos.
+ *   - Popups con info al hacer click.
+ *   - Leyenda con filtros de capas.
+ *
+ * ¿POR QUÉ LEAFLET?
+ *   - Liviano, open-source, sin API key.
+ *   - react-leaflet 5 lo integra nativamente con React 19.
+ *   - react-leaflet-cluster da clustering sin config adicional.
+ *
+ * ¿POR QUÉ NO GOOGLE MAPS?
+ *   - Google Maps requiere API key y tiene costos.
+ *   - Leaflet con tiles de CartoDB es gratuito.
+ *
+ * ICONOS:
+ *   - Usamos icons personalizados de color-markers (blue = personas,
+ *     red = desastres).
+ *   - Leaflet por defecto no encuentra sus iconos en webpack/vite,
+ *     por eso sobrescribimos _getIconUrl con URLs absolutas de CDN.
+ *
+ * MAPA BASE:
+ *   CartoDB Voyager: tiles claros con etiquetas en español.
+ *   Zoom control en la esquina inferior derecha.
+ *
+ * NOTA PARA TESTS:
+ *   Este componente se mockea completo en los tests porque
+ *   Leaflet no funciona en JSDOM (necesita canvas/webgl real).
+ */
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -8,7 +41,8 @@ import { MapLegend } from './MapLegend';
 import { Button } from '../ui/Button';
 import './Map.css';
 
-// Fix para los iconos de leaflet en react
+// Fix para iconos de Leaflet en webpack/vite.
+// Sin esto, los marcadores aparecen como cuadrados rotos.
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -16,24 +50,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Icono personalizado para personas
 const personIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [25, 41], iconAnchor: [12, 41],
+  popupAnchor: [1, -34], shadowSize: [41, 41]
 });
 
-// Icono para desastres
 const disasterIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [25, 41], iconAnchor: [12, 41],
+  popupAnchor: [1, -34], shadowSize: [41, 41]
 });
 
 const getSeverityName = (sev: string) => {
@@ -67,8 +95,6 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-        
-        {/* Marcadores de Personas agrupados */}
         {layers.persons && (
           <MarkerClusterGroup chunkedLoading>
             {persons.map((person) => {
@@ -87,11 +113,7 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
                       <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
                       {onSelectPerson && (
                         <div style={{ marginTop: '10px' }}>
-                          <Button 
-                            fullWidth
-                            size="sm"
-                            onClick={() => onSelectPerson(person)}
-                          >
+                          <Button fullWidth size="sm" onClick={() => onSelectPerson(person)}>
                             Ver perfil completo
                           </Button>
                         </div>
@@ -103,22 +125,18 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
             })}
           </MarkerClusterGroup>
         )}
-
-        {/* Marcadores de Desastres filtrados por capa activa */}
         {disasters.filter(d => {
           if (d.type === 'earthquake' && layers.earthquake) return true;
           if (d.type === 'flood' && layers.flood) return true;
           if (d.type === 'fire' && layers.fire) return true;
           if (d.type === 'social' && layers.social) return true;
-          // default para otros que no se mapearon explícitamente en capas
           if (!['earthquake', 'flood', 'fire', 'social'].includes(d.type)) return true;
           return false;
         }).map((disaster) => {
           const [lng, lat] = disaster.coordinates.coordinates;
-          const color = disaster.severity === 'critical' ? '#ef4444' :
-                        disaster.severity === 'high' ? '#f97316' :
-                        disaster.severity === 'medium' ? '#eab308' : 'var(--clr-primary)';
-          
+          const color = disaster.severity === 'critical' ? '#ef4444'
+            : disaster.severity === 'high' ? '#f97316'
+            : disaster.severity === 'medium' ? '#eab308' : 'var(--clr-primary)';
           return (
             <React.Fragment key={disaster._id}>
               <Marker position={[lat, lng]} icon={disasterIcon}>
@@ -130,11 +148,9 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
                   </div>
                 </Popup>
               </Marker>
-              <Circle 
-                center={[lat, lng]} 
-                radius={disaster.type === 'earthquake' ? 30000 : 5000} 
-                pathOptions={{ color, fillColor: color, fillOpacity: 0.2, weight: 1 }}
-              />
+              <Circle center={[lat, lng]}
+                radius={disaster.type === 'earthquake' ? 30000 : 5000}
+                pathOptions={{ color, fillColor: color, fillOpacity: 0.2, weight: 1 }} />
             </React.Fragment>
           );
         })}

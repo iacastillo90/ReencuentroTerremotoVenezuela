@@ -1,3 +1,11 @@
+/* ═══════════════════════════
+   MapFilters.css — Chips de filtro de capas del mapa
+   ═══════════════════════════
+   Barra horizontal absoluta en la parte superior del mapa.
+   Los chips cambian de color al activarse (active).
+   Cada chip tiene un color único según la capa (quake, flood, fire, zap).
+   En mobile (<768px) los chips se ocultan (se usa MapLegend en su lugar).
+   ═══════════════════════════ */
 .map-filters-container {
   position: absolute;
   top: 1rem;
