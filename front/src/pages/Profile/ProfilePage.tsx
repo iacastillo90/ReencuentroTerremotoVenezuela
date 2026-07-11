@@ -1,44 +1,80 @@
-import React, { useEffect, useState, useRef } from 'react';
+/**
+ * ProfilePage.tsx — Perfil de usuario (datos, tabs, chat)
+ *
+ * PROPÓSITO:
+ *   Muestra el perfil del usuario logueado con:
+ *   1. Header: avatar, nombre, email, teléfono, sector, botón cerrar sesión.
+ *   2. Card de rol: si es "user", puede solicitar ser verificador.
+ *      Si es "verifier", muestra badge de verificado.
+ *   3. Tabs: Mis Reportes, Posibles Coincidencias (IA), Conversaciones.
+ *   4. ChatWidget: cuando se selecciona una conversación.
+ *
+ * ESTADO LOCAL:
+ *   - myReports[]: reportes creados por el usuario (/persons/mine).
+ *   - myMatches[]: coincidencias de IA para cada reporte.
+ *   - messages[] / sentMessages[]: mensajes recibidos y enviados.
+ *   - conversationList[]: conversaciones agrupadas por reportId + otherUserId.
+ *   - activeConversation: conversación seleccionada para abrir ChatWidget.
+ *
+ * CHAT EN TIEMPO REAL:
+ *   - Escucha eventos 'receive_message' del socket para agregar
+ *     mensajes nuevos al inicio de messages[].
+ *   - Al enviar un mensaje, hace POST /contacts y lo agrega a
+ *     sentMessages[].
+ *   - El ChatWidget se abre en un modal cuando hay activeConversation.
+ *
+ * COINCIDENCIAS (IA):
+ *   - Al cargar myReports, itera cada reporte y pide /matches/:idHash.
+ *   - No hay paginación ni límite por ahora (pueden ser muchos).
+ *
+ * FLUJO DE DATOS:
+ *   fetchData(): carga reportes, mensajes recibidos y enviados en paralelo.
+ *   useEffect [user]: llama fetchData al montar.
+ *   useEffect [myReports]: llama fetchMatches cuando cambian los reportes.
+ */
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { useSocket } from '../../store/SocketContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
 import {
-  User, Mail, Phone, MapPin, Clock, ArrowRight, LogOut,
-  FileText, ShieldAlert, CheckCircle, MessageCircle, Send, X, AlertTriangle, Shield
+  User, Mail, Phone, MapPin, LogOut,
+  ShieldAlert, CheckCircle
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { ChatWidget } from '../../components/common/ChatWidget';
+import { TabReports } from './tabs/TabReports';
+import { TabMatches } from './tabs/TabMatches';
+import { TabChats } from './tabs/TabChats';
 import './Profile.css';
 
 interface ProfilePageProps {
   onSelectPerson: (p: Person) => void;
 }
 
-interface ActiveConversation {
-  reportId: string;
-  otherUserId: string;
-}
+type ProfileTab = 'reports' | 'matches' | 'chats';
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
-  
+
+  // ─── Estado de datos ────────────────────────────────
   const [myReports, setMyReports] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [sentMessages, setSentMessages] = useState<any[]>([]);
-  const [requestNotes, setRequestNotes] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);      // Recibidos
+  const [sentMessages, setSentMessages] = useState<any[]>([]); // Enviados
+  const [requestNotes, setRequestNotes] = useState('');      // Texto de solicitud de verificador
   const [showRequestForm, setShowRequestForm] = useState(false);
-  
-  // Matches state
   const [myMatches, setMyMatches] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'reports' | 'matches' | 'chats'>('reports');
-
-  // Chat states
-  const [activeConversation, setActiveConversation] = useState<ActiveConversation | null>(null);
+  const [activeTab, setActiveTab] = useState<ProfileTab>('reports');
+  const [activeConversation, setActiveConversation] = useState<{
+    reportId: string; otherUserId: string
+  } | null>(null);
   const [replyText, setReplyText] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ─── handleRequestVerification ─────────────────────
+  // Envía una solicitud para ser verificador.
+  // POST /auth/verification-request con las notas del usuario.
   const handleRequestVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -50,6 +86,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     }
   };
 
+  // ─── fetchData: carga datos del perfil ──────────────
+  // Obtiene en paralelo:
+  //   - /persons/mine: reportes del usuario.
+  //   - /contacts/received: mensajes recibidos.
+  //   - /contacts/sent: mensajes enviados.
   const fetchData = async () => {
     try {
       const res = await api.get<Person[]>('/persons/mine');
@@ -65,15 +106,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     }
   };
 
+  // Carga inicial de datos cuando el usuario está disponible.
+  useEffect(() => {
+    if (user) fetchData();
+  }, [user]);
+
+  // ─── fetchMatches: obtiene coincidencias de IA ─────
+  // Recorre cada reporte del usuario y pide /matches/:idHash.
+  // Acumula todos los resultados en myMatches[].
   useEffect(() => {
     const fetchMatches = async () => {
       if (myReports.length > 0) {
         try {
-          const allMatches = [];
+          const allMatches: any[] = [];
           for (const report of myReports) {
             const matchRes = await api.get(`/matches/${report.idHash}`);
             if (matchRes.data && matchRes.data.length > 0) {
-              allMatches.push(...matchRes.data.map((m: any) => ({ ...m, originalReportName: report.name })));
+              allMatches.push(
+                ...matchRes.data.map((m: any) => ({
+                  ...m,
+                  originalReportName: report.name
+                }))
+              );
             }
           }
           setMyMatches(allMatches);
@@ -85,39 +139,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     fetchMatches();
   }, [myReports]);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  // Real-time socket message handler
+  // ─── Socket: escuchar mensajes en tiempo real ──────
+  // Cuando llega un mensaje nuevo via websocket, lo agrega
+  // al inicio de messages[] (si no está duplicado).
   useEffect(() => {
     if (!socket) return;
-
     const handleReceiveMessage = (msg: any) => {
-      console.log('[ProfilePage] New real-time message received via socket:', msg);
-      // Append to incoming messages if not already present
-      setMessages(prev => {
-        if (prev.some(m => m._id === msg._id)) return prev;
-        return [msg, ...prev];
-      });
+      setMessages(prev =>
+        prev.some(m => m._id === msg._id) ? prev : [msg, ...prev]
+      );
     };
-
     socket.on('receive_message', handleReceiveMessage);
-
-    return () => {
-      socket.off('receive_message', handleReceiveMessage);
-    };
+    return () => { socket.off('receive_message', handleReceiveMessage); };
   }, [socket]);
 
-  // Auto scroll to bottom of chat
-  useEffect(() => {
-    if (activeConversation) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [activeConversation, messages, sentMessages]);
-
+  // ─── Acciones de match ─────────────────────────────
+  // handleRequestMediation: pide una sala de mediación para menores.
+  // handleStartDirectChat: pide una sala de chat directo.
   const handleRequestMediation = (match: any) => {
     if (!socket) return alert('Desconectado del servidor de chat');
     socket.emit('request_match_chat', { matchId: match._id });
@@ -130,6 +168,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     alert('Sala de chat directo solicitada.');
   };
 
+  // ─── handleSendMessage: enviar mensaje ──────────────
+  // POST /contacts con reportId, receiverId y message.
+  // Agrega el mensaje a sentMessages[] localmente.
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !activeConversation) return;
+    try {
+      const res = await api.post('/contacts', {
+        reportId: activeConversation.reportId,
+        receiverId: activeConversation.otherUserId,
+        message: replyText,
+      });
+      setSentMessages(prev => [...prev, res.data]);
+      setReplyText('');
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Error al enviar mensaje');
+    }
+  };
+
+  // ─── Guard: usuario no logueado ─────────────────────
   if (!user) {
     return (
       <div className="profile-page flex-center">
@@ -138,71 +196,63 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     );
   }
 
-  // Combine, deduplicate, and sort all messages chronologically
+  // ─── Procesamiento de mensajes ──────────────────────
+  // Combina mensajes recibidos y enviados, deduplicando por _id.
   const uniqueMessagesMap = new Map();
-  [...messages, ...sentMessages].forEach(msg => uniqueMessagesMap.set(msg._id, msg));
+  [...messages, ...sentMessages].forEach(msg =>
+    uniqueMessagesMap.set(msg._id, msg)
+  );
   const allMessages = Array.from(uniqueMessagesMap.values()).sort(
-    (a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a: any, b: any) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  // Group messages into conversations (threads)
-  // key: reportId_otherUserId
+  // Agrupa mensajes por conversación (reportId + otherUserId).
   const conversationsMap = new Map<string, any>();
-  
-  // Go through all messages to build unique conversation threads
-  allMessages.forEach(msg => {
+  allMessages.forEach((msg: any) => {
     const isSender = msg.senderId === user._id;
     const otherUserId = isSender ? msg.receiverId : msg.senderId;
-    if (!otherUserId) return; // Ignore if no other party
-    
+    if (!otherUserId) return;
     const key = `${msg.reportId}_${otherUserId}`;
     if (!conversationsMap.has(key)) {
       conversationsMap.set(key, {
-        reportId: msg.reportId,
-        otherUserId: otherUserId,
-        lastMessage: msg,
-        messages: [],
+        reportId: msg.reportId, otherUserId,
+        lastMessage: msg, messages: []
       });
     }
     conversationsMap.get(key).messages.push(msg);
     conversationsMap.get(key).lastMessage = msg;
   });
 
+  // Ordena conversaciones por fecha del último mensaje (más reciente primero).
   const conversationList = Array.from(conversationsMap.values()).sort(
-    (a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+    (a, b) =>
+      new Date(b.lastMessage.createdAt).getTime() -
+      new Date(a.lastMessage.createdAt).getTime()
   );
 
-  // Get active thread messages
+  // Filtra mensajes del hilo activo (reportId + otherUserId).
   const activeThreadMessages = activeConversation
     ? allMessages.filter(
-        msg =>
+        (msg: any) =>
           msg.reportId === activeConversation.reportId &&
-          ((msg.senderId === user._id && msg.receiverId === activeConversation.otherUserId) ||
-            (msg.senderId === activeConversation.otherUserId && msg.receiverId === user._id))
+          ((msg.senderId === user._id &&
+            msg.receiverId === activeConversation.otherUserId) ||
+            (msg.senderId === activeConversation.otherUserId &&
+              msg.receiverId === user._id))
       )
     : [];
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!replyText.trim() || !activeConversation) return;
-
-    try {
-      const res = await api.post('/contacts', {
-        reportId: activeConversation.reportId,
-        receiverId: activeConversation.otherUserId,
-        message: replyText,
-      });
-
-      // Add to local state immediately
-      setSentMessages(prev => [...prev, res.data]);
-      setReplyText('');
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al enviar mensaje');
-    }
-  };
+  // ─── Configuración de tabs ─────────────────────────
+  const TAB_LABELS: { key: ProfileTab; label: string; count?: number }[] = [
+    { key: 'reports', label: `Mis Reportes (${myReports.length})` },
+    { key: 'matches', label: 'Posibles Coincidencias', count: myMatches.length },
+    { key: 'chats', label: `Conversaciones (${conversationList.length})` },
+  ];
 
   return (
     <div className="profile-page">
+      {/* ═══ Header del perfil ═══ */}
       <div className="profile-header">
         <div className="profile-avatar-large">
           <User size={48} color="var(--clr-primary)" />
@@ -210,22 +260,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         <h2>{user.name}</h2>
         <div className="profile-contact-info">
           <span><Mail size={14} /> {user.email}</span>
-          {user.contactNumber && <span><Phone size={14} /> {user.contactNumber}</span>}
-          {user.sector && <span><MapPin size={14} /> {user.sector}</span>}
+          {user.contactNumber && (
+            <span><Phone size={14} /> {user.contactNumber}</span>
+          )}
+          {user.sector && (
+            <span><MapPin size={14} /> {user.sector}</span>
+          )}
         </div>
-        
         <button className="btn-logout" onClick={logout}>
           <LogOut size={16} /> Cerrar sesión
         </button>
       </div>
 
+      {/* ═══ Card de rol: user → puede solicitar verificación ═══ */}
       {user.role === 'user' && (
         <div className="profile-content profile-role-card profile-role-user">
           <h3 className="profile-role-title">
             <ShieldAlert size={20} /> Solicitar Acceso de Verificador
           </h3>
           <p className="profile-role-desc">
-            Si eres periodista, miembro de ONG o personal en terreno, puedes solicitar acceso a datos de refugios e información de contacto directo de los desaparecidos encontrados.
+            Si eres periodista, miembro de ONG o personal en terreno,
+            puedes solicitar acceso a datos de refugios e información
+            de contacto directo de los desaparecidos encontrados.
           </p>
           {!showRequestForm ? (
             <Button onClick={() => setShowRequestForm(true)}>
@@ -233,7 +289,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
             </Button>
           ) : (
             <form onSubmit={handleRequestVerification} className="profile-request-form">
-              <textarea 
+              <textarea
                 placeholder="Explica brevemente tu rol y organización para validar tu acceso..."
                 value={requestNotes}
                 onChange={e => setRequestNotes(e.target.value)}
@@ -241,238 +297,70 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
                 className="profile-textarea"
               />
               <div className="profile-form-actions">
-                <Button type="submit">
-                  Enviar Solicitud
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowRequestForm(false)}>
-                  Cancelar
-                </Button>
+                <Button type="submit">Enviar Solicitud</Button>
+                <Button type="button" variant="outline"
+                  onClick={() => setShowRequestForm(false)}>Cancelar</Button>
               </div>
             </form>
           )}
         </div>
       )}
 
+      {/* ═══ Card de verificación aprobada ═══ */}
       {user.role === 'verifier' && (
         <div className="profile-content profile-role-card profile-role-verifier">
           <h3 className="profile-role-title-success">
             <CheckCircle size={20} /> Cuenta Verificada (Periodista / ONG)
           </h3>
           <p className="profile-role-desc">
-            Tienes acceso completo a la información de contacto y ubicaciones exactas para facilitar reencuentros seguros.
+            Tienes acceso completo a la información de contacto y
+            ubicaciones exactas para facilitar reencuentros seguros.
           </p>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--clr-border)', paddingBottom: '0.5rem' }}>
-        <button 
-          onClick={() => setActiveTab('reports')} 
-          style={{ background: 'none', border: 'none', color: activeTab === 'reports' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'reports' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem' }}
-        >
-          Mis Reportes ({myReports.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('matches')} 
-          style={{ background: 'none', border: 'none', color: activeTab === 'matches' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'matches' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem', position: 'relative' }}
-        >
-          Posibles Coincidencias 
-          {myMatches.length > 0 && <span style={{ marginLeft: '8px', background: 'var(--clr-danger)', color: '#fff', borderRadius: '50%', padding: '2px 8px', fontSize: '0.75rem' }}>{myMatches.length}</span>}
-        </button>
-        <button 
-          onClick={() => setActiveTab('chats')} 
-          style={{ background: 'none', border: 'none', color: activeTab === 'chats' ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontWeight: activeTab === 'chats' ? 700 : 500, fontSize: '1rem', cursor: 'pointer', padding: '0.5rem' }}
-        >
-          Conversaciones ({conversationList.length})
-        </button>
+      {/* ═══ Tabs ═══ */}
+      <div className="profile-tabs">
+        {TAB_LABELS.map(({ key, label, count }) => (
+          <button key={key}
+            className={`profile-tab ${activeTab === key ? 'active' : ''}`}
+            onClick={() => setActiveTab(key)}>
+            {label}
+            {count !== undefined && count > 0 && (
+              <span className="profile-tab-badge">{count}</span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Real-time Chats / Messages List */}
-      {activeTab === 'chats' && (
-        <div className="profile-content">
-        <h3><MessageCircle size={18} /> Conversaciones de la Comunidad ({conversationList.length})</h3>
-        {conversationList.length === 0 ? (
-          <div className="profile-empty">
-            <p>No tienes mensajes ni conversaciones activas.</p>
-          </div>
-        ) : (
-          <div className="my-reports-list">
-            {conversationList.map(conv => (
-              <div
-                key={`${conv.reportId}_${conv.otherUserId}`}
-                className="report-card report-card-message"
-                onClick={() => setActiveConversation({ reportId: conv.reportId, otherUserId: conv.otherUserId })}
-              >
-                <div className="report-card-header">
-                  <h4>Caso: {conv.reportId}</h4>
-                  <span className={`status-badge found`}>
-                    {conv.messages.filter((m: any) => !m.isRead && m.senderId !== user._id).length > 0
-                      ? 'Nuevos'
-                      : 'Activo'}
-                  </span>
-                </div>
-                <div className="report-card-body">
-                  <p><Clock size={12} /> Último mensaje: {new Date(conv.lastMessage.createdAt).toLocaleDateString('es-VE')}</p>
-                  <p className="report-desc report-message-text">
-                    "{conv.lastMessage.message}"
-                  </p>
-                </div>
-                <div className="report-card-footer">
-                  <span>Abrir Chat <ArrowRight size={14} /></span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      )}
-
+      {/* Contenido de tabs */}
       {activeTab === 'reports' && (
-        <div className="profile-content">
-        <h3><FileText size={18} /> Mis reportes ({myReports.length})</h3>
-        
-        {loading ? (
-          <div className="profile-loading">Cargando reportes...</div>
-        ) : myReports.length === 0 ? (
-          <div className="profile-empty">
-            <p>Aún no has creado ningún reporte.</p>
-          </div>
-        ) : (
-          <div className="my-reports-list">
-            {myReports.map(person => (
-              <div key={person.idHash} className="report-card" onClick={() => onSelectPerson(person)}>
-                <div className="report-card-header">
-                  <h4>{person.name}</h4>
-                  <span className={`status-badge ${person.status === 'missing' ? 'missing' : 'found'}`}>
-                    {person.status === 'missing' ? 'En búsqueda' : 'Encontrado'}
-                  </span>
-                </div>
-                <div className="report-card-body">
-                  <p><Clock size={12} /> Actualizado: {new Date(person.metadata.createdAt || '').toLocaleDateString('es-VE')}</p>
-                  <p className="report-desc">{person.lastSeen?.description || person.description}</p>
-                </div>
-                <div className="report-card-footer">
-                  <span>Ver detalles <ArrowRight size={14} /></span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        <TabReports myReports={myReports} loading={loading}
+          onSelectPerson={onSelectPerson} />
       )}
-
       {activeTab === 'matches' && (
-        <div className="profile-content">
-          <h3><ShieldAlert size={18} /> Sugerencias de la IA ({myMatches.length})</h3>
-          
-          {loading ? (
-            <div className="profile-loading">Buscando coincidencias...</div>
-          ) : myMatches.length === 0 ? (
-            <div className="profile-empty">
-              <p>Aún no hay coincidencias detectadas para tus reportes.</p>
-            </div>
-          ) : (
-            <div className="my-reports-list">
-              {myMatches.map(match => {
-                const p = match.matchedPerson;
-                if (!p) return null;
-                const isMinor = p.age !== undefined && p.age < 18;
-                const scorePercent = Math.round(match.score * 100);
-                const scoreColor = scorePercent > 90 ? '#10b981' : scorePercent > 80 ? '#f59e0b' : '#3b82f6';
-                
-                return (
-                  <div key={match._id} className="report-card" style={{ borderLeft: `4px solid ${scoreColor}` }}>
-                    <div className="report-card-header">
-                      <h4>Posible Match para: {match.originalReportName}</h4>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: `${scoreColor}20`, color: scoreColor, padding: '4px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                        Confiabilidad: {scorePercent}%
-                      </div>
-                    </div>
-                    <div className="report-card-body">
-                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginTop: '0.5rem' }}>
-                        {p.photoUrl ? (
-                          <img src={p.photoUrl} alt="Foto" style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
-                        ) : (
-                          <div style={{ width: 60, height: 60, borderRadius: '8px', backgroundColor: 'var(--clr-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <User size={24} color="var(--clr-text-muted)" />
-                          </div>
-                        )}
-                        <div>
-                          <p style={{ fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>{p.name}</p>
-                          <p className="report-desc" style={{ margin: 0 }}>{p.lastSeen?.description || p.description}</p>
-                          {p.data?.origen && <p style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginTop: '0.25rem' }}><MapPin size={10} /> Registrado en: {p.data.origen}</p>}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="report-card-footer" style={{ borderTop: '1px solid var(--clr-border)', paddingTop: '0.75rem', marginTop: '0.75rem' }}>
-                      {isMinor ? (
-                        <Button variant="outline" size="sm" onClick={() => handleRequestMediation(match)} style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderColor: '#f59e0b', color: '#f59e0b' }}>
-                          <Shield size={16} /> Solicitar Mediación para Menor
-                        </Button>
-                      ) : (
-                        <Button variant="primary" size="sm" onClick={() => handleStartDirectChat(match)} style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                          <MessageCircle size={16} /> Contactar Institución
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <TabMatches myMatches={myMatches} loading={loading}
+          handleRequestMediation={handleRequestMediation}
+          handleStartDirectChat={handleStartDirectChat} />
+      )}
+      {activeTab === 'chats' && (
+        <TabChats conversationList={conversationList}
+          onSelectConversation={(reportId, otherUserId) =>
+            setActiveConversation({ reportId, otherUserId })} />
       )}
 
-      {/* Real-time 2-way Chat Modal Overlay */}
+      {/* ═══ ChatWidget (modal) ═══ */}
       {activeConversation && (
-        <div className="chat-modal-overlay" onClick={() => setActiveConversation(null)}>
-          <div className="chat-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="chat-header">
-              <div className="chat-header-info">
-                <h4>Conversación sobre el reporte</h4>
-                <p>ID Reporte: {activeConversation.reportId}</p>
-              </div>
-              <button className="chat-close-btn" onClick={() => setActiveConversation(null)}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="chat-messages-area">
-              {activeThreadMessages.map(msg => {
-                const isSender = msg.senderId === user._id;
-                return (
-                  <div
-                    key={msg._id}
-                    className={`chat-bubble-container ${isSender ? 'sender' : 'receiver'}`}
-                  >
-                    <div className="chat-bubble">
-                      {msg.message}
-                      <span className="chat-time">
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="chat-input-area">
-              <form onSubmit={handleSendMessage} className="chat-form">
-                <input
-                  type="text"
-                  className="chat-input"
-                  placeholder="Escribe un mensaje de respuesta..."
-                  value={replyText}
-                  onChange={e => setReplyText(e.target.value)}
-                  required
-                />
-                <button type="submit" className="chat-send-btn">
-                  <Send size={18} />
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
+        <ChatWidget
+          title="Conversación sobre el reporte"
+          subtitle={`ID Reporte: ${activeConversation.reportId}`}
+          messages={activeThreadMessages}
+          currentUserId={user._id}
+          replyText={replyText}
+          onReplyTextChange={setReplyText}
+          onSend={handleSendMessage}
+          onClose={() => setActiveConversation(null)}
+        />
       )}
     </div>
   );
