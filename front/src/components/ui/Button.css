@@ -13,7 +13,7 @@
   gap: 8px;
   border-radius: 50px; /* STANDARD: Pill style heredado de HomeActionCard */
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   cursor: pointer;
   transition: filter 0.2s ease, background-color 0.2s ease, transform 0.1s ease;
   border: 1px solid transparent;
@@ -82,15 +82,15 @@
 /* Sizes */
 .btn-sm {
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 .btn-md {
   padding: 10px 16px;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
 }
 .btn-lg {
   padding: 16px 24px;
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
 }
 
 /* Full Width */

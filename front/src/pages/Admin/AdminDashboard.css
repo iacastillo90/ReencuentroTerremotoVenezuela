@@ -37,7 +37,7 @@
   color: var(--clr-text-muted);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   border-radius: 8px;
   position: relative;
 }
@@ -57,8 +57,8 @@
   right: 0;
   background: var(--clr-danger);
   color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
   padding: 2px 5px;
   border-radius: 99px;
   min-width: 16px;
@@ -99,19 +99,19 @@
 .admin-topbar-header-row .admin-back-btn {
   display: flex !important;
   color: var(--clr-danger);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .admin-topbar h1 {
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
   margin: 0;
   color: var(--clr-text);
 }
 
 .admin-topbar-meta {
   color: var(--clr-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 .admin-content {
@@ -161,8 +161,8 @@
 .admin-stat-icon.green  { background: var(--clr-success-bg); color: var(--clr-success); }
 .admin-stat-icon.blue   { background: rgba(46, 107, 236, 0.15); color: var(--clr-primary); }
 
-.admin-stat-card h4 { margin: 0; font-size: 1.6rem; font-weight: 700; color: var(--clr-text); }
-.admin-stat-card p  { margin: 0; font-size: 0.8rem; color: var(--clr-text-muted); }
+.admin-stat-card h4 { margin: 0; font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--clr-text); }
+.admin-stat-card p  { margin: 0; font-size: var(--text-sm); color: var(--clr-text-muted); }
 
 /* --- Section Wrapper --- */
 .admin-section {
@@ -185,8 +185,8 @@
 
 .admin-section-header h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
   color: var(--clr-text);
   display: flex;
   align-items: center;
@@ -203,7 +203,7 @@
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   white-space: nowrap;
 }
 
@@ -211,8 +211,8 @@
   text-align: left;
   padding: 0.75rem 1rem;
   color: var(--clr-text-muted);
-  font-weight: 500;
-  font-size: 0.7rem;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -259,8 +259,8 @@
   display: inline-block;
   padding: 3px 10px;
   border-radius: 99px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
 }
 
 .admin-badge.missing  { background: var(--clr-danger-bg);  color: var(--clr-danger); }
@@ -278,8 +278,8 @@
 .btn-merge {
   padding: 0.35rem 0.9rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   border: none;
   cursor: pointer;
   background: var(--clr-success-bg);
@@ -295,8 +295,8 @@
 .btn-dismiss {
   padding: 0.35rem 0.9rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   border: none;
   cursor: pointer;
   background: var(--clr-danger-bg);
@@ -312,8 +312,8 @@
 .btn-found {
   padding: 0.35rem 0.9rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   border: 1px solid rgba(25, 166, 107, 0.3);
   cursor: pointer;
   background: transparent;
@@ -329,8 +329,8 @@
 .btn-secondary {
   padding: 0.35rem 0.9rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   border: 1px solid var(--clr-border);
   cursor: pointer;
   background: transparent;
@@ -345,8 +345,8 @@
 .btn-primary {
   padding: 0.5rem 1.25rem;
   border-radius: 50px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   border: none;
   cursor: pointer;
   background: var(--clr-primary);
@@ -382,7 +382,7 @@
   border: none;
   outline: none;
   color: var(--clr-text);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   width: 100%;
 }
 
@@ -395,7 +395,7 @@
   color: var(--clr-text-dim);
 }
 
-.admin-table-empty p { margin: 0.5rem 0 0; font-size: 0.9rem; }
+.admin-table-empty p { margin: 0.5rem 0 0; font-size: var(--text-md); }
 
 /* --- Loading --- */
 .admin-loading {
@@ -412,15 +412,15 @@
 .admin-text-white { color: var(--clr-text); }
 .admin-text-secondary { color: var(--clr-text-muted); }
 .admin-text-danger { color: var(--clr-danger); }
-.admin-urgency-high   { color: var(--clr-danger); font-weight: 600; }
-.admin-urgency-medium { color: var(--clr-amber);  font-weight: 600; }
-.admin-urgency-low    { color: var(--clr-success); font-weight: 600; }
+.admin-urgency-high   { color: var(--clr-danger); font-weight: var(--weight-semibold); }
+.admin-urgency-medium { color: var(--clr-amber);  font-weight: var(--weight-semibold); }
+.admin-urgency-low    { color: var(--clr-success); font-weight: var(--weight-semibold); }
 .admin-table-empty-simple { text-align: center; padding: 2rem; }
-.admin-score-high   { font-weight: bold; color: var(--clr-success); }
-.admin-score-medium { font-weight: bold; color: var(--clr-amber); }
+.admin-score-high   { font-weight: var(--weight-bold); color: var(--clr-success); }
+.admin-score-medium { font-weight: var(--weight-bold); color: var(--clr-amber); }
 .admin-header-actions { display: flex; gap: 1rem; align-items: center; }
 .admin-header-button-group { display: flex; gap: 0.5rem; }
-.admin-user-email { font-size: 12px; color: var(--clr-text-muted); }
+.admin-user-email { font-size: var(--text-xs); color: var(--clr-text-muted); }
 
 /* --- Error styles --- */
 .admin-error-text {
@@ -432,7 +432,7 @@
 .srch-action-cell { position: relative; text-align: center; }
 .srch-action-trigger {
   background: none; border: none; color: var(--clr-text-muted);
-  font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+  font-size: var(--text-xl); cursor: pointer; padding: 4px 8px; border-radius: 4px;
 }
 .srch-action-trigger:hover { background: rgba(255,255,255,.05); color: var(--clr-text); }
 .srch-action-menu {
@@ -443,7 +443,7 @@
 }
 .srch-action-item {
   display: block; width: 100%; text-align: left; padding: 8px 12px;
-  background: none; border: none; color: var(--clr-text); font-size: .85rem;
+  background: none; border: none; color: var(--clr-text); font-size: var(--text-base);
   cursor: pointer; border-radius: 4px; font-family: inherit;
 }
 .srch-action-item:hover { background: rgba(255,255,255,.06); }
@@ -455,12 +455,12 @@
 .srch-page-btn {
   display: flex; align-items: center; gap: 4px;
   background: none; border: 1px solid var(--clr-border); border-radius: 6px;
-  color: var(--clr-text); padding: 6px 14px; font-size: .85rem; cursor: pointer;
+  color: var(--clr-text); padding: 6px 14px; font-size: var(--text-base); cursor: pointer;
   font-family: inherit;
 }
 .srch-page-btn:disabled { opacity: .4; cursor: default; }
 .srch-page-btn:not(:disabled):hover { background: rgba(255,255,255,.04); }
-.srch-page-info { font-size: .82rem; color: var(--clr-text-muted); }
+.srch-page-info { font-size: var(--text-sm); color: var(--clr-text-muted); }
 
 .admin-error-banner {
   background: var(--clr-danger-bg);
@@ -477,7 +477,7 @@
 /* --- Section-specific --- */
 .admin-moderacion-hint {
   margin-bottom: 1rem;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 .admin-photo-sm {
@@ -490,7 +490,7 @@
 .admin-desc-pre {
   max-width: 400px;
   white-space: pre-wrap;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 
 .admin-desc-ellipsis {
@@ -498,15 +498,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 .admin-contact-name {
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 .admin-contact-email {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 .admin-action-stack {
@@ -554,7 +554,7 @@
 .admin-form-section-title {
   margin: 0 0 1.25rem 0;
   color: var(--clr-text);
-  font-size: 1rem;
+  font-size: var(--text-lg);
 }
 
 .admin-form-grid-full {
@@ -601,7 +601,7 @@
 
 .admin-merge-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -612,7 +612,7 @@
 .admin-merge-subtitle {
   margin: 0.5rem 0 0 0;
   color: var(--clr-text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
 }
 
 .admin-merge-close {
@@ -674,8 +674,8 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--clr-text-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -694,11 +694,11 @@
 .admin-merge-name {
   margin: 0;
   color: var(--clr-text);
-  font-size: 1.4rem;
+  font-size: var(--text-2xl);
 }
 
 .admin-merge-detail {
-  font-size: 1rem;
+  font-size: var(--text-lg);
   color: var(--clr-text-muted);
   margin: 0.25rem 0 0 0;
 }
@@ -727,7 +727,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   background: var(--clr-bg);
   padding: 1rem;
   border-radius: 8px;
@@ -761,7 +761,7 @@
 
 .admin-merge-info-value-scroll {
   text-align: right;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   max-height: 80px;
   overflow-y: auto;
 }
@@ -792,8 +792,8 @@
   border-radius: 20px;
   background: var(--clr-success);
   color: white;
-  font-weight: bold;
-  font-size: 0.9rem;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
   box-shadow: 0 4px 6px rgba(25, 166, 107, 0.2);
 }
 
@@ -803,7 +803,7 @@
   border: 1px solid rgba(255, 193, 7, 0.4);
   padding: 1.5rem;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: var(--text-lg);
   color: var(--clr-amber);
   display: flex;
   gap: 1rem;
@@ -815,7 +815,7 @@
 .admin-merge-warning-strong {
   display: block;
   margin-bottom: 0.25rem;
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
   color: var(--clr-amber);
 }
 
@@ -847,7 +847,7 @@
 
 .admin-merge-status-active {
   color: var(--clr-success);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 /* --- Expanded Person Modal --- */
@@ -900,16 +900,16 @@
 
 .admin-expanded-badge {
   color: var(--clr-primary);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 .admin-expanded-name {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: var(--text-3xl);
   color: var(--clr-text);
 }
 
@@ -946,14 +946,14 @@
 .admin-expanded-detail-title {
   margin: 0 0 1rem 0;
   color: var(--clr-text);
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
   border-bottom: 1px solid var(--clr-border);
   padding-bottom: 0.5rem;
 }
 
 .admin-expanded-detail-text {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
   line-height: 1.6;
   color: var(--clr-text);
   white-space: pre-wrap;
@@ -972,14 +972,14 @@
 }
 
 .admin-expanded-stat-label {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-text-muted);
   text-transform: uppercase;
 }
 
 .admin-expanded-stat-value {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
 }
 
 /* --- Expanded Meta --- */
@@ -1002,19 +1002,19 @@
 
 .admin-expanded-meta-label {
   color: var(--clr-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   display: block;
 }
 
 .admin-expanded-meta-value {
-  font-size: 1rem;
+  font-size: var(--text-lg);
   word-break: break-word;
   display: block;
 }
 
 .admin-expanded-meta-value-mono {
   font-family: monospace;
-  font-size: 1rem;
+  font-size: var(--text-lg);
   word-break: break-all;
   display: block;
 }
@@ -1054,7 +1054,7 @@
 .admin-drawer-header h3 {
   margin: 0;
   color: var(--clr-text);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
 }
 
 .admin-drawer-close {
@@ -1099,7 +1099,7 @@
 .admin-form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-text-muted);
 }
 
@@ -1212,8 +1212,8 @@
   }
 
   .admin-sidebar-logo h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
     margin: 0;
     color: var(--clr-text);
   }
@@ -1225,8 +1225,8 @@
   .admin-sidebar-logo small {
     display: block;
     color: var(--clr-text-muted);
-    font-size: 0.7rem;
-    font-weight: 400;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-normal);
     margin-top: 2px;
   }
 
@@ -1234,7 +1234,7 @@
     flex-direction: row;
     gap: 0.75rem;
     padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
+    font-size: var(--text-md);
     border-radius: 0;
     border-left: 3px solid transparent;
   }
@@ -1264,7 +1264,7 @@
     align-items: center;
     gap: 0.5rem;
     color: var(--clr-text-muted);
-    font-size: 0.85rem;
+    font-size: var(--text-base);
     cursor: pointer;
     background: none;
     border: none;
@@ -1290,7 +1290,7 @@
   }
 
   .admin-topbar h1 {
-    font-size: 1.25rem;
+    font-size: var(--text-xl);
   }
 
   .admin-content {

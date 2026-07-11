@@ -45,7 +45,7 @@
 }
 
 .profile-header h2 {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   color: var(--clr-text);
   margin-bottom: 0.5rem;
 }
@@ -56,7 +56,7 @@
   justify-content: center;
   gap: 1rem;
   color: var(--clr-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   margin-bottom: 1.5rem;
 }
 
@@ -75,7 +75,7 @@
   border: 1px solid rgba(229, 37, 32, 0.3);
   padding: 8px 16px;
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -88,7 +88,7 @@
 }
 
 .profile-content h3 {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   color: var(--clr-text);
   margin-bottom: 1.5rem;
   display: flex;
@@ -127,13 +127,13 @@
 
 .report-card-header h4 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
   color: var(--clr-text);
 }
 
 .report-card-body {
   color: var(--clr-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 
 .report-card-body p {
@@ -161,12 +161,12 @@
 }
 
 .report-card-footer span {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-primary);
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 .profile-content {
@@ -205,7 +205,7 @@
 }
 
 .profile-role-desc {
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   color: var(--clr-text-muted);
   margin-bottom: 1rem;
 }
@@ -275,8 +275,8 @@
   background: none;
   border: none;
   color: var(--clr-text-muted);
-  font-weight: 500;
-  font-size: 1rem;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-lg);
   cursor: pointer;
   padding: 0.5rem;
   transition: color 0.15s;
@@ -284,7 +284,7 @@
 
 .profile-tab.active {
   color: var(--clr-primary);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .profile-tab:hover {
@@ -297,7 +297,7 @@
   color: white;
   border-radius: 50%;
   padding: 2px 8px;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 /* --- Match Cards --- */
@@ -326,7 +326,7 @@
 
 .match-card-header h4 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-lg);
   color: var(--clr-text);
 }
 
@@ -336,8 +336,8 @@
   gap: 0.5rem;
   padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .match-card-body {
@@ -374,18 +374,18 @@
 }
 
 .match-card-name {
-  font-weight: bold;
+  font-weight: var(--weight-bold);
   margin: 0 0 0.25rem 0;
 }
 
 .match-card-desc {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-text-dim);
 }
 
 .match-card-origin {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
   margin-top: 0.25rem;
   display: flex;
@@ -442,13 +442,13 @@
 
 .chat-header-info h4 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
   color: var(--clr-text);
 }
 
 .chat-header-info p {
   margin: 4px 0 0 0;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
 }
 
@@ -493,7 +493,7 @@
   max-width: 75%;
   padding: 10px 14px;
   border-radius: 12px;
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   line-height: 1.4;
   position: relative;
 }
@@ -512,7 +512,7 @@
 
 .chat-time {
   display: block;
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   margin-top: 4px;
   text-align: right;
   opacity: 0.6;
@@ -531,7 +531,7 @@
   background: rgba(14, 24, 56, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
-  font-size: 0.88rem;
+  font-size: var(--text-base);
 }
 
 .chat-input:focus {

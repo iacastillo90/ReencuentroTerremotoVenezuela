@@ -47,8 +47,8 @@
 }
 
 .legend-title {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   color: var(--clr-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -145,13 +145,13 @@
 }
 
 .legend-label {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   color: var(--clr-text);
 }
 
 .legend-source {
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   color: var(--clr-text-muted);
 }
 
@@ -159,7 +159,7 @@
   margin-top: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--clr-border);
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   color: var(--clr-text-dim);
   text-align: center;
 }
@@ -201,10 +201,10 @@
   }
   
   .legend-label {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
   }
   
   .legend-source {
-    font-size: 0.6rem;
+    font-size: var(--text-2xs);
   }
 }

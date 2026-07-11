@@ -42,8 +42,8 @@
   backdrop-filter: blur(8px);
   color: var(--clr-text-muted);
   font-family: var(--font-family, 'Inter'), sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
@@ -104,7 +104,7 @@
   }
   .filter-chip {
     padding: 0.6rem 1.25rem;
-    font-size: 0.95rem;
+    font-size: var(--text-md);
   }
 }
 

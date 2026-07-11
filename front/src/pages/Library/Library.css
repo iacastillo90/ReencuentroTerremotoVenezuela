@@ -16,13 +16,13 @@
 }
 
 .library-header h2 {
-  font-size: 1.8rem;
+  font-size: var(--text-3xl);
   color: var(--clr-text);
   margin-bottom: 0.5rem;
 }
 
 .library-note {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-amber);
   background: rgba(245, 158, 11, 0.1);
   padding: 0.75rem;
@@ -44,8 +44,8 @@
   background: none;
   border: none;
   color: var(--clr-text-muted);
-  font-weight: 500;
-  font-size: 1.05rem;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-lg);
   padding: 0.5rem 1rem;
   cursor: pointer;
   position: relative;
@@ -87,7 +87,7 @@
   outline: none;
   width: 100%;
   color: var(--clr-text);
-  font-size: 1rem;
+  font-size: var(--text-lg);
 }
 
 .library-category {
@@ -95,7 +95,7 @@
 }
 
 .library-category h3 {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   color: var(--clr-text);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
@@ -135,7 +135,7 @@
 
 .card-header h4 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
   color: var(--clr-primary);
 }
 
@@ -147,14 +147,14 @@
 
 .library-card p {
   color: var(--clr-text-secondary); /* Ensure good contrast */
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   line-height: 1.5;
   margin-bottom: 1rem;
   flex-grow: 1;
 }
 
 .card-notes {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   background: rgba(0,0,0,0.05);
   padding: 0.5rem;
   border-radius: 6px;
@@ -170,7 +170,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--clr-success);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }

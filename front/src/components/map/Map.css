@@ -38,14 +38,14 @@
 
 .popup-card h3 {
   margin: 0 0 8px 0;
-  font-size: 16px;
+  font-size: var(--text-lg);
   color: #1f2937;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .popup-card p {
   margin: 4px 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #4b5563;
   text-align: left;
 }
@@ -54,8 +54,8 @@
   display: inline-block;
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   margin-bottom: 8px !important;
   text-align: center !important;
@@ -90,5 +90,5 @@
   background-color: rgba(37, 99, 235, 0.9);
   color: white;
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }

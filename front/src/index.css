@@ -172,6 +172,29 @@
      line-height: 1.4 para legibilidad en pantallas pequeñas.
      color-scheme: dark → inputs nativos en tema oscuro.
      -webkit-font-smoothing: antialiased → mejor renderizado en macOS. */
+
+  /* ═══ Tokens de tipografía ═══
+     Escala única de tamaños y pesos para toda la aplicación.
+     Cualquier componente debe usar var(--text-*) y var(--weight-*)
+     en lugar de valores hardcodeados. */
+
+  --text-2xs: 0.65rem;
+  --text-xs:  0.72rem;
+  --text-sm:  0.8rem;
+  --text-base: 0.85rem;
+  --text-md:  0.95rem;
+  --text-lg:  1.05rem;
+  --text-xl:  1.2rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+  --weight-black: 900;
+
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.4;
@@ -257,8 +280,8 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
    .badge.found   → encontrado (verde). */
 .badge {
   display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   padding: 3px 8px;
   border-radius: var(--radius-full);
   text-transform: uppercase;
@@ -297,7 +320,7 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
   position: absolute; inset: 0; z-index: 2;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; color: var(--clr-amber); text-align: center;
-  font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+  font-size: var(--text-xs); font-weight: var(--weight-bold); letter-spacing: .03em;
 }
 
 /* ─── Indicador "Canal SOS" (dot con pulso) ──────────────── */
@@ -309,7 +332,7 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-full);
   background: rgba(124, 0, 10, .35); color: #fff;
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  font-size: 11px; font-weight: var(--weight-extrabold); text-transform: uppercase; letter-spacing: .04em;
 }
 .sos-pill .sos-dot { width: 8px; height: 8px; border-radius: 50%; background: #16c77a; }
 @media (prefers-reduced-motion: no-preference) {
@@ -350,68 +373,68 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 
 h1, .text-h1 {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: clamp(32px, 5vw, 64px);
   letter-spacing: -0.02em;
 }
 
 h2, .text-h2 {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: clamp(24px, 4vw, 40px);
   letter-spacing: -0.02em;
 }
 
 h3, .text-h3 {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: clamp(20px, 3vw, 24px);
   letter-spacing: -0.02em;
 }
 
 .text-subtitle {
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   font-size: 24px;
 }
 
 body, p, .text-body {
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   font-size: 16px;
   line-height: 1.4;
 }
 
 strong, b, .text-body-bold {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   font-size: 16px;
 }
 
 small, .text-small {
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
 }
 
 .text-pre-title {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 10px;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-2xs);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 button, .text-button {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
   letter-spacing: 0.03em;
 }
 
 a.text-link {
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
   text-decoration: underline;
 }
