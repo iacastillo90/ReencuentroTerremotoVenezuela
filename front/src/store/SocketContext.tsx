@@ -1,3 +1,35 @@
+/**
+ * store/SocketContext.tsx — Conexión WebSocket y notificaciones
+ *
+ * PROPÓSITO:
+ *   Mantiene una conexión Socket.IO con el backend para:
+ *   1. Chat en tiempo real (mensajes directos, salas de mediación).
+ *   2. Notificaciones push (nuevos mensajes, cambios de estado).
+ *
+ * ¿CÓMO FUNCIONA?
+ *   - Se conecta solo cuando hay un usuario logueado (useAuth).
+ *   - Usa socket.io-client con transporte websocket (fallback polling).
+ *   - Escucha eventos 'notification' para notificaciones en tiempo real.
+ *   - Escucha 'receive_message' para chat (ver ProfilePage).
+ *   - Al cerrar sesión (user → null), desconecta el socket.
+ *
+ ¿POR QUÉ UN CONTEXTO?
+ *   Necesitamos que socket sea accesible desde cualquier componente
+ *   (ProfilePage para chat, App para notificaciones). Un contexto
+ *   evita prop drilling o crear una nueva conexión en cada página.
+ *
+ * EXPONE:
+ *   socket:          instancia de Socket.IO (null si no conectado)
+ *   isConnected:     estado de la conexión
+ *   notifications:   array de notificaciones recibidas
+ *   unreadCount:     conteo de no leídas
+ *   markAllAsRead:   marca todas como leídas
+ *   clearNotifications: limpia la lista
+ *
+ * USO:
+ *   const { socket, isConnected } = useSocket();
+ *   socket?.emit('request_match_chat', { matchId });
+ */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -31,7 +63,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    // Only connect if the user is logged in
+    // Solo conecta si hay sesión activa.
     if (!user) {
       if (socket) {
         socket.disconnect();
@@ -57,7 +89,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setIsConnected(false);
     });
 
-    // Listen for real-time notifications
+    // Notificaciones en tiempo real (ej: nuevo mensaje).
     socketInstance.on('notification', (data: { title: string; message: string; type?: 'info' | 'success' | 'warning' | 'danger' }) => {
       console.log('[Socket] Notification received:', data);
       const newNotif: Notification = {
@@ -91,12 +123,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <SocketContext.Provider
       value={{
-        socket,
-        isConnected,
-        notifications,
-        unreadCount,
-        markAllAsRead,
-        clearNotifications,
+        socket, isConnected,
+        notifications, unreadCount,
+        markAllAsRead, clearNotifications,
       }}
     >
       {children}

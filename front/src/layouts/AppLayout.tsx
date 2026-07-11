@@ -1,3 +1,30 @@
+/**
+ * layouts/AppLayout.tsx — Estructura principal de la aplicación
+ *
+ * PROPÓSITO:
+ *   Layout que envuelve todas las vistas (excepto Admin y Auth).
+ *   Contiene:
+ *   - Navbar superior: marca, navegación de escritorio (pills),
+ *     SOS pill, notificaciones, menú de usuario, botón admin.
+ *   - Sidebar: contenido opcional (FeedSidebar en vista feed).
+ *   - Content area: la página activa (children).
+ *   - MobileBottomNav: navegación inferior en móvil.
+ *   - "Más" sheet: drawer con opciones secundarias (logística, mapa).
+ *
+ * ¿POR QUÉ UN LAYOUT?
+ *   La navegación (navbar, bottom nav) debe persistir entre vistas
+ *   sin re-renderizar todo el árbol. AppLayout mantiene esos
+ *   elementos estables y solo cambia children.
+ *
+ * NOTIFICACIONES:
+ *   Lee notificaciones de SocketContext (recibidas en tiempo real).
+ *   Muestra badge con conteo de no leídas y dropdown con lista.
+ *   Al hacer click en una notificación, navega al perfil.
+ *
+ * MENÚ DE USUARIO:
+ *   - Desktop: dropdown con "Mi perfil" y "Cerrar sesión".
+ *   - Mobile: botón avatar que navega al perfil directamente.
+ */
 import React, { useState } from 'react';
 import {
   Settings, Map, X, User as UserIcon, LogOut,
@@ -24,12 +51,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({
-  children,
-  sidebar,
-  activeView,
-  onViewChange,
-  onReport,
-  onAdmin
+  children, sidebar, activeView, onViewChange, onReport, onAdmin
 }) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -37,8 +59,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAllAsRead, clearNotifications } = useSocket();
 
-
-  // Destinos secundarios agrupados en "Más"
   const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
     { view: 'logistics',  icon: <Truck size={20} />,       label: 'Logística',           desc: 'Refugios y vías' },
     { view: 'map',        icon: <Map size={20} />,         label: 'Mapa de calor',       desc: 'Vista geográfica' },
@@ -49,7 +69,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
   return (
     <div className="app-shell">
-      {/* ─ Top Navbar ─ */}
+      {/* ═══ Top Navbar ═══ */}
       <nav className="navbar">
         <div className="nav-left">
           <button className="nav-brand" onClick={() => onViewChange('home')} aria-label="Inicio">
@@ -61,23 +81,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </button>
         </div>
 
-        {/* Nav de escritorio */}
         <div className="nav-toggle-pills">
-          <Button variant={activeView === 'home' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('home')}>
-            <Home size={14} /> Inicio
-          </Button>
-          <Button variant={activeView === 'search' || activeView === 'feed' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('search')}>
-            <Search size={14} /> Buscar
-          </Button>
-          <Button variant={activeView === 'map' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('map')}>
-            <Map size={14} /> Mapa
-          </Button>
-          <Button variant={activeView === 'directorio' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('directorio')}>
-            <Building2 size={14} /> Directorio
-          </Button>
-          <Button variant={activeView === 'manual' ? 'danger' : 'ghost'} size="sm" className="toggle-pill-override" onClick={() => onViewChange('manual')}>
-            <ShieldCheck size={14} /> Manual
-          </Button>
+          {[
+            { view: 'home' as View, icon: <Home size={14} />, label: 'Inicio' },
+            { view: 'search' as View, icon: <Search size={14} />, label: 'Buscar' },
+            { view: 'map' as View, icon: <Map size={14} />, label: 'Mapa' },
+            { view: 'directorio' as View, icon: <Building2 size={14} />, label: 'Directorio' },
+            { view: 'manual' as View, icon: <ShieldCheck size={14} />, label: 'Manual' },
+          ].map(({ view, icon, label }) => (
+            <Button key={view}
+              variant={activeView === view ? 'danger' : 'ghost'} size="sm"
+              className="toggle-pill-override"
+              onClick={() => onViewChange(view)}>
+              {icon} {label}
+            </Button>
+          ))}
         </div>
 
         <div className="nav-actions">
@@ -86,24 +104,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </span>
           {user ? (
             <>
-              {/* Notification Center */}
+              {/* Centro de notificaciones */}
               <div className="nav-notifications-menu">
-                <button
-                  className="nav-notifications-btn"
-                  onClick={() => {
-                    setNotifOpen(prev => !prev);
-                    setUserMenuOpen(false);
-                  }}
-                  aria-haspopup="true"
-                  aria-expanded={notifOpen}
-                  title="Notificaciones"
-                >
+                <button className="nav-notifications-btn"
+                  onClick={() => { setNotifOpen(prev => !prev); setUserMenuOpen(false); }}
+                  aria-haspopup="true" aria-expanded={notifOpen} title="Notificaciones">
                   <Bell size={20} />
-                  {unreadCount > 0 && (
-                    <span className="notifications-badge">{unreadCount}</span>
-                  )}
+                  {unreadCount > 0 && <span className="notifications-badge">{unreadCount}</span>}
                 </button>
-                
                 {notifOpen && (
                   <div className="notifications-dropdown">
                     <div className="notifications-header">
@@ -117,7 +125,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         )}
                       </div>
                     </div>
-                    
                     <div className="notifications-list">
                       {notifications.length === 0 ? (
                         <div className="notifications-empty">
@@ -126,16 +133,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                         </div>
                       ) : (
                         notifications.map(notif => (
-                          <div
-                            key={notif.id}
+                          <div key={notif.id}
                             className={`notification-item ${!notif.read ? 'unread' : ''}`}
-                            onClick={() => {
-                              // Mark this notification as read on click
-                              notif.read = true;
-                              setNotifOpen(false);
-                              go('profile');
-                            }}
-                          >
+                            onClick={() => { notif.read = true; setNotifOpen(false); go('profile'); }}>
                             <span className={`notification-accent ${notif.type}`} />
                             <strong className="notification-title">{notif.title}</strong>
                             <span className="notification-msg">{notif.message}</span>
@@ -150,16 +150,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 )}
               </div>
 
+              {/* Menú de usuario desktop */}
               <div className="nav-user-menu hide-mobile">
-                <button
-                  className="nav-user"
-                  onClick={() => {
-                    setUserMenuOpen(open => !open);
-                    setNotifOpen(false);
-                  }}
-                  aria-haspopup="menu"
-                  aria-expanded={userMenuOpen}
-                >
+                <button className="nav-user"
+                  onClick={() => { setUserMenuOpen(open => !open); setNotifOpen(false); }}
+                  aria-haspopup="menu" aria-expanded={userMenuOpen}>
                   <UserIcon size={18} />
                   <span className="hide-mobile nav-user-name">{user.name.split(' ')[0]}</span>
                   <ChevronDown size={14} className="hide-mobile" />
@@ -175,24 +170,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   </div>
                 )}
               </div>
-              <button 
-                className="hide-desktop" 
-                onClick={() => go('profile')} 
-                title="Mi perfil"
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.08)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: 'none',
-                  color: '#e2e8f0',
-                  cursor: 'pointer',
-                  marginLeft: '0.5rem'
-                }}
-              >
+
+              {/* Botón perfil mobile */}
+              <button className="hide-desktop" onClick={() => go('profile')} title="Mi perfil"
+                style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none',
+                  color: '#e2e8f0', cursor: 'pointer', marginLeft: '0.5rem' }}>
                 <UserIcon size={20} />
               </button>
             </>
@@ -209,22 +192,16 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </nav>
 
-      {/* ─ Body ─ */}
+      {/* ═══ Body ═══ */}
       <div className="app-body">
         {sidebar && <aside className="sidebar">{sidebar}</aside>}
-        <main className="content-area">
-          {children}
-        </main>
+        <main className="content-area">{children}</main>
       </div>
 
-      {/* ─ Bottom Nav — móvil (5 ítems) ─ */}
-      <MobileBottomNav
-        activeView={activeView}
-        onNavigate={(v) => go(v as any)}
-        onReport={onReport}
-      />
+      {/* ═══ Bottom Nav (móvil) ═══ */}
+      <MobileBottomNav activeView={activeView} onNavigate={(v) => go(v as any)} onReport={onReport} />
 
-      {/* ─ Hoja "Más" ─ */}
+      {/* ═══ Hoja "Más" ═══ */}
       {moreOpen && (
         <div className="drawer-overlay" onClick={() => setMoreOpen(false)}>
           <div className="more-sheet" onClick={e => e.stopPropagation()}>

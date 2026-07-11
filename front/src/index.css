@@ -1,14 +1,53 @@
 /* ═══════════════════════════════════════════════════════════
    REENCUENTROS VENEZUELA — Design System Global
-   "Juntos te encontramos" · Mobile-first · Tema oscuro humanitario
-   Marca oficial (brand book 30/06) · Inter · azul/rojo/amarillo
+   "Juntos te encontramos"
+   
+   PROPÓSITO:
+     Este archivo es el SISTEMA DE DISEÑO de la aplicación.
+     Define los tokens visuales (colores, sombras, radios,
+     tipografía) y estilos base (reset, scrollbar, utilidades).
+   
+   FILOSOFÍA:
+     - Mobile-first: los estilos base asumen mobile; los
+       media queries (si los hay) son para desktop.
+     - Tema oscuro obligatorio: la app completa es dark mode.
+       No hay soporte para light mode (ni lo habrá).
+     - Variables CSS: todos los colores, radios y sombras
+       se definen como variables CSS en :root. Ningún
+       componente debe usar valores hardcodeados (#fff, #000).
+     - Inter tipografía: la fuente principal es Inter de Google
+       Fonts. No hay fuentes secundarias (ni variable fonts).
+   
+   MARCA (brand book 30/06/2026):
+     - Azul (#0D47A1 → #2E6BEC): confianza, institucional.
+     - Rojo (#E52520): urgencia, peligro, desaparecidos.
+     - Amarillo (#FFC107): esperanza, encontrados, protección.
+     - Fondo (#07101C): azul profundo, seriedad, humanitario.
+   
+   CÓMO USAR:
+     Los componentes importan sus propios CSS (ej: Button.css)
+     y usan var(--clr-primary), var(--clr-surface), etc.
+     NO duplican los tokens — los heredan de este archivo.
+   
    ════════════════════════════════════════════════════════════ */
 
+/* ─── Google Fonts: Inter ──────────────────────────────── */
+/* Cargar Inter desde Google Fonts con los pesos que usa
+   el design system: 400 (regular), 500 (medium), 600 (semi-bold),
+   700 (bold), 800 (extra-bold), 900 (black).
+   display=swap: prioriza renderizado del texto sobre descarga
+   de la fuente (mejor First Contentful Paint). */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* ─── Tokens ─────────────────────────────────────────────── */
+/* ─── Tokens de diseño ─────────────────────────────────── */
 :root {
-  /* Figma - Primary Blue */
+  /* ═══ Figma - Primary Blue ═══
+     Escala completa de azules, desde el más claro (50)
+     hasta el más oscuro (950). Usamos estos para:
+     - hover states → blue-400
+     - primary buttons → blue-500
+     - backgrounds activos → blue-800/900 */
+
   --blue-50:  #E8F0FC;
   --blue-100: #D2E0F9;
   --blue-200: #A5C2F3;
@@ -21,7 +60,12 @@
   --blue-900: #06142D;
   --blue-950: #040E20;
 
-  /* Figma - Gray */
+  /* ═══ Figma - Gray ═══
+     Grises neutrales para textos y fondos secundarios.
+     50-200: fondos claros (poco usados, tema oscuro).
+     300-500: textos muteados y bordes.
+     600-950: fondos oscuros y textos principales. */
+
   --gray-50:  #F0F0F0;
   --gray-100: #E2E2E2;
   --gray-200: #C5C5C5;
@@ -34,23 +78,32 @@
   --gray-900: #191919;
   --gray-950: #131313;
 
-  /* App Mapping — TEMA OSCURO (brand book oficial 30/06/2026) */
+  /* ═══ App Mapping — TEMA OSCURO ═══
+     Mapeo de la paleta Figma a nombres semánticos de la app.
+     Estos son los tokens que los componentes USAN realmente. */
+
   --white:          #FFFFFF;
-  --ink:            #07101C;
-  --ink-2:          #0B1423;
-  --ink-3:          #122033;
-  --clr-bg:         #07101C;
-  --clr-surface:    #0E1A2B;
-  --clr-card:       #111B2C;
-  --clr-card-grad:  linear-gradient(180deg, #121E30, #0B1423);
-  --clr-border:     #243448;
-  --clr-hover:      #18253A;
+  --ink:            #07101C;  /* Fondo principal de la app */
+  --ink-2:          #0B1423;  /* Fondo secundario (cards, modales) */
+  --ink-3:          #122033;  /* Fondo terciario (hover, inputs) */
+  --clr-bg:         #07101C;  /* alias semántico de --ink */
+  --clr-surface:    #0E1A2B;  /* superficie de cards y paneles */
+  --clr-card:       #111B2C;  /* fondo de tarjetas individuales */
+  --clr-card-grad:  linear-gradient(180deg, #121E30, #0B1423); /* gradiente sutil de cards */
+  --clr-border:     #243448;  /* bordes de cards, inputs, separadores */
+  --clr-hover:      #18253A;  /* hover de items en listas */
 
-  --clr-text:       #FFFFFF;
-  --clr-text-muted: #8390A3;
-  --clr-text-dim:   #5E6C80;
+  --clr-text:       #FFFFFF;       /* texto principal */
+  --clr-text-muted: #8390A3;       /* texto secundario (descripciones) */
+  --clr-text-dim:   #5E6C80;       /* texto terciario (timestamps, metadatos) */
 
-  /* Marca — azul confianza, rojo urgencia, amarillo esperanza */
+  /* ═══ Colores de marca ═══
+     Tres colores base del brand book 30/06:
+     - brand-blue: azul institucional (links, botones primarios)
+     - brand-blue-soft: azul más brillante (hover, glows)
+     - brand-red: rojo de alerta/urgencia
+     - brand-yellow: amarillo de esperanza/protección */
+
   --brand-blue:     #0D47A1;
   --brand-blue-soft:#2E6BEC;
   --brand-red:      #E52520;
@@ -58,15 +111,19 @@
   --clr-primary:    #2E6BEC;
   --clr-primary-glow: rgba(46, 107, 236, 0.28);
 
-  /* Secondary Palettes (estados, sobre fondo oscuro) */
-  --clr-danger:     #E52520;
-  --clr-danger-bg:  rgba(229, 37, 32, 0.12);
-  --clr-success:    #19A66B;
-  --clr-success-bg: rgba(25, 166, 107, 0.14);
-  --clr-amber:      #FFC107;
-  --clr-amber-bg:   rgba(255, 193, 7, 0.12);
+  /* ═══ Paletas secundarias (estados, sobre fondo oscuro) ═══ */
+  --clr-danger:     #E52520;        /* texto de error/eliminar */
+  --clr-danger-bg:  rgba(229, 37, 32, 0.12);   /* bg de badges de error */
+  --clr-success:    #19A66B;        /* texto de éxito/encontrado */
+  --clr-success-bg: rgba(25, 166, 107, 0.14);  /* bg de badges de éxito */
+  --clr-amber:      #FFC107;        /* advertencias, protección */
+  --clr-amber-bg:   rgba(255, 193, 7, 0.12);    /* bg de badges amber */
 
-  /* Aliases legacy (usados por modales/admin: --card-bg, --text-primary, …) */
+  /* ═══ Aliases legacy ═══
+     Nombres más cortos que usaban componentes viejos.
+     Se mantienen por compatibilidad. NO uses estos en
+     componentes nuevos — usa los semánticos (clr-*). */
+
   --bg-color:        var(--clr-bg);
   --card-bg:         var(--clr-card);
   --border-color:    var(--clr-border);
@@ -74,7 +131,10 @@
   --text-secondary:  var(--clr-text-muted);
   --primary-color:   var(--clr-primary);
 
-  /* Aliases cortos estilo mockup (usados en estilos inline) */
+  /* ═══ Aliases cortos ═══
+     Nombres de un solo color (usados en estilos inline
+     de componentes legacy). Prefiere los nombres completos. */
+
   --blue:   var(--brand-blue-soft);
   --line:   var(--clr-border);
   --red:    var(--brand-red);
@@ -83,23 +143,35 @@
   --purple: #6048d8;
   --muted:  var(--clr-text-muted);
 
-  /* Spacing */
+  /* ═══ Spacing ═══
+     --nav-h: altura de la barra de navegación superior.
+     --bottom-nav-h: altura de la navegación inferior (mobile).
+     --sidebar-w: ancho del sidebar en desktop. */
+
   --nav-h: 60px;
   --bottom-nav-h: 64px;
   --sidebar-w: 360px;
 
-  /* Radius */
+  /* ═══ Border Radius ═══
+     Escala de radios de borde, de sutil (8px) a muy redondeado (24px). */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --radius-full: 999px;
+  --radius-full: 999px; /* para pills, badges, avatares */
 
-  /* Shadows (profundas para tema oscuro) */
+  /* ═══ Sombras ═══
+     Profundas para tema oscuro (fondos oscuros necesitan
+     sombras más pronunciadas para crear jerarquía visual). */
   --shadow-card: 0 10px 30px rgba(3, 8, 16, 0.45);
   --shadow-modal: 0 24px 70px rgba(3, 8, 16, 0.6);
 
-  /* Typography */
+  /* ═══ Tipografía base ═══
+     font-family: Inter como principal, system-ui como fallback.
+     font-size: 16px para que 1rem = 16px en todos los navegadores.
+     line-height: 1.4 para legibilidad en pantallas pequeñas.
+     color-scheme: dark → inputs nativos en tema oscuro.
+     -webkit-font-smoothing: antialiased → mejor renderizado en macOS. */
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.4;
@@ -108,15 +180,21 @@
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
+/* Box-sizing border-box en todos los elementos */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* html, body, #root deben ocupar el 100% de la altura
+   para que los layouts de página completa funcionen. */
 html, body, #root { height: 100%; }
 
 body {
-  background: var(--clr-bg);
-  color: var(--clr-text);
-  overflow-x: hidden;
+  background: var(--clr-bg);         /* fondo oscuro principal */
+  color: var(--clr-text);            /* texto blanco por defecto */
+  overflow-x: hidden;                /* evita scroll horizontal no deseado */
 }
 
+/* #root es flex column para que el footer (si existe)
+   se quede al fondo. width/max-width 100% evita desbordes. */
 #root {
   display: flex;
   flex-direction: column;
@@ -124,25 +202,45 @@ body {
   max-width: 100%;
 }
 
+/* Imágenes responsivas por defecto */
 img { max-width: 100%; display: block; }
+
+/* Botones heredan la fuente del sistema (no el font del user agent) */
 button { font-family: inherit; }
+
+/* Links no tienen subrayado por defecto (se usa en componentes específicos) */
 a { text-decoration: none; color: inherit; }
 
-/* Controles nativos en tema oscuro (evita el desplegable blanco de <select>) */
+/* ─── Controles nativos en tema oscuro ──────────────────── */
+/* Evita el fondo blanco de inputs/selects en dark mode */
 input, select, textarea, button { color-scheme: dark; }
+
+/* Los options de los selects suelen tener fondo blanco en Windows/Linux.
+   Esto los fuerza al tema oscuro. */
 select option { background: var(--clr-surface); color: var(--clr-text); }
 
-/* ─── Scrollbar ──────────────────────────────────────────── */
+/* ─── Scrollbar personalizada ──────────────────────────── */
+/* Scrollbar delgada (4px) y semi-transparente para no
+   distraer del contenido. Solo funciona en WebKit (Chrome, Edge, Safari). */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: var(--radius-full); }
 
 /* ─── Utility Classes ────────────────────────────────────── */
+/* Clases helper de una sola línea para evitar repetir CSS. */
+
+/* spinner: animación de rotación para Loaders */
 .spinner { animation: spin 0.8s linear infinite; }
+
+/* flex-center: centrado rápido */
 .flex-center { display: flex; align-items: center; justify-content: center; }
+
+/* gap-2: espaciado horizontal/vertical rápido */
 .gap-2 { gap: 0.5rem; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Animaciones globales de entrada */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -153,6 +251,10 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Badge (etiqueta de estado) ────────────────────────── */
+/* Componente pequeño para mostrar estado de una persona.
+   .badge.missing → desaparecido (rojo).
+   .badge.found   → encontrado (verde). */
 .badge {
   display: inline-block;
   font-size: 0.7rem;
@@ -166,6 +268,8 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 .badge.found   { background: var(--clr-success-bg); color: #4ADCA0; border: 1px solid rgba(25,166,107,.4); }
 
 /* ─── Sellos de confianza (mockups B/C) ──────────────────── */
+/* Sellos que se muestran sobre fotos de personas verificadas
+   o protegidas (menores de edad). */
 .badge.verified {
   background: rgba(13,71,161,.22); color: #8FB4F2;
   border: 1px solid rgba(46,107,236,.45);
@@ -178,6 +282,10 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 }
 
 /* ─── Media protegida: difumina identidad de menores/protegidos ── */
+/* Cuando una persona es menor de edad o tiene protección legal,
+   su foto se difumina. El blur + saturate crea un efecto
+   de privacidad visual. El gradiente oscuro y el candado
+   ( .protected-lock ) indican que la foto está protegida. */
 .protected-media { position: relative; overflow: hidden; }
 .protected-media > img,
 .protected-media > .protected-blur-target { filter: blur(14px) saturate(.7); transform: scale(1.08); }
@@ -193,6 +301,10 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 }
 
 /* ─── Indicador "Canal SOS" (dot con pulso) ──────────────── */
+/* Pequeña pastilla que indica si una persona fue reportada
+   por el canal SOS (emergencia). El dot verde pulsa para
+   llamar la atención. La animación solo se reproduce si
+   el usuario no ha indicado preferencia de movimiento reducido. */
 .sos-pill {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: 32px; padding: 0 12px; border: 0; border-radius: var(--radius-full);
@@ -209,13 +321,33 @@ select option { background: var(--clr-surface); color: var(--clr-text); }
 }
 
 /* ─── Tarjeta de superficie con degradado de marca ───────── */
+/* Clase base para cards que usan el degradado de fondo
+   característico de la marca. */
 .surface-card {
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-lg);
   background: var(--clr-card-grad);
 }
 
-/* ─── Typography (Figma) ─────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   Typography (Figma Design System)
+   
+   Cada nivel tipográfico tiene su propio tamaño, peso y
+   letter-spacing definidos en el design system de Figma.
+   
+   CÓMO USAR:
+   - <h1> para títulos de página (Hero).
+   - <h2> para títulos de sección.
+   - <h3> para títulos de card.
+   - .text-subtitle para subtítulos.
+   - <p> o .text-body para texto normal.
+   - .text-small para texto secundario (metadatos).
+   - .text-pre-title para etiquetas sobre títulos.
+   
+   TODOS los tamaños usan clamp() para escalar responsivamente
+   entre mobile y desktop. No hay media queries de tipografía.
+   ════════════════════════════════════════════════════════════ */
+
 h1, .text-h1 {
   font-family: 'Inter', sans-serif;
   font-weight: 700;
