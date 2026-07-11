@@ -1,3 +1,32 @@
+/**
+ * pages/Manual/ManualPage.tsx — Manual de buenas prácticas y políticas
+ *
+ * PROPÓSITO:
+ *   Documentación estática con las guías éticas y políticas de seguridad
+ *   de la plataforma. Es una página pública (no requiere login).
+ *
+ * SECCIONES:
+ *   1. Guía de buenas prácticas para reportes (10 puntos):
+ *      Cómo capturar y reportar información de manera ética y efectiva.
+ *      Incluye temas como dignidad, consentimiento, protección de menores,
+ *      calidad de imagen, verificación, etc.
+ *
+ *   2. Políticas de seguridad humanitaria (4 políticas):
+ *      - Cero exposición de direcciones (seguridad contra oportunistas).
+ *      - Uso exclusivo de instituciones verificadas (solo reportan ellos).
+ *      - Tratamiento ético y respeto a las víctimas.
+ *      - Protección reforzada de menores (LOPNNA).
+ *
+ * ¿POR QUÉ CONTENIDO ESTÁTICO?
+ *   - El manual cambia poco y no necesita llamadas API.
+ *   - Es crítico que esté disponible offline (PWA).
+ *   - Sirve como documentación legal para justificar políticas.
+ *
+ * POLÍTICA 1: CERO EXPOSICIÓN DE DIRECCIONES
+ *   Para mitigar riesgos delincuenciales, está prohibido publicar
+ *   direcciones específicas de viviendas. Solo puntos de referencia
+ *   comunitarios amplios.
+ */
 import { ShieldCheck, Activity } from 'lucide-react';
 import './Manual.css';
 
@@ -54,7 +83,7 @@ export function ManualPage() {
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {GUIDELINES.map(item => (
                 <li key={item.strong} style={{ lineHeight: '1.4' }}>
-                  <strong style={{ display: 'block', marginBottom: '0.2rem' }}>{item.strong}</strong> 
+                  <strong style={{ display: 'block', marginBottom: '0.2rem' }}>{item.strong}</strong>
                   <span style={{ color: 'var(--clr-text-muted)' }}>{item.text}</span>
                 </li>
               ))}

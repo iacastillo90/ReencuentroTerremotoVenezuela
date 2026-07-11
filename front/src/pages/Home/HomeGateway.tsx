@@ -1,3 +1,23 @@
+/**
+ * pages/Home/HomeGateway.tsx — Pantalla de inicio pública (no logueado)
+ *
+ * PROPÓSITO:
+ *   Versión simplificada de HomePage para usuarios no autenticados.
+ *   Muestra la marca, estadísticas generales y botones de acción
+ *   que redirigen al login/flujo correspondiente.
+ *
+ * DIFERENCIAS CON HomePage:
+ *   - No tiene imagen de fondo.
+ *   - Los botones de acción disparan el gating de auth en App.tsx.
+ *   - Tiene enlace a "Ver últimos comunicados".
+ *   - El gating (mostrar login si no autenticado) se maneja en App.tsx,
+ *     no aquí.
+ *
+ * BOTONES:
+ *   - "Reportar caso" → onReportar (App hace gate → AuthModal).
+ *   - "Buscar personas" → onBuscar (App hace gate → AuthModal).
+ *   - "Ver últimos comunicados" → onManual (público, sin gate).
+ */
 import React from 'react';
 import { Search, Plus, Bell } from 'lucide-react';
 import { BrandMark } from '../../components/BrandMark';
@@ -8,13 +28,12 @@ import './HomeGateway.css';
 
 interface HomeGatewayProps {
   counts?: { missing: number; found: number; total: number };
-  onBuscar: () => void;      // requiere login (gating en App)
-  onReportar: () => void;    // requiere login (gating en App)
-  onDirectorio: () => void;  // público
-  onManual: () => void;      // público
+  onBuscar: () => void;
+  onReportar: () => void;
+  onDirectorio: () => void;
+  onManual: () => void;
 }
 
-/** Home público simplificado y centrado para encajar en una vista */
 export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onManual }) => (
   <div className="public-landing hg" style={{ height: '100%', minHeight: '100%', backgroundColor: '#070c14', overflow: 'hidden' }}>
     <div className="pl__bg" />
@@ -27,7 +46,7 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
       padding: '1rem',
       textAlign: 'center'
     }}>
-      
+
       {/* Brand Header */}
       <div className="hg__brand" style={{ justifyContent: 'center', marginBottom: '2.5rem' }}>
         <BrandMark size={44} />
@@ -48,13 +67,13 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
 
       {/* Action Buttons */}
       <div style={{ width: '100%', maxWidth: '358px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <HomeActionCard 
+        <HomeActionCard
           icon={<Plus size={18} strokeWidth={2} />}
           title="Reportar caso"
           onClick={onReportar}
           style={{ backgroundColor: '#3b82f6', border: '1px solid #3b82f6', color: '#111' }}
         />
-        <HomeActionCard 
+        <HomeActionCard
           icon={<Search size={18} strokeWidth={2} />}
           title="Buscar personas o mascotas"
           onClick={onBuscar}
@@ -64,9 +83,9 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
 
       {/* Communications Link */}
       <div style={{ marginTop: '3rem' }}>
-        <button 
-          onClick={onManual} 
-          style={{ 
+        <button
+          onClick={onManual}
+          style={{
             color: '#3b82f6',
             fontWeight: 500,
             display: 'flex',
@@ -83,7 +102,7 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
           <Bell size={20} /> Ver últimos comunicados
         </button>
       </div>
-      
+
     </div>
   </div>
 );

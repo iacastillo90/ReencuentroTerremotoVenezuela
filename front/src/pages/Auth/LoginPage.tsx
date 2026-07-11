@@ -1,3 +1,31 @@
+/**
+ * pages/Auth/LoginPage.tsx — Página de inicio de sesión
+ *
+ * PROPÓSITO:
+ *   Formulario de login con email + contraseña, más botones
+ *   de autenticación social (Google, Apple próximamente).
+ *   Es una página independiente (no un modal) porque el flujo
+ *   de autenticación es más complejo que solo "loguearse para reportar".
+ *
+ * FLUJO:
+ *   1. Usuario ingresa email + contraseña.
+ *   2. Submit → POST /auth/login → backend fija cookie httpOnly.
+ *   3. El contexto AuthContext.login(usuario) actualiza el estado global.
+ *   4. onSuccess() → redirige a la vista anterior (App.tsx maneja el ruteo).
+ *
+ * SEGURIDAD:
+ *   - La contraseña se envía en texto plano sobre HTTPS (estándar).
+ *   - El backend establece una cookie httpOnly (no accesible desde JS).
+ *   - Nunca almacenamos el password en el frontend.
+ *
+ * GOOGLE LOGIN:
+ *   El botón de Google redirige al flujo de Google OAuth (no usa
+ *   @react-oauth/google aquí, sino un botón personalizado que llama
+ *   a onGoogle() en el padre, que abre una nueva página de Google).
+ *
+ * BYPASS:
+ *   - Apple: deshabilitado con clase "disabled" (próximamente).
+ */
 import React, { useState } from 'react';
 import { Eye, EyeOff, Info } from 'lucide-react';
 import { api } from '../../services/api';
@@ -44,7 +72,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
     if (!email || !password) { setError('Ingresa tu correo y contraseña.'); return; }
     try {
       setLoading(true);
-      // El backend fija la cookie httpOnly; el contexto solo necesita el usuario.
       const res = await api.post('/auth/login', { email, password });
       login(res.data.user);
       onSuccess();
@@ -120,9 +147,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
           <p className="auth-foot">¿No tienes cuenta? <button className="auth-link" onClick={onGoRegister}>Crear cuenta</button></p>
         </div>
       </div>
-      
+
         <div className="auth-mobile-nav-wrapper">
-          <MobileBottomNav 
+          <MobileBottomNav
             activeView="login"
             onNavigate={(v) => { if (v === 'home') onBack(); }}
             onReport={() => {}}

@@ -1,3 +1,30 @@
+/**
+ * pages/Feed/components/FeedCard.tsx — Tarjeta individual en el feed
+ *
+ * PROPÓSITO:
+ *   Renderiza un resumen visual de una persona reportada.
+ *   Se usa en FeedPage, SearchPage, y otras vistas que muestran listas.
+ *
+ * ELEMENTOS:
+ *   - Header: avatar (foto o icono), nombre, ubicación, tiempo desde creación.
+ *   - Badge: "Buscado" (rojo) o "Encontrado" (verde).
+ *   - Sellos de confianza: "Verificado por X" o "Protegido (LOPNNA)".
+ *   - Foto con overlay de identidad protegida si aplica.
+ *   - Footer: entidad fuente, ubicación detallada, botón de contacto.
+ *
+ * PROTECCIÓN DE MENORES (LOPNNA):
+ *   Si person.name === 'Caso protegido', person.age < 18, o
+ *   person.protected === true, se aplican estas reglas:
+ *   - La foto se difumina con CSS (clase protected-media).
+ *   - Aparece un candado con "Identidad protegida (LOPNNA)".
+ *   - No se muestra el nombre real.
+ *   - Aparece botón "Contactar Moderador" para aportar datos.
+ *
+ * TIME AGO:
+ *   Muestra cuánto tiempo pasó desde la creación del reporte
+ *   en formato legible: "hace 5 min", "hace 3 h", "hace 2 d".
+ *   Si no hay fecha, no muestra nada.
+ */
 import React from 'react';
 import { MapPin, Users, BadgeCheck, ShieldAlert } from 'lucide-react';
 import type { Person } from '../../../types';
@@ -9,7 +36,7 @@ interface FeedCardProps {
 
 export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
 
-  // Identidad protegida: menores (LOPNNA) o casos marcados como protegidos por el backend.
+  // Determina si el caso está protegido por LOPNNA
   const isProtected =
     (person as any).protected === true ||
     person.name === 'Caso protegido' ||
@@ -26,7 +53,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
 
   return (
     <article className="feed-card">
-      {/* Header */}
+      {/* Header: avatar, nombre, ubicación, badge de estado */}
       <div className="feed-card-header">
         <div className="feed-avatar">
           {person.photoUrl
@@ -55,7 +82,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         </div>
       </div>
 
-      {/* Sellos de confianza */}
+      {/* Sellos de confianza: verificado o protegido */}
       {(verifiedBy || isProtected) && (
         <div className="feed-card-badges">
           {verifiedBy && <span className="badge verified"><BadgeCheck size={13} /> {verifiedBy}</span>}
@@ -63,7 +90,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         </div>
       )}
 
-      {/* Photo */}
+      {/* Foto con overlay de protección (LOPNNA) si aplica */}
       <div className={`feed-card-photo${isProtected ? ' protected-media' : ''}`}>
         {person.photoUrl ? (
           <img src={person.photoUrl} alt={isProtected ? 'Identidad protegida' : person.name} loading="lazy" />
@@ -81,7 +108,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer: fuente, ubicación, botón de contacto si está protegido */}
       <div className="feed-card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--clr-text-muted)' }}>
           <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'}</div>
@@ -89,8 +116,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         </div>
 
         {isProtected && (
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => alert("Próximamente: El chat seguro con el equipo de moderación se abrirá aquí.")}
             style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
           >

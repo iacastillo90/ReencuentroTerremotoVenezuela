@@ -1,3 +1,10 @@
+/* ═══════════════════════════
+   Library.css — Directorio de recursos y enlaces útiles
+   ═══════════════════════════
+   Tabs (buscadores/afectados), search bar, grid de cards
+   con enlaces externos. Cada card tiene nombre, descripción,
+   notas, badge de verificado y enlace externo.
+   ═══════════════════════════ */
 .library-page {
   padding: 1.5rem;
   max-width: 1200px;

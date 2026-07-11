@@ -1,3 +1,9 @@
+/* ═══════════════════════════
+   Input.css — Campos de formulario con label y error
+   ═══════════════════════════
+   .input-group: contenedor flex column con label + input + error.
+   .input-error: mensaje de error en rojo.
+   ═══════════════════════════ */
 .input-group {
   display: flex;
   flex-direction: column;

@@ -1,3 +1,17 @@
+/**
+ * pages/Home/HomePage.tsx — Pantalla de inicio para usuarios logueados
+ *
+ * PROPÓSITO:
+ *   Muestra el hero principal con estadísticas y botones de acción
+ *   para reportar o buscar. Es la vista por defecto cuando el usuario
+ *   está autenticado y tiene perfil completo.
+ *
+ * COMPOSICIÓN:
+ *   - Hero con imagen de fondo (reunionHero) y texto "Juntos te encontramos".
+ *   - HomeStats: 3 tarjetas (desaparecidos, encontrados, reportes).
+ *   - 2 botones de acción: "Reportar caso" y "Buscar personas o mascotas".
+ *   - Enlace a Manual y políticas.
+ */
 import React from 'react';
 import { Search, Plus, ShieldAlert } from 'lucide-react';
 import type { Person } from '../../types';
@@ -33,20 +47,20 @@ export const HomePage: React.FC<HomePageProps> = ({ counts, onBuscar, onReportar
       </section>
 
       <section className="home-primary" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', margin: '2rem 0' }}>
-        <HomeActionCard 
+        <HomeActionCard
           icon={<Plus size={18} strokeWidth={2} />}
           title="Reportar caso"
           onClick={onReportar}
           style={{ backgroundColor: '#3b82f6', border: '1px solid #3b82f6', color: '#111' }}
         />
-        <HomeActionCard 
+        <HomeActionCard
           icon={<Search size={18} strokeWidth={2} />}
           title="Buscar personas o mascotas"
           onClick={onBuscar}
           style={{ backgroundColor: 'transparent', border: '1px solid #3b82f6', color: '#fff' }}
         />
-        
-        <button 
+
+        <button
           onClick={() => onNavigate('manual')}
           style={{
             marginTop: '1.5rem',

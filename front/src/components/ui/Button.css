@@ -1,3 +1,11 @@
+/* ═══════════════════════════
+   Button.css — Sistema de botones (5 variantes, 3 tamaños)
+   ═══════════════════════════
+   Variantes: primary (azul), outline (borde), danger (rojo),
+   ghost (transparente), success (verde).
+   Tamaños: sm (32px), md (40px, default), lg (48px).
+   Estados: disabled, loading (con spinner).
+   ═══════════════════════════ */
 .btn {
   display: inline-flex;
   align-items: center;

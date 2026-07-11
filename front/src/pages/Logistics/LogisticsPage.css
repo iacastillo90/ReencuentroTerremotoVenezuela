@@ -1,3 +1,10 @@
+/* ═══════════════════════════
+   LogisticsPage.css — Vista de logística y ayuda
+   ═══════════════════════════
+   Cards de alertas logísticas con icono por fuente,
+   título, severidad y descripción. Layout optimizado
+   para bajo consumo de datos (sin imágenes).
+   ═══════════════════════════ */
 .logistics-page {
   padding: 1.5rem;
   max-width: 1000px;

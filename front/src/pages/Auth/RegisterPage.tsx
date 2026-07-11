@@ -1,3 +1,36 @@
+/**
+ * pages/Auth/RegisterPage.tsx — Página de registro de cuenta
+ *
+ * PROPÓSITO:
+ *   Formulario completo de creación de cuenta. Es una página
+ *   independiente de LoginPage para mantener el flujo de
+ *   autenticación limpio y permitir enlaces directos.
+ *
+ * CAMPOS:
+ *   - Nombre, Apellido, Email (obligatorios).
+ *   - Teléfono con prefijo +58 (Venezuela).
+ *   - País (Venezuela, Colombia, Otro).
+ *   - Estado (lista de 24 estados de Venezuela).
+ *   - Municipio.
+ *   - Contraseña + confirmación (mínimo 8 caracteres).
+ *   - 3 checkboxes de políticas: privacidad, términos, uso responsable.
+ *
+ * VALIDACIONES:
+ *   - Campos obligatorios: name, lastName, email, password.
+ *   - Password: mínimo 8 caracteres.
+ *   - Confirmación: debe coincidir con password.
+ *   - Checkboxes: los 3 deben estar marcados.
+ *
+ * FLUJO:
+ *   1. Usuario completa el formulario.
+ *   2. Submit → POST /auth/register con los datos.
+ *   3. El backend crea el usuario y devuelve los datos + cookie.
+ *   4. AuthContext.login(usuario) → onSuccess() (redirige).
+ *
+ * ERRORES:
+ *   Se muestran con humanizeError, que traduce errores comunes
+ *   del backend (como "email already exists") a español.
+ */
 import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';

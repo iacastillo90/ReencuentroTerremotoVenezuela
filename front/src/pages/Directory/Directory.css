@@ -1,3 +1,10 @@
+/* ═══════════════════════════
+   Directory.css — Directorio de organizaciones verificadas
+   ═══════════════════════════
+   Grid de cards de organizaciones. Cada card tiene ID,
+   badge "Certificado", nombre, especialidad y canal de
+   coordinación. Layout responsive: 1 col en mobile, 2 en tablet.
+   ═══════════════════════════ */
 .directory-page { padding: 22px 16px 96px; display: grid; gap: 16px; }
 
 .directory-hero {
