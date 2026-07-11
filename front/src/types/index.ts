@@ -109,6 +109,34 @@ export interface Person {
  * coordinates usa el formato GeoJSON [lng, lat] para
  * compatibilidad directa con MongoDB $nearSphere.
  */
+/**
+ * Solicitud de búsqueda reportada por un familiar (panel admin).
+ *
+ * Corresponde al modelo SearchRequest del backend en /admin/searches.
+ * Cada solicitud representa un reporte de búsqueda creado por un
+ * familiar desde la interfaz de ReportModal.
+ *
+ * status:
+ *   'activa'   → búsqueda en curso (default).
+ *   'resuelta' → la persona fue localizada.
+ *   'cerrada'  → la búsqueda se desactivó sin resolución.
+ *
+ * user: objeto poblado (populate) desde la API; si el usuario fue
+ * eliminado, se muestra "Desconocido" / "Sin email" en la UI.
+ */
+export interface SearchRequest {
+  _id: string;
+  searchName: string;
+  description?: string;
+  category?: string;
+  status: 'activa' | 'resuelta' | 'cerrada';
+  user?: {
+    name?: string;
+    email?: string;
+  };
+  createdAt?: string;
+}
+
 export interface Disaster {
   _id: string;
   title: string;

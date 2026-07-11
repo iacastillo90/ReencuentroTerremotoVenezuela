@@ -2,66 +2,70 @@
  * SectionBusquedas.tsx — Solicitudes de búsqueda de familiares
  *
  * PROPÓSITO:
- *   Muestra una tabla con todas las solicitudes de búsqueda que
- *   los familiares han creado. Cada solicitud incluye:
- *   - Nombre de la persona buscada.
- *   - Descripción/contexto de la desaparición.
- *   - Datos de contacto del familiar que creó la solicitud.
- *   - Estado (activa, resuelta, cerrada).
+ *   Tabla de solicitudes de búsqueda con paginación cliente,
+ *   cambio de estado inline y caché automática via SWR.
  *
  * CARGA DE DATOS:
- *   Se llama a GET /admin/searches al montar el componente.
- *   El resultado se guarda en searches[].
+ *   Usa useSWR('/admin/searches', fetcher) que cachea la respuesta.
+ *   Si el admin cambia de pestaña y vuelve, los datos se muestran
+ *   instantáneamente desde caché (stale-while-revalidate).
  *
- * FILTRO:
- *   Se muestra un badge con el conteo de solicitudes activas
- *   en el header de la sección.
+ * PAGINACIÓN:
+ *   10 resultados por página con controles Anterior/Siguiente.
+ *   Se implementa del lado del cliente (slice) para mantener
+ *   compatibilidad con el backend actual.
  *
- * NOTA:
- *   Los datos de usuario vienen poblados (populate) desde la API:
- *   s.user.name y s.user.email. Si el usuario fue eliminado,
- *   se muestra "Desconocido" / "Sin email".
+ * ACCIONES:
+ *   Columna ⋮ con menú para cambiar estado de la solicitud:
+ *   activa → resuelta | cerrada (PATCH /admin/searches/:id).
+ *   Después del PATCH se hace mutate() para refrescar la caché.
+ *
+ * TIPADO:
+ *   SearchRequest (types/index.ts) reemplaza any[].
  */
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Users } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import useSWR from 'swr';
+import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';
 import { EmptyState } from '../../../components/common/EmptyState';
+import type { SearchRequest } from '../../../types';
+
+const LIMIT = 10;
+const fetcher = (url: string) => api.get(url).then(res => res.data as SearchRequest[]);
 
 export function SectionBusquedas() {
-  const [searches, setSearches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
+  const { data, error, isLoading, mutate } = useSWR('/admin/searches', fetcher);
+  const [page, setPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // load: obtiene las solicitudes del backend.
-  // useCallback para evitar loops infinitos con useEffect.
-  const load = useCallback(async () => {
+  const totalPages = data ? Math.ceil(data.length / LIMIT) : 0;
+  const paged = data ? data.slice((page - 1) * LIMIT, page * LIMIT) : [];
+
+  const activeCount = (data ?? []).filter(s => s.status === 'activa').length;
+  const hasPrev = page > 1;
+  const hasNext = page < totalPages;
+
+  const updateStatus = useCallback(async (id: string, newStatus: SearchRequest['status']) => {
     try {
-      setLoading(true);
-      const res = await api.get('/admin/searches');
-      setSearches(res.data);
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || 'Error cargando búsquedas');
-    } finally {
-      setLoading(false);
+      await api.patch(`/admin/searches/${id}`, { status: newStatus });
+      mutate();
+    } catch (e) {
+      console.error('Error al actualizar estado:', e);
     }
-  }, []);
+    setOpenMenuId(null);
+  }, [mutate]);
 
-  useEffect(() => { load(); }, [load]);
-
-  if (loading) return <LoadingScreen text="Cargando búsquedas..." />;
+  if (isLoading) return <LoadingScreen text="Cargando búsquedas…" />;
 
   return (
     <div className="admin-section">
       <div className="admin-section-header">
         <h3><Search size={18} /> Solicitudes de Búsqueda (Familiares)</h3>
-        {/* Badge que muestra cuántas solicitudes están activas */}
-        <span className="admin-badge pending">
-          {searches.filter(s => s.status === 'activa').length} Activas
-        </span>
+        <span className="admin-badge pending">{activeCount} Activas</span>
       </div>
 
-      {errorMsg && <div className="admin-error-text">{errorMsg}</div>}
+      {error && <div className="admin-error-text">{(error as any)?.response?.data?.error || 'Error cargando búsquedas'}</div>}
 
       <div className="table-responsive-wrapper">
         <table className="admin-table">
@@ -71,10 +75,11 @@ export function SectionBusquedas() {
               <th>Descripción</th>
               <th>Familiar / Contacto</th>
               <th>Estado</th>
+              <th style={{ width: 60 }}>{'⋮'}</th>
             </tr>
           </thead>
           <tbody>
-            {searches.map(s => (
+            {paged.map(s => (
               <tr key={s._id}>
                 <td>
                   <div className="name-cell">
@@ -101,14 +106,44 @@ export function SectionBusquedas() {
                     {s.status.toUpperCase()}
                   </span>
                 </td>
+                <td>
+                  <div className="srch-action-cell">
+                    <button
+                      className="srch-action-trigger"
+                      onClick={() => setOpenMenuId(openMenuId === s._id ? null : s._id)}
+                      aria-label="Acciones"
+                    >
+                      {'⋮'}
+                    </button>
+                    {openMenuId === s._id && (
+                      <div className="srch-action-menu">
+                        <button onClick={() => updateStatus(s._id, 'resuelta')} className="srch-action-item">Marcar como resuelta</button>
+                        <button onClick={() => updateStatus(s._id, 'activa')} className="srch-action-item">Marcar como activa</button>
+                        <button onClick={() => updateStatus(s._id, 'cerrada')} className="srch-action-item">Marcar como cerrada</button>
+                      </div>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
-            {searches.length === 0 && (
-              <tr><td colSpan={4}><EmptyState message="No hay búsquedas registradas" /></td></tr>
+            {paged.length === 0 && (
+              <tr><td colSpan={5}><EmptyState message="No hay búsquedas registradas" /></td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="srch-pagination">
+          <button className="srch-page-btn" disabled={!hasPrev} onClick={() => { setPage(p => p - 1); setOpenMenuId(null); }}>
+            <ChevronLeft size={16} /> Anterior
+          </button>
+          <span className="srch-page-info">Página {page} de {totalPages}</span>
+          <button className="srch-page-btn" disabled={!hasNext} onClick={() => { setPage(p => p + 1); setOpenMenuId(null); }}>
+            Siguiente <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

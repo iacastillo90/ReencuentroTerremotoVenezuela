@@ -428,6 +428,40 @@
   margin-bottom: 1rem;
 }
 
+/* --- Sección Búsquedas: action menu & paginación --- */
+.srch-action-cell { position: relative; text-align: center; }
+.srch-action-trigger {
+  background: none; border: none; color: var(--clr-text-muted);
+  font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+}
+.srch-action-trigger:hover { background: rgba(255,255,255,.05); color: var(--clr-text); }
+.srch-action-menu {
+  position: absolute; right: 0; top: 100%; z-index: 100;
+  background: var(--clr-surface); border: 1px solid var(--clr-border);
+  border-radius: 8px; padding: 4px; min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+.srch-action-item {
+  display: block; width: 100%; text-align: left; padding: 8px 12px;
+  background: none; border: none; color: var(--clr-text); font-size: .85rem;
+  cursor: pointer; border-radius: 4px; font-family: inherit;
+}
+.srch-action-item:hover { background: rgba(255,255,255,.06); }
+
+.srch-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--clr-border);
+}
+.srch-page-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: 1px solid var(--clr-border); border-radius: 6px;
+  color: var(--clr-text); padding: 6px 14px; font-size: .85rem; cursor: pointer;
+  font-family: inherit;
+}
+.srch-page-btn:disabled { opacity: .4; cursor: default; }
+.srch-page-btn:not(:disabled):hover { background: rgba(255,255,255,.04); }
+.srch-page-info { font-size: .82rem; color: var(--clr-text-muted); }
+
 .admin-error-banner {
   background: var(--clr-danger-bg);
   border: 1px solid var(--clr-danger);
