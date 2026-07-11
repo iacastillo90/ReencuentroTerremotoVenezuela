@@ -63,7 +63,7 @@ ReencuentroTerremotoVenezuela/
 
 Actualmente, la plataforma opera bajo un modelo de servicios en la nube descentralizados (PaaS / Serverless), garantizando un despliegue tolerante a fallos sin necesidad de gestionar servidores propios:
 
-1. **Frontend (Vercel):** La aplicación React se despliega automáticamente desde GitHub a **Vercel** (`reencuentroterremotovenezuela.vercel.app`), aprovechando su CDN global para distribuir la carga inicial al usuario casi instantáneamente.
+1. **Frontend (Vercel):** La aplicación React se despliega automáticamente desde GitHub a **Vercel** (`reencuentros-terremoto-venezuela.vercel.app`), aprovechando su CDN global para distribuir la carga inicial al usuario casi instantáneamente. ⚠️ Dominio de producción actual — ver #16 si el proyecto se renombra de nuevo en Vercel, este enlace y el `homepage` del repo quedan huérfanos (`DEPLOYMENT_NOT_FOUND`).
 2. **Backend API (Render):** El servidor Node.js/Express está montado como un *Web Service* en **Render**. Escucha las peticiones de la aplicación web y gestiona la seguridad y rutas.
 3. **Backend Worker (Render):** Se usa un *Background Worker* separado (también en Render) que arranca el entorno, pero se dedica exclusivamente a limpiar las colas de BullMQ (como procesar las peticiones a la IA) y correr los `node-cron` para los scrapers. Esto asegura que tareas pesadas no bloqueen el API principal.
 4. **Base de Datos (MongoDB Atlas):** Se utiliza **MongoDB Atlas** en la nube, exponiendo la cadena `mongodb+srv://`. Ofrece failover automático y copias de seguridad continuas.
