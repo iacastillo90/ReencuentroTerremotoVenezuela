@@ -11,13 +11,22 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: var(--radius-md);
+  border-radius: 50px; /* STANDARD: Pill style heredado de HomeActionCard */
   font-family: 'Inter', sans-serif;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
+  transition: filter 0.2s ease, background-color 0.2s ease, transform 0.1s ease;
+  border: 1px solid transparent;
   text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
