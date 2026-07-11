@@ -1,3 +1,30 @@
+/**
+ * hooks/useBackgroundSync.js — Sincronización offline → servidor
+ *
+ * PROPÓSITO:
+ *   Cuando el usuario crea un reporte sin conexión (offline),
+ *   este hook detecta cuando vuelve la conectividad y envía
+ *   los reportes pendientes al backend automáticamente.
+ *
+ * ¿CÓMO FUNCIONA?
+ *   1. Escucha los eventos 'online' y 'offline' del navegador.
+ *   2. Al iniciar, si hay conexión, ejecuta syncOfflineReports().
+ *   3. syncOfflineReports() lee de IndexedDB (db.offlineReports)
+ *      todos los reportes con status 'draft_offline'.
+ *   4. Por cada reporte:
+ *      a) Marca status → 'syncing' (para evitar doble envío).
+ *      b) Si hay foto, la sube a /media via FormData.
+ *      c) Envía los datos a POST /persons.
+ *      d) Si ok → elimina el reporte de IndexedDB.
+ *      e) Si falla → regresa a 'draft_offline' (reintento futuro).
+ *
+ * DEPENDENCIAS:
+ *   - db (offlineDb.ts): Dexie database con tabla offlineReports.
+ *   - api (services/api.ts): instancia Axios con CSRF.
+ *
+ * RETORNA:
+ *   { isOnline }: boolean que indica el estado de conectividad.
+ */
 import { useEffect, useState } from 'react';
 import { db } from '../db/offlineDb';
 import { api } from '../services/api';
@@ -6,6 +33,7 @@ export function useBackgroundSync() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
+    // Cuando volvemos a estar online, sincroniza.
     const handleOnline = async () => {
       setIsOnline(true);
       await syncOfflineReports();
@@ -18,7 +46,7 @@ export function useBackgroundSync() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Initial sync check
+    // Sincronización inicial si ya estamos online.
     if (navigator.onLine) {
       syncOfflineReports();
     }
@@ -42,12 +70,12 @@ export function useBackgroundSync() {
 
       for (const report of pendingReports) {
         try {
-          // Mark as syncing
+          // Marca como syncing para evitar doble envío.
           await db.offlineReports.update(report.id!, { status: 'syncing' });
 
           const payload = { ...report.reportData };
 
-          // Upload photo if present
+          // Sube la foto si existe.
           if (report.photoFile) {
             const formData = new FormData();
             formData.append('file', report.photoFile);
@@ -57,15 +85,15 @@ export function useBackgroundSync() {
             payload.photoUrl = uploadRes.data.url;
           }
 
-          // Send data to backend
+          // Envía los datos al backend.
           await api.post('/persons', payload);
 
-          // Delete from IndexedDB on success
+          // Éxito: elimina de IndexedDB.
           await db.offlineReports.delete(report.id!);
           console.log(`[Background Sync] Successfully synced report ID: ${report.id}`);
         } catch (err) {
           console.error(`[Background Sync] Failed to sync report ID: ${report.id}`, err);
-          // Mark as failed or revert to draft_offline to retry later
+          // Reintentará en el próximo ciclo online.
           await db.offlineReports.update(report.id!, { status: 'draft_offline' });
         }
       }
