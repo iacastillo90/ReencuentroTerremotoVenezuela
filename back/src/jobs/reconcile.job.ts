@@ -3,6 +3,7 @@ import { DisasterEventModel } from '../models/disaster-event.model';
 import { distance } from 'fastest-levenshtein';
 import mongoose from 'mongoose';
 import { runConcurrent } from '../utils/run-concurrent.util';
+import { logger } from '../utils/logger.util';
 
 const CONCURRENCY = parseInt(process.env.BATCH_CONCURRENCY || '10', 10);
 const CHUNK_SIZE = parseInt(process.env.BATCH_CHUNK_SIZE || '200', 10);
@@ -15,7 +16,7 @@ function similarity(a: string, b: string): number {
 }
 
 export async function runGeospatialCrossover() {
-  console.log('[Reconcile] Iniciando cruce geoespacial...');
+  logger.info('[Reconcile] Iniciando cruce geoespacial...');
 
   const persons = await PersonModel.find({
     'lastSeen.coordinates': { $exists: true, $ne: null },
@@ -74,17 +75,17 @@ export async function runGeospatialCrossover() {
     try {
       const result = await PersonModel.bulkWrite(operations);
       updatedCount += result.modifiedCount;
-      console.log(`[reconcile] Geo chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${result.modifiedCount} updated`);
+      logger.info({ chunk: Math.floor(i / CHUNK_SIZE) + 1, modifiedCount: result.modifiedCount }, '[reconcile] Geo chunk updated');
     } catch (error) {
-      console.error(`[reconcile] Geo chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed:`, error);
+      logger.error({ chunk: Math.floor(i / CHUNK_SIZE) + 1, error }, '[reconcile] Geo chunk failed');
     }
   }
 
-  console.log(`[Reconcile] Cruce geoespacial completado. ${updatedCount} personas vinculadas a desastres.`);
+  logger.info({ updatedCount }, '[Reconcile] Geo crossover completado.');
 }
 
 export async function runFuzzyMatching() {
-  console.log('[Reconcile] Iniciando fuzzy matching para detectar duplicados...');
+  logger.info('[Reconcile] Iniciando fuzzy matching para detectar duplicados...');
 
   const candidates = await PersonModel.find({
     'metadata.auditStatus': 'clean'
@@ -92,21 +93,30 @@ export async function runFuzzyMatching() {
 
   const idsToFlag = new Set<string>();
 
-  for (let i = 0; i < candidates.length; i++) {
-    const current = candidates[i];
-    for (let j = i + 1; j < candidates.length; j++) {
-      const other = candidates[j];
+  // Pre-group by status+state to avoid wasted cross-group comparisons
+  const groups = new Map<string, typeof candidates>();
+  for (const c of candidates) {
+    const key = `${c.status}|${c.lastSeen?.state || ''}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(c);
+  }
 
-      if (current.status !== other.status || current.lastSeen?.state !== other.lastSeen?.state) continue;
+  const groupArray = Array.from(groups.values());
 
-      const nameSim = similarity(current.normalizedName, other.normalizedName);
-
-      if (nameSim > 0.85) {
-        idsToFlag.add(current._id.toString());
-        idsToFlag.add(other._id.toString());
+  await runConcurrent(groupArray, 4, async (group) => {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const sim = similarity(group[i].normalizedName, group[j].normalizedName);
+        if (sim > 0.85) {
+          idsToFlag.add(group[i]._id.toString());
+          idsToFlag.add(group[j]._id.toString());
+        }
+      }
+      if (i % 50 === 49) {
+        await new Promise(resolve => setImmediate(resolve));
       }
     }
-  }
+  });
 
   const idArray = Array.from(idsToFlag).map(id => new mongoose.Types.ObjectId(id));
   let totalFlagged = 0;
@@ -119,12 +129,12 @@ export async function runFuzzyMatching() {
         { $set: { 'metadata.auditStatus': 'pending_review' as const } }
       );
       totalFlagged += result.modifiedCount;
-      console.log(`[reconcile] Fuzzy chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${result.modifiedCount} flagged`);
+      logger.info({ chunk: Math.floor(i / CHUNK_SIZE) + 1, flagged: result.modifiedCount }, '[reconcile] Fuzzy chunk flagged');
     } catch (error) {
-      console.error(`[reconcile] Fuzzy chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed:`, error);
+      logger.error({ chunk: Math.floor(i / CHUNK_SIZE) + 1, error }, '[reconcile] Fuzzy chunk failed');
     }
   }
 
   const duplicateCount = idsToFlag.size / 2;
-  console.log(`[Reconcile] Fuzzy matching completado. ${duplicateCount} posibles duplicados detectados (auditStatus = pending_review).`);
+  logger.info({ duplicateCount }, '[Reconcile] Fuzzy matching completado.');
 }

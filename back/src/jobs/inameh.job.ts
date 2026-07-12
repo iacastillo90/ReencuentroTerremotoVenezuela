@@ -2,12 +2,13 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess, markSyncError } from '../services/sync-state.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE = 'inameh-gov';
 const SOURCE_URL = 'http://www.inameh.gob.ve/web/'; // URL base de INAMEH
 
 export async function runInamehJob() {
-  console.log(`[INAMEH] Iniciando extracción de alertas climáticas...`);
+  logger.info('[INAMEH] Iniciando extracción de alertas climáticas...');
   
   try {
     let alerts: any[] = [];
@@ -74,9 +75,9 @@ export async function runInamehJob() {
       ingested++;
     }
 
-    console.log(`[INAMEH] Extracción completada. Nuevos: ${ingested}. Omitidos: ${skipped}`);
+    logger.info({ ingested, skipped }, '[INAMEH] Extracción completada.');
 
   } catch (error: any) {
-    console.error(`[INAMEH] Error crítico en la extracción:`, error.message);
+    logger.error({ err: (error as Error).message }, '[INAMEH] Error crítico en la extracción');
   }
 }

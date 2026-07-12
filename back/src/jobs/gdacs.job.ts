@@ -2,6 +2,7 @@ import Parser from 'rss-parser';
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox, isPointInsideBBox } from '../utils/geo.util';
+import { logger } from '../utils/logger.util';
 
 const rawDataSchema = z.record(z.string(), z.unknown());
 
@@ -85,14 +86,14 @@ export async function fetchGDACS() {
 
     if (operations.length > 0) {
       await DisasterEventModel.bulkWrite(operations as any[]);
-      console.log(`[GDACS Sync] Processed ${operations.length} global alerts for target region.`);
+      logger.info({ count: operations.length }, '[GDACS Sync] Processed global alerts.');
     } else {
-       console.log(`[GDACS Sync] No active alerts for target region.`);
+       logger.info('[GDACS Sync] No active alerts for target region.');
     }
 
     return operations.length;
   } catch (error: any) {
-    console.error('[GDACS Sync] Error fetching data:', error.message);
+    logger.error({ err: (error as Error).message }, '[GDACS Sync] Error fetching data');
     throw error;
   }
 }

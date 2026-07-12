@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox } from '../utils/geo.util';
+import { logger } from '../utils/logger.util';
 
 const rawDataSchema = z.record(z.string(), z.unknown());
 
@@ -13,7 +14,7 @@ export async function fetchUSGSEarthquakes() {
               `&minmagnitude=2.5&orderby=time&limit=50`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -60,12 +61,12 @@ export async function fetchUSGSEarthquakes() {
 
     if (operations.length > 0) {
       await DisasterEventModel.bulkWrite(operations);
-      console.log(`[USGS Sync] Processed ${operations.length} earthquakes.`);
+      logger.info({ count: operations.length }, '[USGS Sync] Processed earthquakes.');
     }
 
     return operations.length;
   } catch (error: any) {
-    console.error('[USGS Sync] Error fetching data:', error.message);
+    logger.error({ err: (error as Error).message }, '[USGS Sync] Error fetching data');
     throw error;
   }
 }

@@ -1,12 +1,14 @@
-import { PersonModel } from '../models/unified-person.model';
-import crypto from 'crypto';
+import { VenezuelaReportaAdapter } from '../adapters/venezuelareporta.adapter';
+import { syncFromSource } from '../services/sync-source.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE_ID = 'venezuelareporta';
 const SOURCE_URL = 'https://venezuelareporta.org/api/v1/personas?limit=100';
+const adapter = new VenezuelaReportaAdapter();
 
 export async function fetchVenezuelaReporta() {
-  console.log(`[VenezuelaReporta] Iniciando sincronización...`);
-  
+  logger.info('Starting VenezuelaReporta sync');
+
   try {
     let offset = 0;
     let totalProcessed = 0;
@@ -14,14 +16,15 @@ export async function fetchVenezuelaReporta() {
 
     while (hasMore) {
       const url = `${SOURCE_URL}&offset=${offset}`;
-      console.log(`[VenezuelaReporta] Obteniendo ${url}...`);
-      
+      logger.info({ url }, 'Fetching VenezuelaReporta page');
+
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'ReencuentroVE/1.0 (Integración)' }
+        headers: { 'User-Agent': 'ReencuentroVE/1.0 (Integración)' },
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+        throw new Error(`HTTP error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -32,80 +35,21 @@ export async function fetchVenezuelaReporta() {
         break;
       }
 
-      const operations = items.map((item: any) => {
-        const idHash = crypto.createHash('sha256').update(`${SOURCE_ID}-${item.id}`).digest('hex');
-        
-        // Status mapping: buscando -> missing, a_salvo/encontrado -> found
-        let mappedStatus = 'missing';
-        if (item.status === 'a_salvo' || item.status === 'encontrado') {
-          mappedStatus = 'found';
-        }
-
-        let gender = 'unknown';
-        if (item.genero === 'masculino') gender = 'M';
-        if (item.genero === 'femenino') gender = 'F';
-
-        return {
-          updateOne: {
-            filter: { idHash },
-            update: {
-              $set: {
-                type: 'person',
-                normalizedName: (item.nombre || '').toLowerCase().trim(),
-                name: (item.nombre || '').trim(),
-                status: mappedStatus,
-                age: item.edad || null,
-                gender: gender,
-                lastSeen: {
-                  date: item.created_at ? new Date(item.created_at) : new Date(),
-                  state: item.ciudad || 'Desconocido',
-                  municipality: item.zona || 'Desconocido',
-                  description: [item.ultima_vez, item.descripcion].filter(Boolean).join(' - '),
-                  coordinates: {
-                    type: 'Point',
-                    coordinates: [-66.9, 10.48] // Cerca de La Guaira
-                  }
-                },
-                photoUrl: item.foto_url || null,
-                data: {
-                  cedula: item.cedula || null,
-                  ficha_url: item.ficha_url || null,
-                  origen: item.origen || null,
-                  verificado_por: item.verificado_por || null
-                },
-                sourceRecords: [{ source: SOURCE_ID, externalId: item.id, rawData: item }],
-                metadata: {
-                  urgencyScore: mappedStatus === 'missing' ? 85 : 0,
-                  confidenceScore: item.verificado ? 100 : 70,
-                  createdAt: new Date(),
-                  updatedAt: new Date()
-                }
-              }
-            },
-            upsert: true
-          }
-        };
+      const result = await syncFromSource(items, {
+        source: SOURCE_ID,
+        adapter,
       });
 
-      if (operations.length > 0) {
-        const chunkSize = 100;
-        for (let i = 0; i < operations.length; i += chunkSize) {
-          await PersonModel.bulkWrite(operations.slice(i, i + chunkSize) as any[]);
-        }
-        totalProcessed += operations.length;
-      }
-
+      totalProcessed += result.processed;
       offset += items.length;
-      
-      // Delay to respect rate limits (120 req/min)
+
       await new Promise(r => setTimeout(r, 500));
     }
 
-    console.log(`[VenezuelaReporta] Sincronización completada: ${totalProcessed} personas procesadas.`);
+    logger.info({ total: totalProcessed }, 'VenezuelaReporta sync completed');
     return totalProcessed;
-    
   } catch (error: any) {
-    console.error(`[VenezuelaReporta] Error crítico:`, error.message);
+    logger.error({ err: error }, 'VenezuelaReporta sync critical error');
     throw error;
   }
 }

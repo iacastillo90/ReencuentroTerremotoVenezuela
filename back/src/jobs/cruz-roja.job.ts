@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess } from '../services/sync-state.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE = 'cruz-roja-ve';
 
 export async function runCruzRojaJob() {
-  console.log(`[CRUZ ROJA] Iniciando extracción de requerimientos médicos...`);
+  logger.info('[CRUZ ROJA] Iniciando extracción de requerimientos médicos...');
   
   try {
     // Mock simulando la API de la Cruz Roja Venezolana
@@ -61,9 +62,9 @@ export async function runCruzRojaJob() {
       ingested++;
     }
 
-    console.log(`[CRUZ ROJA] Completado. Nuevos: ${ingested}.`);
+    logger.info({ ingested }, '[CRUZ ROJA] Completado.');
 
   } catch (error: any) {
-    console.error(`[CRUZ ROJA] Error crítico:`, error.message);
+    logger.error({ err: (error as Error).message }, '[CRUZ ROJA] Error crítico');
   }
 }

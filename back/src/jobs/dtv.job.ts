@@ -1,12 +1,14 @@
 import { PersonModel } from '../models/unified-person.model';
 import puppeteer from 'puppeteer';
 import crypto from 'crypto';
+import { redactPhoneNumbers } from '../utils/sanitize.util';
+import { logger } from '../utils/logger.util';
 
 const SOURCE_ID = 'dtv-scraper';
 const BASE_URL = 'https://desaparecidosterremotovenezuela.com/';
 
 export async function runDTVScraper(pagesToScrape = 1) {
-  console.log(`[DTV Scraper] Iniciando scraping de ${pagesToScrape} páginas...`);
+  logger.info({ pagesToScrape }, '[DTV Scraper] Iniciando scraping...');
   const browser = await puppeteer.launch({ 
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -17,7 +19,7 @@ export async function runDTVScraper(pagesToScrape = 1) {
     let processed = 0;
     
     for (let p = 1; p <= pagesToScrape; p++) {
-      console.log(`[DTV Scraper] Scrapeando página ${p}...`);
+      logger.info({ page: p }, '[DTV Scraper] Scrapeando página...');
       await page.goto(`${BASE_URL}?page=${p}`, { waitUntil: 'networkidle2' });
 
       // Extraer datos de la tarjeta usando evaluación en el navegador
@@ -79,16 +81,20 @@ export async function runDTVScraper(pagesToScrape = 1) {
       let pageUsedFallback = false;
       if (reports.length === 0) {
         if (process.env.ALLOW_MOCK_DATA === 'true') {
-          console.warn(`[DTV Scraper] Sin tarjetas en la página ${p} (posible bloqueo anti-bot). ALLOW_MOCK_DATA=true → usando datos SIMULADOS (marcados isSimulated).`);
+          if (process.env.NODE_ENV === 'production') {
+            logger.error('[DTV Scraper] ALLOW_MOCK_DATA=true en PRODUCCIÓN — abortando.');
+            continue;
+          }
+          logger.warn({ page: p }, '[DTV Scraper] Sin tarjetas, usando datos SIMULADOS.');
           reports.push(...generateDTVFallback());
           pageUsedFallback = true;
         } else {
-          console.warn(`[DTV Scraper] Sin tarjetas en la página ${p} (posible bloqueo anti-bot). Datos simulados deshabilitados; no se insertan registros ficticios.`);
+          logger.warn({ page: p }, '[DTV Scraper] Sin tarjetas, datos simulados deshabilitados.');
           continue;
         }
       }
 
-      console.log(`[DTV Scraper] Extraídos ${reports.length} reportes de la página ${p}.`);
+      logger.info({ page: p, count: reports.length }, '[DTV Scraper] Reportes extraídos.');
 
       const operations = reports.map(item => {
         const idHash = crypto.createHash('sha256').update(`${SOURCE_ID}-${item.externalId}-${item.name}`).digest('hex');
@@ -106,7 +112,7 @@ export async function runDTVScraper(pagesToScrape = 1) {
                   date: new Date(),
                   state: item.estado,
                   municipality: item.municipio,
-                  description: item.rawText.substring(0, 500),
+                  description: redactPhoneNumbers(item.rawText.substring(0, 500)),
                   coordinates: {
                     type: 'Point',
                     coordinates: [-66.9, 10.48]
@@ -138,11 +144,11 @@ export async function runDTVScraper(pagesToScrape = 1) {
       await new Promise(r => setTimeout(r, 2000));
     }
     
-    console.log(`[DTV Scraper] Finalizado con éxito. ${processed} registros guardados.`);
+    logger.info({ processed }, '[DTV Scraper] Finalizado con éxito.');
     return processed;
     
   } catch (error) {
-    console.error('[DTV Scraper] Error:', error);
+    logger.error({ err: error }, '[DTV Scraper] Error:');
   } finally {
     await browser.close();
   }

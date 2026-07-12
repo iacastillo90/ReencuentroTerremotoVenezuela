@@ -1,16 +1,20 @@
 import { PersonModel } from '../models/unified-person.model';
 import crypto from 'crypto';
+import { ReencuentroAdapter } from '../adapters/reencuentro.adapter';
+import { syncFromSource } from '../services/sync-source.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE_ID = 'reencuentro-api';
-// Usamos el endpoint documentado en el PDF
 const SOURCE_URL = 'https://ayudahumanitariavenezuela.com/api/persons';
+const adapter = new ReencuentroAdapter();
 
 export async function fetchReencuentroPersons() {
-  console.log(`[Reencuentro Sync] Iniciando sincronización desde ${SOURCE_URL}...`);
-  
+  logger.info({ url: SOURCE_URL }, 'Starting Reencuentro sync');
+
   try {
     const response = await fetch(SOURCE_URL, {
-      headers: { 'User-Agent': 'ReencuentroVE/1.0 (Integración)' }
+      headers: { 'User-Agent': 'ReencuentroVE/1.0 (Integración)' },
+      signal: AbortSignal.timeout(10000),
     });
 
     let items: any[] = [];
@@ -18,93 +22,41 @@ export async function fetchReencuentroPersons() {
 
     if (response.ok) {
       const data = await response.json();
-      items = Array.isArray(data) ? data : (data.items || []);
+      items = Array.isArray(data) ? data : data.items || [];
     } else if (process.env.ALLOW_MOCK_DATA === 'true') {
-      // Solo en desarrollo y de forma EXPLÍCITA. Los registros se marcan como simulados.
-      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. ALLOW_MOCK_DATA=true → usando datos SIMULADOS (marcados isSimulated).`);
+      if (process.env.NODE_ENV === 'production') {
+        logger.error('ALLOW_MOCK_DATA=true in production — aborting');
+        return 0;
+      }
+      logger.warn({ status: response.status }, 'API returned error — using mock data');
       items = generateMockReencuentroData();
       usingMock = true;
     } else {
-      // Por defecto NO se insertan datos ficticios (evita mostrar personas falsas como reales).
-      console.warn(`[Reencuentro Sync] La API retornó ${response.status}. Datos simulados deshabilitados (defina ALLOW_MOCK_DATA=true solo en desarrollo). No se insertan registros.`);
+      logger.warn({ status: response.status }, 'API returned error — mock disabled, no records inserted');
       return 0;
     }
 
-    let processed = 0;
-    const operations = [];
+    const result = await syncFromSource(items, {
+      source: SOURCE_ID,
+      adapter,
+      usingMock,
+    });
 
-    for (const item of items) {
-      const externalId = item.id || item._id;
-      const idHash = crypto.createHash('sha256').update(`${SOURCE_ID}-${externalId}`).digest('hex');
-      
-      const normalized = {
-        updateOne: {
-          filter: { idHash },
-          update: {
-            $set: {
-              type: 'person',
-              normalizedName: `${item.nombre || ''} ${item.apellido || ''}`.trim().toLowerCase(),
-              name: `${item.nombre || ''} ${item.apellido || ''}`.trim(),
-              status: item.status === 'encontrado' ? 'found' : 'missing',
-              age: parseInt(item.edad) || null,
-              gender: item.sexo === 'Masculino' ? 'M' : item.sexo === 'Femenino' ? 'F' : 'U',
-              lastSeen: {
-                date: item.lastSeen?.date ? new Date(item.lastSeen.date) : new Date(),
-                state: item.estado || item.lastSeen?.state || 'Desconocido',
-                municipality: item.municipio || item.lastSeen?.municipality || 'Desconocido',
-                description: item.descripcion || '',
-                coordinates: {
-                  type: 'Point',
-                  coordinates: [-66.9, 10.48]
-                }
-              },
-              photoUrl: item.foto ? (item.foto.startsWith('/') ? `https://ayudahumanitariavenezuela.com${item.foto}` : item.foto) : null,
-              sourceRecords: [{ source: SOURCE_ID, externalId: String(externalId), rawData: item }],
-              metadata: {
-                urgencyScore: item.urgencyScore || 80,
-                confidenceScore: 90,
-                source: usingMock ? `${SOURCE_ID}-mock` : SOURCE_ID,
-                isSimulated: usingMock,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              }
-            }
-          },
-          upsert: true
-        }
-      };
-      
-      operations.push(normalized);
-      processed++;
-    }
-
-    if (operations.length > 0) {
-      // Chunk the bulkWrite to prevent memory issues
-      const chunkSize = 200;
-      for (let i = 0; i < operations.length; i += chunkSize) {
-        await PersonModel.bulkWrite(operations.slice(i, i + chunkSize) as any[]);
-      }
-    }
-
-    console.log(`[Reencuentro Sync] Sincronización completada: ${processed} personas procesadas.`);
-    return processed;
-    
+    logger.info({ processed: result.processed }, 'Reencuentro sync completed');
+    return result.processed;
   } catch (error: any) {
-    console.error(`[Reencuentro Sync] Error crítico:`, error.message);
+    logger.error({ err: error }, 'Reencuentro sync critical error');
     throw error;
   }
 }
 
-// Fallback de datos simulados realistas basados en la crisis real
 function generateMockReencuentroData() {
   const names = ['Carlos', 'Luis', 'Jose', 'Maria', 'Ana', 'Carmen', 'Jorge', 'Miguel', 'Sofia', 'Valentina'];
   const lastNames = ['Rodriguez', 'Perez', 'Gonzalez', 'Gomez', 'Lopez', 'Diaz', 'Martinez', 'Hernandez'];
   const states = ['Vargas', 'Distrito Capital', 'Miranda', 'Aragua', 'Carabobo'];
-  
+
   const mockData = [];
   for (let i = 1; i <= 250; i++) {
-    const latOffset = (Math.random() - 0.5) * 1.5;
-    const lngOffset = (Math.random() - 0.5) * 2;
     mockData.push({
       id: `ext-reencuentro-${i}`,
       nombre: `${names[Math.floor(Math.random() * names.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
@@ -112,12 +64,7 @@ function generateMockReencuentroData() {
       edad: Math.floor(Math.random() * 60) + 5,
       estado: states[Math.floor(Math.random() * states.length)],
       descripcion: 'Reporte ingresado desde la central de ApoyaVe/Reencuentro.',
-      foto_url: `https://i.pravatar.cc/150?u=reencuentro-${i}`,
-      lastSeen: {
-        coordinates: {
-          coordinates: [-66.9333 + lngOffset, 10.5833 + latOffset] // Cerca de La Guaira/Caracas
-        }
-      }
+      foto: `https://i.pravatar.cc/150?u=reencuentro-${i}`,
     });
   }
   return mockData;

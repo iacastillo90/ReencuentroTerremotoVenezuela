@@ -2,13 +2,14 @@ import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox } from '../utils/geo.util';
+import { logger } from '../utils/logger.util';
 
 const rawDataSchema = z.record(z.string(), z.unknown());
 
 export async function fetchFIRMSFires() {
   const apiKey = process.env.FIRMS_API_KEY;
   if (!apiKey) {
-    console.warn('[FIRMS Sync] Missing FIRMS_API_KEY. Skipping fire sync.');
+    logger.warn('[FIRMS Sync] Missing FIRMS_API_KEY. Skipping fire sync.');
     return 0;
   }
 
@@ -19,7 +20,7 @@ export async function fetchFIRMSFires() {
   const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${apiKey}/VIIRS_SNPP_NRT/${bboxString}/1`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -80,12 +81,12 @@ export async function fetchFIRMSFires() {
 
     if (operations.length > 0) {
       await DisasterEventModel.bulkWrite(operations as any[]);
-      console.log(`[FIRMS Sync] Processed ${operations.length} fire alerts.`);
+      logger.info({ count: operations.length }, '[FIRMS Sync] Processed fire alerts.');
     }
 
     return operations.length;
   } catch (error: any) {
-    console.error('[FIRMS Sync] Error fetching data:', error.message);
+    logger.error({ err: (error as Error).message }, '[FIRMS Sync] Error fetching data');
     throw error;
   }
 }
