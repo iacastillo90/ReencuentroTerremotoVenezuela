@@ -31,7 +31,7 @@ import {
   Home, Search, ShieldCheck, Building2, Truck, LogIn, ChevronDown, Bell, BellOff
 } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
-import { useSocket } from '../store/SocketContext';
+import { useNotifications } from '../store/SocketContext';
 import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/ui/Button';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -57,7 +57,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { notifications, unreadCount, markAllAsRead, clearNotifications } = useSocket();
+  const { notifications, unreadCount, markAllAsRead, clearNotifications } = useNotifications();
 
   const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
     { view: 'logistics',  icon: <Truck size={20} />,       label: 'Logística',           desc: 'Refugios y vías' },

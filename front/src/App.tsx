@@ -18,20 +18,13 @@
  * ═══════════════════════════════════════════════════════════
  */
 import { useState, lazy, Suspense } from 'react';
+import * as Sentry from '@sentry/react';
 import { AppLayout } from './layouts/AppLayout';
-import { FeedPage, FeedSidebar } from './pages/Feed/Feed';
+import { FeedSidebar } from './pages/Feed/Feed';
 import { ReportModal } from './components/modals/ReportModal';
-import { AdminDashboard } from './pages/Admin/AdminDashboard';
-import { LibraryPage } from './pages/Library/LibraryPage';
-import { ProfilePage } from './pages/Profile/ProfilePage';
 import { LogisticsPage } from './pages/Logistics/LogisticsPage';
 import { HomePage } from './pages/Home/HomePage';
 import { HomeGateway } from './pages/Home/HomeGateway';
-import { SearchPage } from './pages/Search/SearchPage';
-import { ManualPage } from './pages/Manual/ManualPage';
-import { DirectoryPage } from './pages/Directory/DirectoryPage';
-import { LoginPage } from './pages/Auth/LoginPage';
-import { RegisterPage } from './pages/Auth/RegisterPage';
 import { PersonDetailModal } from './components/modals/PersonDetailModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { useAuth } from './store/AuthContext';
@@ -41,6 +34,15 @@ import { LoadingScreen } from './components/common/LoadingScreen';
 import type { Person } from './types';
 
 const MapPage = lazy(() => import('./pages/Map/MapPage').then(m => ({ default: m.MapPage })));
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const FeedPage = lazy(() => import('./pages/Feed/Feed').then(m => ({ default: m.FeedPage })));
+const SearchPage = lazy(() => import('./pages/Search/SearchPage').then(m => ({ default: m.SearchPage })));
+const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const LibraryPage = lazy(() => import('./pages/Library/LibraryPage').then(m => ({ default: m.LibraryPage })));
+const ManualPage = lazy(() => import('./pages/Manual/ManualPage').then(m => ({ default: m.ManualPage })));
+const DirectoryPage = lazy(() => import('./pages/Directory/DirectoryPage').then(m => ({ default: m.DirectoryPage })));
+const LoginPage = lazy(() => import('./pages/Auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/Auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 
 type View = 'home' | 'feed' | 'search' | 'map' | 'report'
   | 'admin' | 'library' | 'profile' | 'logistics'
@@ -79,24 +81,32 @@ function App() {
   };
 
   if (activeView === 'admin') {
-    return <AdminDashboard onBack={() => setActiveView('home')} />;
+    return (
+      <Suspense fallback={<LoadingScreen text="Cargando panel de administración..." />}>
+        <AdminDashboard onBack={() => setActiveView('home')} />
+      </Suspense>
+    );
   }
 
   return (
     <>
       {activeView === 'login' ? (
-        <LoginPage
-          onSuccess={() => setActiveView('home')}
-          onGoRegister={() => setActiveView('register')}
-          onGoogle={() => setIsAuthenticating(true)}
-          onBack={() => setActiveView('home')}
-        />
+        <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+          <LoginPage
+            onSuccess={() => setActiveView('home')}
+            onGoRegister={() => setActiveView('register')}
+            onGoogle={() => setIsAuthenticating(true)}
+            onBack={() => setActiveView('home')}
+          />
+        </Suspense>
       ) : activeView === 'register' ? (
-        <RegisterPage
-          onSuccess={() => setActiveView('home')}
-          onGoLogin={() => setActiveView('login')}
-          onBack={() => setActiveView('login')}
-        />
+        <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+          <RegisterPage
+            onSuccess={() => setActiveView('home')}
+            onGoLogin={() => setActiveView('login')}
+            onBack={() => setActiveView('login')}
+          />
+        </Suspense>
       ) : (<>
         <AppLayout
           activeView={activeView}
@@ -129,41 +139,59 @@ function App() {
           )}
 
           {activeView === 'search' && (
-            <SearchPage onBack={() => setActiveView('home')} />
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <SearchPage onBack={() => setActiveView('home')} />
+            </Suspense>
           )}
 
           {activeView === 'profile' && (
-            <ProfilePage onSelectPerson={setSelectedPerson} />
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <ProfilePage onSelectPerson={setSelectedPerson} />
+            </Suspense>
           )}
 
-          {activeView === 'library' && <LibraryPage />}
+          {activeView === 'library' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <LibraryPage />
+            </Suspense>
+          )}
 
           {activeView === 'feed' && (
-            <FeedPage persons={persons} disasters={disasters}
-              loading={loading} loadingMore={loadingMore}
-              hasMore={hasMore} total={total} counts={counts}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onLoadMore={loadMore}
-            />
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <FeedPage persons={persons} disasters={disasters}
+                loading={loading} loadingMore={loadingMore}
+                hasMore={hasMore} total={total} counts={counts}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onLoadMore={loadMore}
+              />
+            </Suspense>
           )}
 
           {activeView === 'map' && (
-            <Suspense fallback={<LoadingScreen text="Cargando mapa…" />}>
-              <MapPage persons={persons} disasters={disasters}
-                onSelectPerson={setSelectedPerson}
-              />
-            </Suspense>
+            <Sentry.ErrorBoundary fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-text-muted)' }}>El mapa no está disponible en este momento. Intenta de nuevo.</div>}>
+              <Suspense fallback={<LoadingScreen text="Cargando mapa…" />}>
+                <MapPage persons={persons} disasters={disasters}
+                  onSelectPerson={setSelectedPerson}
+                />
+              </Suspense>
+            </Sentry.ErrorBoundary>
           )}
 
           {activeView === 'logistics' && (
             <LogisticsPage disasters={disasters} />
           )}
 
-          {activeView === 'manual' && <ManualPage />}
+          {activeView === 'manual' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <ManualPage />
+            </Suspense>
+          )}
 
           {activeView === 'directorio' && (
-            <DirectoryPage onNavigate={navigate} />
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <DirectoryPage onNavigate={navigate} />
+            </Suspense>
           )}
         </AppLayout>
       </>)}
