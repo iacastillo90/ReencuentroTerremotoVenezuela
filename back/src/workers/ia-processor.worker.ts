@@ -8,6 +8,7 @@ import { upsertVectorToPinecone } from '../services/pinecone.service';
 import { emitToUser } from '../services/socket.service';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
+const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
 
 if (mongoose.connection.readyState === 0) {
   console.log(`[ia-processor] Conectando a MongoDB en ${MONGO_URI}...`);
@@ -16,20 +17,53 @@ if (mongoose.connection.readyState === 0) {
     .catch((err) => console.error('[ia-processor] Error al conectar a MongoDB:', err));
 }
 
+async function extractFaceEncoding(imageUrl: string): Promise<number[] | null> {
+  try {
+    const response = await fetch(`${VISION_SERVICE_URL}/extract-face`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_url: imageUrl, timeout: 30 }),
+      signal: AbortSignal.timeout(35000),
+    });
+
+    if (!response.ok) {
+      console.warn(`[ia-processor] Vision service returned ${response.status}`);
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (!result.face_detected || !result.face_encoding) {
+      console.log('[ia-processor] No face detected in image, skipping face encoding.');
+      return null;
+    }
+
+    console.log(`[ia-processor] Face encoding extracted (${result.face_encoding.length} dims)`);
+    return result.face_encoding;
+  } catch (error: any) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      console.warn('[ia-processor] Vision service timeout (35s), skipping face encoding.');
+    } else {
+      console.warn('[ia-processor] Vision service error, skipping face encoding:', error?.message || error);
+    }
+    return null;
+  }
+}
+
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
   
   try {
     const isMinor = rawData.isMinor === true;
     let aiProcessedText = rawData.text || 'Sin descripción';
-    let urgencyScore = isMinor ? 10 : 1; // Menores siempre alta urgencia
+    let urgencyScore = isMinor ? 10 : 1;
     let personName = rawData.name || 'Desconocido';
     let personState = rawData.estado || 'Desconocido';
     let personAge = rawData.data?.age ? Number(rawData.data.age) : undefined;
     let embedding: number[] | undefined = undefined;
+    let faceEncoding: number[] | undefined = undefined;
 
     if (!isMinor) {
-      // 1. Fase de Análisis IA (Solo si NO es menor)
       const aiProvider = getAIProvider();
       
       const rawTextToAnalyze = typeof rawData.text === 'string' 
@@ -40,7 +74,7 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       try {
         aiResult = await aiProvider.processRecord(rawTextToAnalyze);
       } catch (error) {
-        console.error('[ia-processor] Gemini API Error (quota or auth), falling back to manual fields:', error);
+        console.error('[ia-processor] AI API Error, falling back to manual fields:', error);
       }
       
       aiProcessedText = aiResult?.safeDescription || aiProcessedText; 
@@ -49,17 +83,22 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       personState = aiResult?.estado || personState;
       personAge = aiResult?.age || personAge;
       
-      // Generar Embedding Vectorial solo para adultos
+      // Generar Embedding Vectorial (texto) solo para adultos
       if (aiProvider.generateEmbedding) {
         const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
         try {
           embedding = await aiProvider.generateEmbedding(textToEmbed);
         } catch (e) {
-          console.warn('[ia-processor] Error generando embedding, ignorando:', e);
+          console.warn('[ia-processor] Error generando embedding textual, ignorando:', e);
         }
       }
     }
     
+    // 2. Extraer encoding facial si hay foto (siempre, incluso para menores)
+    if (rawData.photoUrl) {
+      faceEncoding = (await extractFaceEncoding(rawData.photoUrl)) || undefined;
+    }
+
     // 3. Reconciliación e Inserción Idempotente
     const result = await processAndReconcilePerson(
       rawData.source || 'manual',
@@ -76,6 +115,7 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         age: personAge,
         photoUrl: rawData.photoUrl,
         embedding: embedding,
+        faceEncoding: faceEncoding,
         metadata: {
           urgencyScore: urgencyScore,
           confidenceScore: rawData.confidence_score,
@@ -103,7 +143,17 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       });
     }
 
-    // 5. Notificar al usuario creador por WebSocket en tiempo real
+    // 5. Guardar faceEncoding en Pinecone (índice separado o mismo con prefijo)
+    if (faceEncoding && result.idHash && process.env.USE_PINECONE_VECTOR_SEARCH === 'true') {
+      await upsertVectorToPinecone(`face_${result.idHash}`, faceEncoding, {
+        name: personName,
+        status: 'missing',
+        state: personState,
+        type: 'face'
+      });
+    }
+
+    // 6. Notificar al usuario creador por WebSocket en tiempo real
     if (rawData.reportedBy) {
       let title = 'Reporte Procesado';
       let message = `El reporte para "${personName}" ha sido procesado exitosamente.`;
@@ -139,4 +189,3 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
     throw error;
   }
 }, { connection: connection as any });
-
