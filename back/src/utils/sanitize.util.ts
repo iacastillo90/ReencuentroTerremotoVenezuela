@@ -67,3 +67,13 @@ export function safeRegexQuery(str: string): string {
   if (trimmed.length > 200) return '';
   return escapeRegex(trimmed);
 }
+
+const PHONE_REGEX = /\+?\d{7,15}/g;
+
+/**
+ * Redact phone numbers from a string — replaces with [TELÉFONO REDACTADO].
+ */
+export function redactPhoneNumbers(str: string): string {
+  if (!str) return '';
+  return str.replace(PHONE_REGEX, '[TELÉFONO REDACTADO]');
+}

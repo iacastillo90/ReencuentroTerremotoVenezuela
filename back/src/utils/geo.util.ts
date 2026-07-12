@@ -1,3 +1,5 @@
+import { logger } from './logger.util';
+
 export interface BoundingBox {
   minLon: number;
   minLat: number;
@@ -21,7 +23,7 @@ export function getTargetBoundingBox(): BoundingBox {
     };
   }
   
-  console.warn('[GeoUtil] Invalid TARGET_COUNTRY_BBOX, falling back to Venezuela.');
+  logger.warn('[GeoUtil] Invalid TARGET_COUNTRY_BBOX, falling back to Venezuela.');
   return { minLon: -73.4, minLat: 0.6, maxLon: -59.8, maxLat: 12.2 };
 }
 

@@ -25,7 +25,7 @@ const UserSchema = new Schema<IUser>({
   // La unicidad se aplica con un índice PARCIAL más abajo (solo cuando googleId
   // es un string), así múltiples usuarios sin googleId no colisionan.
   googleId: { type: String },
-  passwordHash: { type: String },
+  passwordHash: { type: String, select: false },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   name: { type: String, required: true },
   lastName: { type: String },
@@ -48,5 +48,13 @@ UserSchema.index(
   { googleId: 1 },
   { unique: true, partialFilterExpression: { googleId: { $type: 'string' } } }
 );
+
+UserSchema.set('toJSON', {
+  transform(_doc: any, ret: any) {
+    delete ret.passwordHash;
+    delete ret.__v;
+    return ret;
+  },
+});
 
 export const UserModel = model<IUser>('User', UserSchema);
