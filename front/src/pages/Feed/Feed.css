@@ -67,6 +67,18 @@
 
 .feed-search-row input::placeholder { color: var(--clr-text-dim); }
 
+.feed-search-pending {
+  font-size: 0.7rem;
+  color: var(--clr-text-dim);
+  white-space: nowrap;
+  animation: feed-pulse 1s ease-in-out infinite;
+}
+
+@keyframes feed-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .feed-chips {
   display: flex;
   flex-wrap: wrap;

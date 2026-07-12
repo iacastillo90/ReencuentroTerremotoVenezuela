@@ -5,7 +5,7 @@ function asString(v: string | string[] | undefined): string {
 }
 import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
-import { adminStatusUpdateSchema, adminMergeSchema } from '../validators/admin.validator';
+import { adminStatusUpdateSchema, adminMergeSchema, adminModerateSchema, adminUpdateMatchStatusSchema, adminUpdateUserRoleSchema, adminUpdateUserStatusSchema, adminAuditStatusQuerySchema } from '../validators/admin.validator';
 import { mergeProfiles, getAdminPersons, putPerson, updatePersonStatus, moderatePerson, getPersonContacts } from '../services/admin/person.service';
 import { getAuditJobs, mergeAuditJob, dismissAuditJob } from '../services/admin/audit.service';
 import { getAdminMatches, updateMatchStatus } from '../services/admin/match.service';
@@ -86,11 +86,11 @@ export async function updatePersonStatusHandler(req: Request, res: Response, nex
 
 export async function moderatePersonHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const { action } = req.body;
-    if (action !== 'approve' && action !== 'reject') {
-      return res.status(400).json({ error: 'Acción inválida' });
+    const parsed = adminModerateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Acción inválida', details: parsed.error.issues });
     }
-    const result = await moderatePerson(asString(req.params.idHash), action);
+    const result = await moderatePerson(asString(req.params.idHash), parsed.data.action);
     return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);
@@ -121,13 +121,15 @@ export async function getPersonContactsHandler(req: Request, res: Response, next
 
 export async function getAdminPersonsHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 200, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
-    const filter: Record<string, any> = {};
-    if (req.query.auditStatus) {
-      filter['metadata.auditStatus'] = req.query.auditStatus;
+    const parsed = adminAuditStatusQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Parámetros inválidos', details: parsed.error.issues });
     }
-    const result = await getAdminPersons(filter, limit, offset);
+    const filter: Record<string, any> = {};
+    if (parsed.data.auditStatus) {
+      filter['metadata.auditStatus'] = parsed.data.auditStatus;
+    }
+    const result = await getAdminPersons(filter, parsed.data.limit, parsed.data.offset);
     return res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -147,8 +149,11 @@ export async function getAdminMatchesHandler(req: Request, res: Response, next: 
 
 export async function updateMatchStatusHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const { status } = req.body;
-    const result = await updateMatchStatus(asString(req.params.id), status, req.user?.userId || 'admin', req);
+    const parsed = adminUpdateMatchStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Estado inválido', details: parsed.error.issues });
+    }
+    const result = await updateMatchStatus(asString(req.params.id), parsed.data.status, req.user?.userId || 'admin', req);
     return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);
@@ -168,8 +173,11 @@ export async function getAdminUsersHandler(req: Request, res: Response, next: Ne
 
 export async function updateUserRoleHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const { role } = req.body;
-    const result = await updateUserRole(asString(req.params.id), role, req.user?.userId || 'admin', req);
+    const parsed = adminUpdateUserRoleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Rol inválido', details: parsed.error.issues });
+    }
+    const result = await updateUserRole(asString(req.params.id), parsed.data.role, req.user?.userId || 'admin', req);
     return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);
@@ -178,8 +186,11 @@ export async function updateUserRoleHandler(req: Request, res: Response, next: N
 
 export async function updateUserStatusHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const { status } = req.body;
-    const result = await updateUserStatus(asString(req.params.id), status, req.user?.userId || 'admin', req);
+    const parsed = adminUpdateUserStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Estado inválido', details: parsed.error.issues });
+    }
+    const result = await updateUserStatus(asString(req.params.id), parsed.data.status, req.user?.userId || 'admin', req);
     return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);

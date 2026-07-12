@@ -35,6 +35,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { useSocket } from '../../store/SocketContext';
+import { useToast } from '../../store/ToastContext';
 import { api } from '../../services/api';
 import type { Person } from '../../types';
 import {
@@ -57,6 +58,7 @@ type ProfileTab = 'reports' | 'matches' | 'chats';
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
+  const { addToast } = useToast();
 
   // ─── Estado de datos ────────────────────────────────
   const [myReports, setMyReports] = useState<Person[]>([]);
@@ -71,6 +73,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     reportId: string; otherUserId: string
   } | null>(null);
   const [replyText, setReplyText] = useState('');
+  const fetchGenRef = useRef(0);
 
   // ─── handleRequestVerification ─────────────────────
   // Envía una solicitud para ser verificador.
@@ -79,10 +82,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     e.preventDefault();
     try {
       await api.post('/auth/verification-request', { notes: requestNotes });
-      alert('Solicitud enviada correctamente. Un moderador la revisará pronto.');
+      addToast('Solicitud enviada correctamente. Un moderador la revisará pronto.', 'success');
       setShowRequestForm(false);
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al enviar la solicitud');
+      addToast(err.response?.data?.error || 'Error al enviar la solicitud', 'error');
     }
   };
 
@@ -92,16 +95,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   //   - /contacts/received: mensajes recibidos.
   //   - /contacts/sent: mensajes enviados.
   const fetchData = async () => {
+    const gen = ++fetchGenRef.current;
     try {
-      const res = await api.get<Person[]>('/persons/mine');
+      const [res, msgs, sent] = await Promise.all([
+        api.get<Person[]>('/persons/mine'),
+        api.get('/contacts/received'),
+        api.get('/contacts/sent'),
+      ]);
+      if (fetchGenRef.current !== gen) return;
       setMyReports(res.data);
-      const msgs = await api.get('/contacts/received');
       setMessages(msgs.data);
-      const sent = await api.get('/contacts/sent');
       setSentMessages(sent.data);
     } catch (err) {
+      if (fetchGenRef.current !== gen) return;
       console.error('Error fetching data', err);
     } finally {
+      if (fetchGenRef.current !== gen) return;
       setLoading(false);
     }
   };
@@ -116,22 +125,37 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   // Acumula todos los resultados en myMatches[].
   useEffect(() => {
     const fetchMatches = async () => {
+      const gen = ++fetchGenRef.current;
       if (myReports.length > 0) {
         try {
           const allMatches: any[] = [];
-          for (const report of myReports) {
-            const matchRes = await api.get(`/matches/${report.idHash}`);
-            if (matchRes.data && matchRes.data.length > 0) {
-              allMatches.push(
-                ...matchRes.data.map((m: any) => ({
-                  ...m,
-                  originalReportName: report.name
-                }))
-              );
+          for (let i = 0; i < myReports.length; i += 5) {
+            const batch = myReports.slice(i, i + 5);
+            const results = await Promise.allSettled(
+              batch.map(report =>
+                api.get(`/matches/${report.idHash}`)
+                  .then(matchRes => ({ report, data: matchRes.data || [] }))
+              )
+            );
+            if (fetchGenRef.current !== gen) return;
+            for (const result of results) {
+              if (result.status === 'fulfilled') {
+                const { report, data } = result.value;
+                if (data.length > 0) {
+                  allMatches.push(
+                    ...data.map((m: any) => ({
+                      ...m,
+                      originalReportName: report.name
+                    }))
+                  );
+                }
+              }
             }
           }
+          if (fetchGenRef.current !== gen) return;
           setMyMatches(allMatches);
         } catch (err) {
+          if (fetchGenRef.current !== gen) return;
           console.error('Error fetching matches', err);
         }
       }
@@ -157,15 +181,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   // handleRequestMediation: pide una sala de mediación para menores.
   // handleStartDirectChat: pide una sala de chat directo.
   const handleRequestMediation = (match: any) => {
-    if (!socket) return alert('Desconectado del servidor de chat');
+    if (!socket) {
+      addToast('Desconectado del servidor de chat', 'error');
+      return;
+    }
     socket.emit('request_match_chat', { matchId: match._id });
-    alert('Se ha solicitado la sala de mediación. Un moderador se unirá pronto.');
+    addToast('Se ha solicitado la sala de mediación. Un moderador se unirá pronto.', 'success');
   };
 
   const handleStartDirectChat = (match: any) => {
-    if (!socket) return alert('Desconectado del servidor de chat');
+    if (!socket) {
+      addToast('Desconectado del servidor de chat', 'error');
+      return;
+    }
     socket.emit('request_match_chat', { matchId: match._id });
-    alert('Sala de chat directo solicitada.');
+    addToast('Sala de chat directo solicitada.', 'info');
   };
 
   // ─── handleSendMessage: enviar mensaje ──────────────
@@ -183,7 +213,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       setSentMessages(prev => [...prev, res.data]);
       setReplyText('');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al enviar mensaje');
+      addToast(err.response?.data?.error || 'Error al enviar mensaje', 'error');
     }
   };
 

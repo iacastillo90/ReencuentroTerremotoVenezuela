@@ -24,14 +24,33 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users } from 'lucide-react';
 import { api } from '../../../services/api';
+import { useToast } from '../../../store/ToastContext';
 import { Button } from '../../../components/ui/Button';
 import { NameCell } from '../../../components/common/NameCell';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';
 import { EmptyState } from '../../../components/common/EmptyState';
 
+interface AdminUser {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  picture?: string;
+}
+
+interface AdminVerification {
+  _id: string;
+  user?: { name?: string; picture?: string; email?: string };
+  notes?: string;
+  evidenceUrl?: string;
+  status: string;
+}
+
 export function SectionUsuarios() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [verifications, setVerifications] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [verifications, setVerifications] = useState<AdminVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'users' | 'verifications'>('users');
 
@@ -47,11 +66,11 @@ export function SectionUsuarios() {
       setVerifications(verifRes.data);
     } catch (e) {
       console.error(e);
-      alert('Error cargando datos (¿Eres admin?)');
+      addToast('Error cargando datos (¿Eres admin?)', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -61,7 +80,7 @@ export function SectionUsuarios() {
       await api.patch(`/admin/users/${id}/role`, { role: newRole });
       setUsers(prev => prev.map(u => u._id === id ? { ...u, role: newRole } : u));
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error cambiando rol');
+      addToast(e.response?.data?.error || 'Error cambiando rol', 'error');
     }
   };
 
@@ -71,7 +90,7 @@ export function SectionUsuarios() {
       await api.patch(`/admin/users/${id}/status`, { status: newStatus });
       setUsers(prev => prev.map(u => u._id === id ? { ...u, status: newStatus } : u));
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error cambiando estado');
+      addToast(e.response?.data?.error || 'Error cambiando estado', 'error');
     }
   };
 
@@ -85,7 +104,7 @@ export function SectionUsuarios() {
         loadData(); // Recarga para que el usuario aparezca con el nuevo rol.
       }
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error actualizando solicitud');
+      addToast(e.response?.data?.error || 'Error actualizando solicitud', 'error');
     }
   };
 

@@ -7,10 +7,7 @@ import { ApiKeyModel } from '../models/api-key.model';
 import { auditLog } from './audit.middleware';
 import { JWT_SECRET } from '../utils/jwt-secret.util';
 import { logger } from '../utils/logger.util';
-
-function hashApiKey(key: string): string {
-  return crypto.createHash('sha256').update(key).digest('hex');
-}
+import { hashApiKey } from '../utils/hash.util';
 
 async function findApiKeyByKey(rawKey: string, type: 'admin' | 'webhook' | 'partner') {
   const hashedKey = hashApiKey(rawKey);

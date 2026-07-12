@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';
-import { getPartnerCases, postPartnerCases } from '../controllers/partner.controller';
+import { getPartnerCasesHandler, postPartnerCasesHandler } from '../controllers/partner.controller';
 
 export const partnerRouter = Router();
 
-partnerRouter.get('/cases', requirePartnerApiKey, getPartnerCases);
-partnerRouter.post('/cases', requirePartnerApiKey, postPartnerCases);
+partnerRouter.get('/cases', requirePartnerApiKey, getPartnerCasesHandler);
+partnerRouter.post('/cases', requirePartnerApiKey, postPartnerCasesHandler);

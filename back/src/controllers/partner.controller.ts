@@ -1,12 +1,12 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
-import { PersonModel } from '../models/unified-person.model';
 import { connection as redis } from '../config/redis.config';
 import { partnerCasesPayloadSchema } from '../validators/partner.validator';
 import { auditLog } from '../middlewares/audit.middleware';
 import { upsertPerson } from '../services/person.service';
+import { getPartnerCases } from '../services/partner.service';
 
-export async function getPartnerCases(req: Request, res: Response, next: NextFunction) {
+export async function getPartnerCasesHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
     const offset = parseInt(req.query.offset as string) || 0;
@@ -15,22 +15,15 @@ export async function getPartnerCases(req: Request, res: Response, next: NextFun
     const filter: any = {};
     if (status) filter.status = status;
 
-    const cases = await PersonModel.find(filter)
-      .select('name status age gender description lastSeen photoUrl aliases contactPerson type metadata.createdAt metadata.updatedAt metadata.source metadata.urgencyScore metadata.confidenceLabel metadata.auditStatus')
-      .sort({ 'metadata.createdAt': -1 })
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const result = await getPartnerCases(filter, limit, offset);
 
-    const total = await PersonModel.countDocuments(filter);
-
-    return res.status(200).json({ data: cases, total, offset, limit });
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
 }
 
-export async function postPartnerCases(req: Request, res: Response, next: NextFunction) {
+export async function postPartnerCasesHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const validation = partnerCasesPayloadSchema.safeParse(req.body);
     if (!validation.success) {

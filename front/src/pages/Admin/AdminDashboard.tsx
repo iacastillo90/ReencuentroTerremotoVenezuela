@@ -25,6 +25,7 @@
  *   necesitan (resumen, registros).
  */
 import { useState, useEffect } from 'react';
+import * as Sentry from '@sentry/react';
 import {
   LayoutDashboard, Users, ShieldCheck,
   Search, ShieldAlert, ArrowLeft, Activity
@@ -159,27 +160,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
 
         {/* Contenido dinámico según sección activa */}
         <div className="admin-content">
-          {activeSection === 'resumen' && <SectionResumen counts={counts} />}
-          {activeSection === 'moderacion' && <SectionModeracion />}
-          {activeSection === 'matches' && <SectionMatches />}
-          {activeSection === 'busquedas' && <SectionBusquedas />}
-          {activeSection === 'registros' && (
-            <SectionRegistros
-              persons={persons}
-              loading={loading}
-              onStatusChange={handleStatusChange}
-            />
-          )}
-          {activeSection === 'usuarios' && <SectionUsuarios />}
-          {activeSection === 'colas' && (
-            <div style={{ width: '100%', height: 'calc(100vh - 80px)', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
-              <iframe
-                src={`${api.defaults.baseURL}/admin/queues?_t=${Date.now()}`}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title="Bull-Board Queues"
+          <Sentry.ErrorBoundary fallback={<div style={{ padding: '1rem', textAlign: 'center', color: 'var(--clr-text-muted)' }}>Error al cargar la sección.</div>}>
+            {activeSection === 'resumen' && <SectionResumen counts={counts} />}
+            {activeSection === 'moderacion' && <SectionModeracion />}
+            {activeSection === 'matches' && <SectionMatches />}
+            {activeSection === 'busquedas' && <SectionBusquedas />}
+            {activeSection === 'registros' && (
+              <SectionRegistros
+                persons={persons}
+                loading={loading}
+                onStatusChange={handleStatusChange}
               />
-            </div>
-          )}
+            )}
+            {activeSection === 'usuarios' && <SectionUsuarios />}
+            {activeSection === 'colas' && (
+              <div style={{ width: '100%', height: 'calc(100vh - 80px)', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+                <iframe
+                  src={`${api.defaults.baseURL}/admin/queues?_t=${Date.now()}`}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="Bull-Board Queues"
+                />
+              </div>
+            )}
+          </Sentry.ErrorBoundary>
         </div>
       </main>
     </div>

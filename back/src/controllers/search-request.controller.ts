@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { SearchRequestModel } from '../models/search-request.model';
 import { ValidationError } from '../middlewares/error.middleware';
-import { personMatchingQueue } from '../queues/person-matching.queue';
+import { createSearchRequest, getMySearchRequests, updateSearchRequestStatus } from '../services/search-request.service';
 
 const createSearchRequestSchema = z.object({
   searchName: z.string().min(1).max(200),
@@ -15,7 +14,7 @@ const updateStatusSchema = z.object({
   status: z.enum(['activa', 'resuelta', 'cancelada']),
 });
 
-export async function createSearchRequest(req: Request, res: Response, next: NextFunction) {
+export async function createSearchRequestHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId;
 
@@ -25,15 +24,13 @@ export async function createSearchRequest(req: Request, res: Response, next: Nex
     }
     const { searchName, description, category, isMinor } = parsed.data;
 
-    const newRequest = await SearchRequestModel.create({
+    const newRequest = await createSearchRequest({
       user: userId,
       searchName,
       description,
       category,
-      isMinor
+      isMinor,
     });
-
-    await personMatchingQueue.enqueue({ idHash: newRequest._id.toString(), source: 'search-request' });
 
     return res.status(201).json(newRequest);
   } catch (error) {
@@ -41,20 +38,20 @@ export async function createSearchRequest(req: Request, res: Response, next: Nex
   }
 }
 
-export async function getMySearchRequests(req: Request, res: Response, next: NextFunction) {
+export async function getMySearchRequestsHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId;
-    const requests = await SearchRequestModel.find({ user: userId }).sort({ createdAt: -1 }).lean();
+    const requests = await getMySearchRequests(userId);
     return res.status(200).json(requests);
   } catch (error) {
     next(error);
   }
 }
 
-export async function updateSearchRequestStatus(req: Request, res: Response, next: NextFunction) {
+export async function updateSearchRequestStatusHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId;
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const parsed = updateStatusSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -62,11 +59,7 @@ export async function updateSearchRequestStatus(req: Request, res: Response, nex
     }
     const { status } = parsed.data;
 
-    const request = await SearchRequestModel.findOneAndUpdate(
-      { _id: id, user: userId },
-      { status },
-      { new: true }
-    );
+    const request = await updateSearchRequestStatus(id, userId, status);
 
     if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
 

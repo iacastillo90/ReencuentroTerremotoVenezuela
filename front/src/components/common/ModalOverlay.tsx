@@ -22,7 +22,7 @@
  *     demasiado ancho en pantallas grandes.
  *   - role="dialog" y aria-modal para accesibilidad.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface ModalOverlayProps {
   isOpen: boolean;
@@ -41,12 +41,21 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   className = '',
   maxWidth = '600px',
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // No renderiza nada si el modal está cerrado.
   if (!isOpen) return null;
 
   return (
     <div className="report-modal-overlay" role="dialog" aria-modal="true"
-      aria-label={title || 'Modal'} onClick={onClose}>
+      aria-label={title || 'Modal'} onClick={onClose}
+      tabIndex={0} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
       <div className={`report-modal-content ${className}`}
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}>

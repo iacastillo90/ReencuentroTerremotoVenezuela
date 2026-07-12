@@ -30,6 +30,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Info } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { useToast } from '../../store/ToastContext';
 import { humanizeError } from '../../utils/humanizeError';
 import { Button } from '../../components/ui/Button';
 import { BrandMark } from '../../components/BrandMark';
@@ -60,6 +61,7 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, onGoogle, onBack }) => {
   const { login } = useAuth();
+  const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -112,16 +114,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
 
         <form onSubmit={submit} className="auth-form">
           <div className="auth-field">
-            <input type="email" placeholder="Correo electrónico" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
+            <input type="email" placeholder="Correo electrónico" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" aria-label="Correo electrónico" />
           </div>
           <div className="auth-field">
-            <input type={showPw ? 'text' : 'password'} placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
+            <input type={showPw ? 'text' : 'password'} placeholder="Contraseña" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" aria-label="Contraseña" />
             <button type="button" className="auth-eye" onClick={() => setShowPw(s => !s)} aria-label="Mostrar contraseña">
               {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
           <div className="auth-forgot-wrap">
-            <button type="button" className="auth-link-right" onClick={() => alert('Recuperación de contraseña: próximamente.')}>
+            <button type="button" className="auth-link-right" onClick={() => addToast('Recuperación de contraseña: próximamente.', 'info')}>
               ¿Olvidaste tu contraseña?
             </button>
           </div>

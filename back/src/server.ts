@@ -34,6 +34,11 @@ async function bootstrap() {
       logger.info('Internal workers disabled (assuming dedicated containers)');
     }
 
+    process.on('unhandledRejection', (reason) => {
+      logger.fatal({ err: reason }, 'Unhandled Rejection');
+      process.exit(1);
+    });
+
     startOutboxProcessor();
 
     const server = http.createServer(app);

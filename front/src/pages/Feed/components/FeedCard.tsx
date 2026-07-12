@@ -29,12 +29,15 @@ import React from 'react';
 import { MapPin, Users, BadgeCheck, ShieldAlert } from 'lucide-react';
 import type { Person } from '../../../types';
 import '../Feed.css';
+import styles from './FeedCard.module.css';
+import { useToast } from '../../../store/ToastContext';
 
 interface FeedCardProps {
   person: Person;
 }
 
 export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
+  const { addToast } = useToast();
 
   // Determina si el caso está protegido por LOPNNA
   const isProtected =
@@ -63,19 +66,19 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         </div>
         <div className="feed-card-meta">
           <div className="feed-card-name">{person.name}</div>
-          {person.description && <div style={{ fontSize: '0.8rem', color: 'var(--clr-text-muted)', marginBottom: '4px', lineHeight: '1.2' }}>{person.description}</div>}
+          {person.description && <div className={styles.desc}>{person.description}</div>}
           <div className="feed-card-sub">
             <MapPin size={11} />
             {person.lastSeen?.state || 'Ubicación desconocida'}
             {timeAgo() && <>&nbsp;·&nbsp;{timeAgo()}</>}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+        <div className={styles.metaRight}>
           <span className={`badge ${person.status}`}>
             {person.status === 'missing' ? 'Buscado' : 'Encontrado'}
           </span>
           {person.age !== undefined && (
-            <span style={{ fontSize: '0.65rem', color: 'var(--clr-text-muted)', fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            <span className={styles.ageLabel}>
               Edad: {person.age} {person.age === 1 ? 'año' : 'años'}
             </span>
           )}
@@ -109,8 +112,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
       </div>
 
       {/* Footer: fuente, ubicación, botón de contacto si está protegido */}
-      <div className="feed-card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--clr-text-muted)' }}>
+      <div className={styles.footer}>
+        <div className={styles.footerMeta}>
           <div>🏢 <strong>Entidad:</strong> {person.data?.origen || 'Protección Civil'}</div>
           <div>📍 <strong>Ubicación:</strong> {person.lastSeen?.description || person.lastSeen?.state || 'Ubicación no precisada'}</div>
         </div>
@@ -118,8 +121,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
         {isProtected && (
           <button
             type="button"
-            onClick={() => alert("Próximamente: El chat seguro con el equipo de moderación se abrirá aquí.")}
-            style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+            onClick={() => addToast('Próximamente: El chat seguro con el equipo de moderación se abrirá aquí.', 'info')}
+            className={styles.contactBtn}
           >
             <ShieldAlert size={16} /> Contactar Moderador para aportar información
           </button>

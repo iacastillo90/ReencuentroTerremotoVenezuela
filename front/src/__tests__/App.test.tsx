@@ -56,10 +56,12 @@ describe('App Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state initially', () => {
+  it('renders HomeGateway when not authenticated', () => {
     (api.get as any).mockReturnValue(new Promise(() => {}));
     render(<App />);
-    expect(screen.getByText(/Cargando registros/i)).toBeInTheDocument();
+    expect(screen.getByText('Casos reportados')).toBeInTheDocument();
+    expect(screen.getByText('Reportar caso')).toBeInTheDocument();
+    expect(screen.getByText('Buscar personas o mascotas')).toBeInTheDocument();
   });
 
   it('renders persons and disasters successfully', async () => {
@@ -81,7 +83,7 @@ describe('App Component', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('Juan Perez')).toBeInTheDocument();
+      expect(screen.getByText('Casos reportados')).toBeInTheDocument();
       expect(screen.getAllByText('1').length).toBeGreaterThan(0);
     });
   });

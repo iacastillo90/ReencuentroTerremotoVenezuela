@@ -42,9 +42,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, AlertTriangle, Users, MapPin, Loader2, PawPrint } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
-import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/common/EmptyState';
+import { FeedSkeletonList } from '../../components/common/Skeleton';
 import type { Person, Disaster } from '../../types';
 import { useAuth } from '../../store/AuthContext';
+import { useToast } from '../../store/ToastContext';
 import { api } from '../../services/api';
 import './Feed.css';
 
@@ -70,8 +72,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 }) => {
   const [filter, setFilter] = useState<Filter>('missing');
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  const loadingMoreRef = useRef(loadingMore);
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { loadingMoreRef.current = loadingMore; }, [loadingMore]);
+  useEffect(() => { searchQueryRef.current = searchQuery; }, [searchQuery]);
+  const [isSearchPending, setIsSearchPending] = useState(false);
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [creatingAlert, setCreatingAlert] = useState(false);
+
+  useEffect(() => { setIsSearchPending(false); }, [searchQuery]);
+
+  const handleSearchChange = (value: string) => {
+    if (value !== searchQuery) setIsSearchPending(true);
+    onSearchChange(value);
+  };
 
   const handleCreateSearchRequest = async () => {
     if (!searchQuery) return;
@@ -82,9 +99,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         category: 'adulto',
         isMinor: false
       });
-      alert('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.');
+      addToast('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.', 'success');
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al crear alerta de búsqueda');
+      addToast(e.response?.data?.error || 'Error al crear alerta de búsqueda', 'error');
     } finally {
       setCreatingAlert(false);
     }
@@ -99,7 +116,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !searchQuery) {
+        if (entries[0].isIntersecting && hasMoreRef.current && !loadingMoreRef.current && !searchQueryRef.current) {
           onLoadMore();
         }
       },
@@ -108,7 +125,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, onLoadMore, searchQuery]);
+  }, [onLoadMore]);
 
   // Filtra personas según el chip activo
   const filtered = persons
@@ -137,8 +154,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             type="text"
             placeholder="Buscar por nombre o zona..."
             value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
+            aria-label="Buscar personas"
           />
+          {isSearchPending && <span className="feed-search-pending">Buscando...</span>}
         </div>
         <div className="feed-chips">
           {chips.map(c => (
@@ -158,18 +177,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
       {/* Lista del feed */}
       {loading ? (
-        <div className="feed-loading">
-          <Loader2 size={28} className="spinner" />
-          <span>Cargando registros...</span>
+        <div className="feed-list" data-testid="feed-skeleton-loading">
+          <FeedSkeletonList count={5} />
         </div>
       ) : filter === 'disasters' ? (
         /* Lista de desastres (no personas) */
         <div className="feed-list">
           {disasters.length === 0 ? (
-            <div className="feed-empty">
-              <AlertTriangle size={40} />
-              <p>No hay desastres activos reportados.</p>
-            </div>
+            <EmptyState icon="alert" message="No hay desastres activos reportados" subtext="Los desastres activos aparecerán aquí automáticamente." />
           ) : disasters.map(d => (
             <article key={d._id} className={`feed-card ${d.severity === 'critical' ? 'feed-card-critical' : 'feed-card-amber'}`}>
               <div className="feed-card-header">
@@ -189,24 +204,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         </div>
       ) : filtered.length === 0 ? (
         /* Sin resultados: muestra botón de crear alerta si hay búsqueda */
-        <div className="feed-empty">
-          <Users size={48} />
-          <p>No se encontraron personas con esos filtros.</p>
-          {searchQuery && (
-            <div className="feed-empty-actions">
-              <p className="feed-empty-hint">
-                ¿No encuentras a quien buscas?
-              </p>
-              {user ? (
-                <Button
-                  onClick={handleCreateSearchRequest}
-                  disabled={creatingAlert}
-                >
-                  {creatingAlert ? 'Creando...' : 'Crear Alerta de Búsqueda'}
-                </Button>
-              ) : (
-                <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
-              )}
+        <div className="feed-list">
+          <EmptyState
+            icon="search"
+            message={searchQuery ? `Sin resultados para "${searchQuery}"` : "No se encontraron personas con esos filtros"}
+            subtext={searchQuery ? "Prueba con otros términos o crea una alerta para recibir notificaciones." : "Intenta cambiar el filtro o crear un reporte."}
+            action={searchQuery && user ? {
+              label: 'Crear Alerta de Búsqueda',
+              onClick: handleCreateSearchRequest,
+              disabled: creatingAlert
+            } : undefined}
+          />
+          {searchQuery && !user && (
+            <div className="feed-empty" style={{ paddingTop: 0 }}>
+              <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
             </div>
           )}
         </div>

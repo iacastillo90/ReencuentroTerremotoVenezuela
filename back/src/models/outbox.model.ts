@@ -24,5 +24,6 @@ const outboxSchema = new Schema<OutboxEvent>({
 
 outboxSchema.index({ status: 1, createdAt: 1 });
 outboxSchema.index({ type: 1, status: 1 });
+outboxSchema.index({ processedAt: 1 }, { expireAfterSeconds: 604800 });
 
 export const OutboxModel = mongoose.model<OutboxEvent>('Outbox', outboxSchema);

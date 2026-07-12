@@ -29,7 +29,7 @@
  * RECURSOS DE EMERGENCIA:
  *   Números de contacto venezolanos visibles siempre (171, 911, Protección Civil).
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Person } from '../../types';
 import {
   X, MapPin, User, CheckCircle, Heart,
@@ -44,10 +44,13 @@ interface PersonDetailModalProps {
   person: Person;
   onClose: () => void;
   onReport?: () => void;
+  onCaseClosed?: () => void;
 }
 
-export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport }) => {
-  const isMissing = person.status === 'missing';
+export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, onClose, onReport, onCaseClosed }) => {
+  const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+  const currentStatus = optimisticStatus || person.status;
+  const isMissing = currentStatus === 'missing';
 
   // ─── Control de acceso a datos sensibles ───
   const { user } = useAuth();
@@ -67,6 +70,45 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
   const [closeNotes, setCloseNotes] = useState('');
   const [closing, setClosing] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
+  useEffect(() => { return () => { isMountedRef.current = false; }; }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleTab);
+    first?.focus();
+    return () => document.removeEventListener('keydown', handleTab);
+  }, []);
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (toastMessage) {
+      const t = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toastMessage]);
+
   // Determina si el usuario actual es el dueño del reporte
   const isOwner = user?.role === 'admin' ||
     ((person.metadata?.reportedBy as any)?._id === user?._id) ||
@@ -76,38 +118,49 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("Debes iniciar sesión para enviar un mensaje.");
+      setToastMessage("Debes iniciar sesión para enviar un mensaje.");
       return;
     }
     try {
       setSending(true);
       await api.post('/contacts', { reportId: person.idHash, message });
-      alert("Mensaje enviado exitosamente. El reportante será notificado de forma segura.");
-      setShowContactForm(false);
-      setMessage('');
+      setToastMessage("Mensaje enviado exitosamente. El reportante será notificado de forma segura.");
+      if (isMountedRef.current) {
+        setShowContactForm(false);
+        setMessage('');
+      }
     } catch (e: any) {
-      alert(e.response?.data?.error || "Error al enviar mensaje");
+      setToastMessage(e.response?.data?.error || "Error al enviar mensaje");
     } finally {
-      setSending(false);
+      if (isMountedRef.current) setSending(false);
     }
   };
 
-  // ─── Cerrar caso (sello legal) ───
+  // ─── Cerrar caso (sello legal) con actualización optimista ───
   const handleCloseCase = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const previousStatus = currentStatus;
+    // Optimistic update: cambia el estado inmediatamente
+    setOptimisticStatus(closeResolution === 'found' ? 'found' : closeResolution);
+    setShowCloseCase(false);
+    setClosing(true);
     try {
-      setClosing(true);
       await api.post(`/persons/${person.idHash}/close`, {
         resolution: closeResolution,
         notes: closeNotes
       });
-      alert('Caso cerrado y sellado exitosamente bajo la Ley de Protección de Datos.');
-      window.location.reload();
+      if (isMountedRef.current) {
+        setClosing(false);
+        onCaseClosed?.();
+      }
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al cerrar el caso');
-    } finally {
-      setClosing(false);
+      // Rollback en caso de error
+      if (isMountedRef.current) {
+        setOptimisticStatus(previousStatus);
+        setClosing(false);
+      }
+      setToastMessage(e.response?.data?.error || 'Error al cerrar el caso');
     }
   };
 
@@ -117,7 +170,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     if (person.data?.cedula && cedulaInput.trim() === person.data.cedula) {
       setCedulaMatched(true);
     } else {
-      alert("Cédula incorrecta. Si eres familiar, verifica el documento. De lo contrario, solicita acceso a un moderador.");
+      setToastMessage("Cédula incorrecta. Si eres familiar, verifica el documento. De lo contrario, solicita acceso a un moderador.");
     }
   };
 
@@ -141,7 +194,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     : 'Fecha desconocida';
 
   return (
-    <div className="modal-overlay" onClick={handleBackdropClick}>
+    <div className="modal-overlay" onClick={handleBackdropClick} ref={containerRef}>
       <div className="modal-content" role="dialog" aria-modal="true">
 
         <header className="modal-header">
@@ -381,7 +434,10 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           <div className="social-share">
             <p>Cuantas más personas conozcan el registro, a más gente ayuda.</p>
             <div className="share-buttons">
-              <button className="btn-share whatsapp">
+              <button className="btn-share whatsapp" onClick={() => {
+                const text = `Busco a ${person.name} - Está reportado en Reencuentro Terremoto Venezuela. Ayúdanos a encontrarle.`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }}>
                 <Share2 size={16} /> Compartir WhatsApp
               </button>
             </div>
@@ -389,6 +445,9 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
 
         </div>
       </div>
+      {toastMessage && (
+        <div className="toast-notification">{toastMessage}</div>
+      )}
     </div>
   );
 };

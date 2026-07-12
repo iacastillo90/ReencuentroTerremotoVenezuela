@@ -1,32 +1,48 @@
-/**
- * EmptyState.tsx — Estado vacío genérico
- *
- * PROPÓSITO:
- *   Muestra un mensaje amigable cuando una lista/tabla/búsqueda
- *   no tiene resultados. Reemplaza los patrones duplicados de
- *   AdminDashboard, ProfilePage, Feed, SearchPage.
- *
- * CÓMO USAR:
- *   <EmptyState message="No hay reportes pendientes" />
- *   <EmptyState message="Sin resultados" subtext="Intenta con otros filtros" />
- *
- * NOTA:
- *   No necesita íconos — el mensaje claro y el subtexto opcional
- *   son suficientes. Si en el futuro se quiere un ícono, se puede
- *   agregar como prop opcional.
- */
 import React from 'react';
+import { SearchX, Users, Inbox, AlertCircle } from 'lucide-react';
 
 interface EmptyStateProps {
-  /** Mensaje principal (ej: "No se encontraron resultados") */
   message: string;
-  /** Subtítulo opcional con más contexto */
   subtext?: string;
+  icon?: 'search' | 'users' | 'inbox' | 'alert';
+  action?: {
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  };
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ message, subtext }) => (
-  <div className="admin-table-empty">
-    <p>{message}</p>
-    {subtext && <small className="admin-text-muted">{subtext}</small>}
-  </div>
-);
+const iconMap = {
+  search: SearchX,
+  users: Users,
+  inbox: Inbox,
+  alert: AlertCircle,
+};
+
+export const EmptyState: React.FC<EmptyStateProps> = ({
+  message,
+  subtext,
+  icon = 'inbox',
+  action
+}) => {
+  const Icon = iconMap[icon];
+
+  return (
+    <div className="empty-state">
+      <div className="empty-state-icon-wrapper">
+        <Icon size={40} />
+      </div>
+      <p className="empty-state-message">{message}</p>
+      {subtext && <p className="empty-state-subtext">{subtext}</p>}
+      {action && (
+        <button
+          className="empty-state-action"
+          onClick={action.onClick}
+          disabled={action.disabled}
+        >
+          {action.disabled ? 'Procesando...' : action.label}
+        </button>
+      )}
+    </div>
+  );
+};

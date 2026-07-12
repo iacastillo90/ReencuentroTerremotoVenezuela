@@ -1,12 +1,9 @@
 import crypto from 'crypto';
 import { ApiKeyModel, ApiKeyDocument } from '../models/api-key.model';
 import { logger } from '../utils/logger.util';
+import { hashApiKey } from '../utils/hash.util';
 
 const KEY_PREFIX_LENGTH = 8;
-
-function hashApiKey(key: string): string {
-  return crypto.createHash('sha256').update(key).digest('hex');
-}
 
 function generateApiKey(): { key: string; keyPrefix: string } {
   const raw = crypto.randomBytes(32).toString('hex');

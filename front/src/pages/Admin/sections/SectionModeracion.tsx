@@ -30,12 +30,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ShieldAlert, CheckCircle, XCircle, Edit2, MessageSquare, Users } from 'lucide-react';
 import { api } from '../../../services/api';
+import { useToast } from '../../../store/ToastContext';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { ChatWidget } from '../../../components/common/ChatWidget';
 
+interface ModeracionPerson {
+  idHash: string;
+  name: string;
+  photoUrl?: string;
+  status: string;
+  type: string;
+  age?: number;
+  gender?: string;
+  aliases?: string | string[];
+  lastSeen?: {
+    description?: string;
+    state?: string;
+    municipality?: string;
+    date?: string;
+  };
+  metadata?: {
+    reportedBy?: string | { _id: string; name: string };
+    source?: string;
+  };
+  contactPerson?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
+}
+
+interface ChatMessage {
+  _id: string;
+  senderId: string;
+  receiverId?: string;
+  reportId?: string;
+  message?: string;
+  createdAt?: string;
+}
+
 export function SectionModeracion() {
-  const [persons, setPersons] = useState<any[]>([]);
+  const { addToast } = useToast();
+  const [persons, setPersons] = useState<ModeracionPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -56,10 +93,10 @@ export function SectionModeracion() {
   useEffect(() => { load(); }, [load]);
 
   // ─── Estado de modales ──────────────────────────────
-  const [editingPerson, setEditingPerson] = useState<any>(null);  // Drawer de edición
-  const [chattingPerson, setChattingPerson] = useState<any>(null); // Chat con reportero
+  const [editingPerson, setEditingPerson] = useState<ModeracionPerson | null>(null);
+  const [chattingPerson, setChattingPerson] = useState<ModeracionPerson | null>(null);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
 
   // Carga el historial del chat cuando se abre la ventana de chat.
@@ -89,7 +126,7 @@ export function SectionModeracion() {
       // Elimina la fila de la tabla local (sin recargar).
       setPersons(prev => prev.filter(p => p.idHash !== idHash));
     } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al procesar la moderación');
+      addToast(e.response?.data?.error || 'Error al procesar la moderación', 'error');
     }
   };
 
@@ -98,7 +135,7 @@ export function SectionModeracion() {
     e.preventDefault();
     try {
       // Construye el payload con los campos editables.
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: editingPerson.name,
         type: editingPerson.type,
         status: editingPerson.status,
@@ -122,9 +159,9 @@ export function SectionModeracion() {
         p.idHash === editingPerson.idHash ? { ...p, ...updated.data } : p
       ));
       setEditingPerson(null);
-      alert('Datos actualizados correctamente');
+      addToast('Datos actualizados correctamente', 'success');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al actualizar');
+      addToast(err.response?.data?.error || 'Error al actualizar', 'error');
     }
   };
 
@@ -148,7 +185,7 @@ export function SectionModeracion() {
       setChatMessages(prev => [...prev, res.data]);
       setChatMessage('');
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error al enviar mensaje');
+      addToast(err.response?.data?.error || 'Error al enviar mensaje', 'error');
     }
   };
 

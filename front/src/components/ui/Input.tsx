@@ -17,7 +17,7 @@
  */
 import React from 'react';
 import type { InputHTMLAttributes } from 'react';
-import './Input.css';
+import styles from './Input.module.css';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -28,10 +28,10 @@ export const Input: React.FC<InputProps> = ({
   label, error, className = '', ...props
 }) => {
   return (
-    <div className={`input-group ${className}`}>
-      {label && <label className="input-label">{label}</label>}
-      <input className={`input-field ${error ? 'input-error' : ''}`} {...props} />
-      {error && <span className="input-error-msg">{error}</span>}
+    <div className={`${styles['input-group']} ${className}`}>
+      {label && <label className={styles['input-label']}>{label}</label>}
+      <input className={`${styles['input-field']} ${error ? styles['input-error'] : ''}`} {...props} />
+      {error && <span className={styles['input-error-msg']}>{error}</span>}
     </div>
   );
 };

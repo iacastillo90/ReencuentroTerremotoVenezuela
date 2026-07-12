@@ -66,7 +66,6 @@ export function useBackgroundSync() {
 
       if (pendingReports.length === 0) return;
 
-      console.log(`[Background Sync] Found ${pendingReports.length} pending reports to sync.`);
 
       for (const report of pendingReports) {
         try {
@@ -90,7 +89,6 @@ export function useBackgroundSync() {
 
           // Éxito: elimina de IndexedDB.
           await db.offlineReports.delete(report.id!);
-          console.log(`[Background Sync] Successfully synced report ID: ${report.id}`);
         } catch (err) {
           console.error(`[Background Sync] Failed to sync report ID: ${report.id}`, err);
           // Reintentará en el próximo ciclo online.

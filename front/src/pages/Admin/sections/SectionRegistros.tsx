@@ -26,6 +26,7 @@
 import { useState } from 'react';
 import { Search, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
 import { api } from '../../../services/api';
+import { useToast } from '../../../store/ToastContext';
 import { NameCell } from '../../../components/common/NameCell';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
+  const { addToast } = useToast();
   // search: texto del input de búsqueda local.
   const [search, setSearch] = useState('');
 
@@ -54,7 +56,7 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
       onStatusChange(idHash, newStatus);
     } catch (e: any) {
       // alert es simple y no requiere librerías de toasts.
-      alert(e.response?.data?.error || 'Error actualizando estado');
+      addToast(e.response?.data?.error || 'Error actualizando estado', 'error');
     }
   };
 

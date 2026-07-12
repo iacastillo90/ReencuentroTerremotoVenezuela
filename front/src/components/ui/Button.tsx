@@ -28,7 +28,7 @@
  */
 import React from 'react';
 import type { ButtonHTMLAttributes } from 'react';
-import './Button.css';
+import styles from './Button.module.css';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -41,8 +41,8 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false, className = '', ...props
 }) => {
   const classNames = [
-    'btn', `btn-${variant}`, `btn-${size}`,
-    fullWidth ? 'btn-full' : '', className
+    styles.btn, styles[`btn-${variant}`], styles[`btn-${size}`],
+    fullWidth ? styles['btn-full'] : '', className
   ].filter(Boolean).join(' ');
 
   return <button className={classNames} {...props}>{children}</button>;

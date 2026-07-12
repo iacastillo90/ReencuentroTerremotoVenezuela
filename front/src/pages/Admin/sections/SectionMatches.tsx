@@ -35,14 +35,75 @@ import { Button } from '../../../components/ui/Button';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';
 import { EmptyState } from '../../../components/common/EmptyState';
 
+interface MatchPerson {
+  idHash: string;
+  name: string;
+  photoUrl?: string;
+  age?: number;
+  gender?: string;
+  description?: string;
+  status?: string;
+  lastSeen?: {
+    state?: string;
+    municipality?: string;
+    description?: string;
+  };
+  metadata?: {
+    source?: string;
+  };
+  contactPerson?: {
+    name?: string;
+    phone?: string;
+  };
+}
+
+interface MatchEntry {
+  _id: string;
+  score: number;
+  status: string;
+  searchRequestId?: {
+    _id: string;
+    searchName: string;
+    category?: string;
+  };
+  matchedPerson?: MatchPerson;
+  person?: MatchPerson;
+}
+
+interface ExpandedPerson {
+  _id?: string;
+  _isSearchReq?: boolean;
+  _title?: string;
+  idHash?: string;
+  name?: string;
+  searchName?: string;
+  photoUrl?: string;
+  age?: number;
+  gender?: string;
+  description?: string;
+  category?: string;
+  lastSeen?: {
+    description?: string;
+    state?: string;
+    municipality?: string;
+  };
+  metadata?: {
+    source?: string;
+  };
+  contactPerson?: {
+    name?: string;
+    phone?: string;
+  };
+}
+
 export function SectionMatches() {
-  const [matches, setMatches] = useState<any[]>([]);
+  const [matches, setMatches] = useState<MatchEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const [mergingMatch, setMergingMatch] = useState<any>(null);  // Modal de merge
-  const [isMerging, setIsMerging] = useState(false);             // Estado de carga del merge
-  const [expandedPerson, setExpandedPerson] = useState<any>(null); // Modal expandido
+  const [mergingMatch, setMergingMatch] = useState<MatchEntry | null>(null);
+  const [isMerging, setIsMerging] = useState(false);
+  const [expandedPerson, setExpandedPerson] = useState<ExpandedPerson | null>(null);
 
   // loadMatches: obtiene los matches de la IA.
   const loadMatches = useCallback(async () => {
