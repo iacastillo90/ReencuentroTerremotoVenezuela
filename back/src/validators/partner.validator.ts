@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sanitizedString, sanitizedStringOptional, sanitize } from '../utils/sanitize.util';
+import { sanitizedString, sanitizedStringOptional } from '../utils/sanitize.util';
 
 const geoJsonSchema = z.object({
   type: z.literal('Point'),
@@ -18,7 +18,7 @@ export const partnerCaseSchema = z.object({
   }).optional(),
   age: z.number().min(0).max(150).optional(),
   gender: z.enum(['M', 'F', 'other', 'unknown']).optional(),
-  description: z.string().trim().transform(v => sanitize(v)).pipe(z.string().max(5000)).optional(),
+  description: sanitizedString.pipe(z.string().max(5000)).optional(),
   photoUrl: z.string().url().optional(),
   aliases: z.array(sanitizedStringOptional).max(20).optional(),
   contactPerson: z.object({

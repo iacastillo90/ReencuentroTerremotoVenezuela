@@ -51,22 +51,20 @@ export const sanitizedStringOptional = z.string()
   .optional();
 
 /**
- * Escape regex special characters to prevent regex injection.
+ * Safe string for IDs, hashes, and tokens that should NOT be HTML-sanitized
+ * but must still be validated. Trims and limits length only.
  */
-export function escapeRegex(str: string): string {
-  return str.replace(/[.^$*+?{}[\]\\|()]/g, '\\$&');
-}
+export const safeIdString = z.string().trim().max(256);
 
 /**
- * Safe regex query — trim, limit to 200 chars, escape metacharacters.
- * Returns empty string if input is too long or empty.
+ * Pre-sanitized query parameter string.
  */
-export function safeRegexQuery(str: string): string {
-  if (!str) return '';
-  const trimmed = str.trim();
-  if (trimmed.length > 200) return '';
-  return escapeRegex(trimmed);
-}
+export const sanitizedQueryParam = z.string()
+  .trim()
+  .transform((v) => sanitize(v))
+  .pipe(z.string().max(200));
+
+export { escapeRegex, safeRegexQuery } from './regex-escape.util';
 
 const PHONE_REGEX = /\+?\d{7,15}/g;
 
