@@ -21,6 +21,10 @@ export class PersonMatchingQueue {
     return this.queue.name;
   }
 
+  get underlyingQueue(): Queue {
+    return this.queue;
+  }
+
   async enqueue(data: { idHash: string; source: string }, opts?: { delay?: number }): Promise<void> {
     await this.queue.add('match-person', data, opts);
   }

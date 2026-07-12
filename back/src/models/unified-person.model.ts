@@ -54,6 +54,7 @@ export interface UnifiedPerson extends Document {
     reporterLocation?: { lat: number; lng: number };
   };
   embedding?: number[];
+  faceEncoding?: number[];
 }
 
 const UnifiedPersonSchema = new Schema<UnifiedPerson>({
@@ -104,7 +105,8 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
       lng: Number
     }
   },
-  embedding: { type: [Number], select: false } // Vector embedding para IA
+  embedding: { type: [Number], select: false }, // Vector embedding textual (IA)
+  faceEncoding: { type: [Number], select: false }, // Vector facial 128-d (face_recognition)
 });
 
 UnifiedPersonSchema.index({ normalizedName: 1, 'lastSeen.state': 1 });
