@@ -1,6 +1,7 @@
 import { Client } from 'minio';
 import crypto from 'crypto';
 import path from 'path';
+import { logger } from '../utils/logger.util';
 
 // Limpiar el endpoint por si el usuario pone https:// por error
 const rawEndpoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
@@ -10,7 +11,11 @@ const minioAccessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
 const minioSecretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
 
 if (minioAccessKey === 'minioadmin' || minioSecretKey === 'minioadmin') {
-  console.warn('[MinIO] Using default credentials. Set MINIO_ACCESS_KEY and MINIO_SECRET_KEY for production.');
+  if (process.env.NODE_ENV === 'production') {
+    logger.fatal('[MinIO] Default credentials detected in production — refusing to start.');
+    process.exit(1);
+  }
+  logger.warn('[MinIO] Using default credentials. Set MINIO_ACCESS_KEY and MINIO_SECRET_KEY for production.');
 }
 
 // Configuración cliente MinIO local/cloud
@@ -30,10 +35,10 @@ export async function initializeStorage() {
     const exists = await minioClient.bucketExists(BUCKET_NAME);
     if (!exists) {
       await minioClient.makeBucket(BUCKET_NAME, 'us-east-1');
-      console.log(`[Storage] Bucket '${BUCKET_NAME}' creado (sin política pública).`);
+      logger.info({ bucket: BUCKET_NAME }, '[Storage] Bucket created');
     }
   } catch (error) {
-    console.error(`[Storage] Error inicializando MinIO:`, error);
+    logger.error({ err: error }, '[Storage] Error initializing MinIO');
   }
 }
 

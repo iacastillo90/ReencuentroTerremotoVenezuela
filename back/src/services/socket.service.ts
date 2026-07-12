@@ -5,10 +5,15 @@ import { getJwtSecret } from '../middlewares/auth.middleware';
 import { UserModel } from '../models/user.model';
 import { PersonModel } from '../models/unified-person.model';
 import { MatchModel } from '../models/match.model';
+import { logger } from '../utils/logger.util';
+
+let RedisAdapter: any;
+try {
+  RedisAdapter = require('@socket.io/redis-adapter');
+} catch {}
 
 let ioInstance: Server | null = null;
 
-// Map user ID to set of socket IDs (a user can have multiple tabs/sockets open)
 const userSockets = new Map<string, Set<string>>();
 
 export function initializeSocketServer(httpServer: HttpServer, corsOrigins: string[]) {
@@ -21,6 +26,15 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
   });
 
   ioInstance = io;
+
+  if (RedisAdapter) {
+    const { connection: pubClient } = require('../config/redis.config');
+    const subClient = pubClient.duplicate();
+    io.adapter(RedisAdapter(pubClient, subClient));
+    logger.info('[Socket] Redis adapter initialized');
+  } else {
+    logger.warn('[Socket] Redis adapter not available — single process only');
+  }
 
   // Authentication Middleware for Socket.IO
   io.use(async (socket: Socket, next) => {
@@ -68,7 +82,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
 
       next();
     } catch (err) {
-      console.error('[SocketAuth] Connection auth failed:', err);
+      logger.error({ err }, '[SocketAuth] Connection auth failed');
       next(new Error('Authentication error: Invalid credentials'));
     }
   });
@@ -78,7 +92,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
     if (!user) return;
 
     const userId = user.userId;
-    console.log(`[Socket] User connected: ${userId} (${user.email}) - Socket: ${socket.id}`);
+    logger.info({ userId, email: user.email, socketId: socket.id }, '[Socket] User connected');
 
     // Join personal user room
     socket.join(`user_${userId}`);
@@ -92,7 +106,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
     // Join role-specific rooms (e.g. admin or verifier)
     if (user.role === 'admin' || user.role === 'verifier') {
       socket.join('moderators');
-      console.log(`[Socket] Moderator joined: ${userId}`);
+      logger.info({ userId }, '[Socket] Moderator joined');
     }
 
     socket.on('request_match_chat', async (data: { matchId: string }) => {
@@ -126,7 +140,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
             requesterEmail: user.email,
             minorId: matchedPerson.idHash
           });
-          console.log(`[Socket] Mediation room created for minor: ${roomName}`);
+          logger.info({ roomName }, '[Socket] Mediation room created');
         } else {
           // Chat 1:1 Normal
           const roomName = `room_match_${matchId}`;
@@ -137,13 +151,13 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
           // emitToUser(matchedPerson.metadata.reportedBy, 'chat_invite', { room: roomName })
         }
       } catch (err) {
-        console.error('[Socket] Error in request_match_chat:', err);
+        logger.error({ err }, '[Socket] Error in request_match_chat');
         socket.emit('chat_error', { message: 'Error interno al procesar el chat' });
       }
     });
 
     socket.on('disconnect', () => {
-      console.log(`[Socket] User disconnected: ${userId} - Socket: ${socket.id}`);
+      logger.info({ userId, socketId: socket.id }, '[Socket] User disconnected');
       const sockets = userSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
@@ -163,7 +177,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
 export function emitToUser(userId: string, event: string, data: any) {
   if (ioInstance) {
     ioInstance.to(`user_${userId}`).emit(event, data);
-    console.log(`[Socket] Emitted event '${event}' to user: ${userId}`);
+    logger.info({ userId, event }, '[Socket] Emitted event to user');
   }
 }
 
@@ -173,7 +187,7 @@ export function emitToUser(userId: string, event: string, data: any) {
 export function emitToModerators(event: string, data: any) {
   if (ioInstance) {
     ioInstance.to('moderators').emit(event, data);
-    console.log(`[Socket] Emitted event '${event}' to moderators`);
+    logger.info({ event }, '[Socket] Emitted event to moderators');
   }
 }
 
