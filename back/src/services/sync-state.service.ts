@@ -1,9 +1,17 @@
 import { SyncStateModel } from '../models/sync-state.model';
 import { createHash } from 'crypto';
 
+function stableStringify(obj: any): string {
+  if (obj === null || obj === undefined) return 'null';
+  if (typeof obj === 'string') return JSON.stringify(obj);
+  if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+  if (Array.isArray(obj)) return '[' + obj.map(stableStringify).join(',') + ']';
+  const keys = Object.keys(obj).sort();
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(obj[k])).join(',') + '}';
+}
+
 export function generateChecksum(payload: any): string {
-  // Sort keys to ensure consistent hash for same object structure
-  const dataString = JSON.stringify(payload, Object.keys(payload).sort());
+  const dataString = stableStringify(payload);
   return createHash('md5').update(dataString).digest('hex');
 }
 
