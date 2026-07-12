@@ -10,7 +10,7 @@ export async function uploadFile(req: Request, res: Response, next: NextFunction
       return res.status(400).json({ error: 'No se envió ningún archivo.' });
     }
 
-    if (!validateMagicBytes(req.file.buffer, req.file.mimetype)) {
+    if (!(await validateMagicBytes(req.file.buffer, req.file.mimetype))) {
       auditLog({
         eventType: 'validation_failure',
         severity: 'warning',
