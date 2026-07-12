@@ -7,8 +7,18 @@ import {
   getVerificationsHandler, getAdminSearchesHandler,
   postApiKeyHandler, getApiKeysHandler, deleteApiKeyHandler,
 } from '../controllers/admin.controller';
+import rateLimit from 'express-rate-limit';
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests to admin endpoints. Try again later.' }
+});
 
 const router = Router();
+router.use(adminLimiter);
 
 router.post('/merge/:id1/:id2', mergeProfilesHandler);
 router.get('/audit', getAuditJobsHandler);
