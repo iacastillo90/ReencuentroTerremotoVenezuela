@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import mongoose from 'mongoose';
 import { Worker, Job } from 'bullmq';
+import { connectDB } from '../database/connection';
 import { connection } from '../config/redis.config';
 import { fetchUSGSEarthquakes } from '../jobs/usgs.job';
 import { fetchFIRMSFires } from '../jobs/firms.job';
@@ -14,14 +14,7 @@ import { runProteccionCivilJob } from '../jobs/proteccion-civil.job';
 import { runCruzRojaJob } from '../jobs/cruz-roja.job';
 import { logger } from '../utils/logger.util';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
-
-if (mongoose.connection.readyState === 0) {
-  logger.info({ mongoUri: MONGO_URI }, '[disaster-sync] Connecting to MongoDB...');
-  mongoose.connect(MONGO_URI)
-    .then(() => logger.info('[disaster-sync] MongoDB connected'))
-    .catch((err) => logger.error({ err }, '[disaster-sync] MongoDB connection error'));
-}
+connectDB('Worker');
 
 interface SyncJob {
   name: string;

@@ -8,11 +8,13 @@ export class PersonMatchingQueue {
     this.queue = new Queue('person-matching', {
       connection: connection as any,
       defaultJobOptions: {
-        attempts: 3,
+        attempts: 5,
         backoff: {
           type: 'exponential',
-          delay: 1000,
+          delay: 2000,
         },
+        removeOnComplete: true,
+        removeOnFail: { age: 24 * 3600, count: 100 },
       },
     });
   }

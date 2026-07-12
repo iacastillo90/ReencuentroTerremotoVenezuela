@@ -7,13 +7,13 @@ export const DISASTER_SYNC_QUEUE_NAME = 'disaster-sync';
 export const disasterSyncQueue = new Queue(DISASTER_SYNC_QUEUE_NAME, {
   connection: connection as any,
   defaultJobOptions: {
-    attempts: 3,
+    attempts: 5,
     backoff: {
       type: 'exponential',
       delay: 5000,
     },
     removeOnComplete: true,
-    removeOnFail: false,
+    removeOnFail: { age: 24 * 3600, count: 100 },
   }
 });
 

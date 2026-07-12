@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import mongoose from 'mongoose';
 import { z } from 'zod';
 import { Worker, Job } from 'bullmq';
+import { connectDB } from '../database/connection';
 import { processAndReconcilePerson } from '../services/reconciliation.service';
 import { connection } from '../config/redis.config';
 import { getAIProvider } from '../services/ai/ai.factory';
@@ -18,15 +18,9 @@ const aiOutputSchema = z.object({
   safeDescription: z.string().max(10000).optional(),
 });
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
-const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
+connectDB('Worker');
 
-if (mongoose.connection.readyState === 0) {
-  logger.info({ mongoUri: MONGO_URI }, '[ia-processor] Connecting to MongoDB...');
-  mongoose.connect(MONGO_URI)
-    .then(() => logger.info('[ia-processor] MongoDB connected'))
-    .catch((err) => logger.error({ err }, '[ia-processor] MongoDB connection error'));
-}
+const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
 
 async function extractFaceEncoding(imageUrl: string): Promise<number[] | null> {
   try {
