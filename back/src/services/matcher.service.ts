@@ -3,6 +3,7 @@ import { SearchRequestModel } from '../models/search-request.model';
 import { MatchModel } from '../models/match.model';
 import { queryPinecone } from './pinecone.service';
 import { getAIProvider } from './ai/ai.factory';
+import { logger } from '../utils/logger.util';
 
 // Helper de similitud del coseno para cálculo local
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
@@ -100,10 +101,13 @@ export async function runMatchingForSearchRequest(searchRequestId: string) {
       }
     }
     
-    console.log(`[Matcher] Vector Search completado para SearchRequest ${searchRequestId}. Uso Atlas: ${useAtlas}. Matches encontrados: ${candidates.length}`);
+    logger.info({ searchRequestId, useAtlas, matchCount: candidates.length }, '[Matcher] Vector search completed');
 
   } catch (error) {
-    console.error('[Matcher] Error running matching:', error);
+    logger.error({ err: error }, '[Matcher] Error running matching');
+    if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('ECONNREFUSED'))) {
+      throw error;
+    }
   }
 }
 
@@ -180,6 +184,9 @@ export async function runMatchingForNewPerson(personIdHash: string) {
     }
 
   } catch (error) {
-    console.error('[Matcher] Error running matching for new person:', error);
+    logger.error({ err: error }, '[Matcher] Error running matching for new person');
+    if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('ECONNREFUSED'))) {
+      throw error;
+    }
   }
 }

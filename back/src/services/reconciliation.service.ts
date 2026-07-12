@@ -1,6 +1,6 @@
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
 import { calculateSimilarity } from '../utils/fuzzy-match.util';
-import { addJobToManualAudit } from '../queues/manual-audit.queue';
+import { addToOutbox } from './outbox.service';
 import { upsertPerson } from './person.service';
 
 export interface SimilarityResult {
@@ -9,9 +9,17 @@ export interface SimilarityResult {
 }
 
 export async function findSimilarPersons(normalizedName: string, state: string, threshold: number = 0.85): Promise<SimilarityResult[]> {
-  // To avoid scanning the entire database, we filter by the state where the person was last seen.
-  // In a highly optimized setup, we could use n-grams or text indexes.
-  const candidates = await PersonModel.find({ 'lastSeen.state': state }).lean();
+  const nameParts = normalizedName.split(' ').filter(Boolean);
+  const escapeRegExp = (text: string) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+  const safeParts = nameParts.slice(0, 3).map(escapeRegExp);
+  const nameFilter = safeParts.length > 0
+    ? { normalizedName: { $regex: safeParts.join('|'), $options: 'i' } }
+    : {};
+
+  const candidates = await PersonModel.find({
+    'lastSeen.state': state,
+    ...nameFilter,
+  }).limit(500).lean();
   
   const matches: SimilarityResult[] = [];
   
@@ -22,7 +30,6 @@ export async function findSimilarPersons(normalizedName: string, state: string, 
     }
   }
   
-  // Sort from highest similarity to lowest
   return matches.sort((a, b) => b.score - a.score);
 }
 
@@ -56,11 +63,11 @@ export async function processAndReconcilePerson(
       });
       return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to high similarity (>95%).' };
     } else {
-      // Send to manual audit queue if similarity is between 85% and 94.9%
-      await addJobToManualAudit({
+      // Send to manual audit queue via Transactional Outbox
+      await addToOutbox('manual-audit', {
         incoming: { source, externalId, personData },
         candidates: similarCandidates.map(c => ({ idHash: c.person.idHash, name: c.person.name, score: c.score }))
-      });
+      } as Record<string, unknown>);
       return { status: 'pending_audit', message: 'Sent to manual audit due to possible duplicate.' };
     }
   }
