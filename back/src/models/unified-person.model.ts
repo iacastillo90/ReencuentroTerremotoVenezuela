@@ -110,9 +110,11 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
 });
 
 UnifiedPersonSchema.index({ normalizedName: 1, 'lastSeen.state': 1 });
-// El índice unique de idHash ya está declarado en la definición del esquema
 UnifiedPersonSchema.index({ status: 1, 'metadata.urgencyScore': -1 });
 UnifiedPersonSchema.index({ 'lastSeen.coordinates': '2dsphere' });
 UnifiedPersonSchema.index({ 'externalIds.source': 1, 'externalIds.id': 1 });
+UnifiedPersonSchema.index({ name: 'text', normalizedName: 'text', 'lastSeen.description': 'text' }, { weights: { name: 10, normalizedName: 5, 'lastSeen.description': 1 } });
+UnifiedPersonSchema.index({ 'metadata.reportedBy': 1 });
+UnifiedPersonSchema.index({ 'metadata.auditStatus': 1, status: 1, type: 1 });
 
 export const PersonModel = model<UnifiedPerson>('UnifiedPerson', UnifiedPersonSchema);
