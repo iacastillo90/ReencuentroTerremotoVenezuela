@@ -29,6 +29,7 @@ import App from './App.tsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './store/AuthContext.tsx';
 import { SocketProvider } from './store/SocketContext.tsx';
+import { ToastProvider } from './store/ToastContext.tsx';
 
 Sentry.init({
   dsn: "https://4dbc1ed175d31a1908263519ff64da80@o4511719339458560.ingest.us.sentry.io/4511719432650752",
@@ -70,7 +71,7 @@ const FALLBACK_UI = (
   </div>
 );
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -78,7 +79,9 @@ createRoot(document.getElementById('root')!).render(
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <AuthProvider>
           <SocketProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </SocketProvider>
         </AuthProvider>
       </GoogleOAuthProvider>

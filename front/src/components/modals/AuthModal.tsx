@@ -45,8 +45,8 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const { login, user } = useAuth();
 
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id';
-  const isDevMode = GOOGLE_CLIENT_ID === 'dummy-client-id';
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const isDevMode = import.meta.env.DEV;
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +61,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   // ─── Google Login exitoso ───
   // El backend recibe el credential token de Google, valida,
   // crea/actualiza el usuario y devuelve los datos + cookie de sesión.
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
     try {
       setIsSubmitting(true);
       setError('');
