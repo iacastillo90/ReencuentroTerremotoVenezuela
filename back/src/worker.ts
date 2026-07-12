@@ -1,24 +1,22 @@
-import './sentry'; // INICIALIZAR SENTRY PRIMERO (monitoreo de errores)
-import 'dotenv/config'; // Carga variables de entorno
+import './sentry';
+import 'dotenv/config';
 import mongoose from 'mongoose';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
+import { connectDB } from './database/connection';
+import { logger } from './utils/logger.util';
 
 async function bootstrapWorker() {
   try {
-    console.log(`[Worker] Conectando a MongoDB en ${MONGO_URI}...`);
-    await mongoose.connect(MONGO_URI);
-    console.log('[Worker] MongoDB Conectado exitosamente.');
+    await connectDB('Worker');
 
-    // Iniciar todos los procesos en segundo plano
-    console.log('[Worker] Iniciando colas de procesamiento (BullMQ)...');
+    logger.info('[Worker] Starting BullMQ workers...');
     require('./workers/disaster-sync.worker');
     require('./workers/ia-processor.worker');
     require('./workers/matching.worker');
-    
-    console.log('[Worker] Todos los workers están escuchando tareas.');
+
+    logger.info('[Worker] All workers listening for tasks.');
   } catch (error) {
-    console.error('[Worker] Error crítico durante el inicio:', error);
+    logger.error({ err: error }, '[Worker] Critical startup error');
     process.exit(1);
   }
 }
