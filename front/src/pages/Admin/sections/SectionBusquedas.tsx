@@ -47,6 +47,8 @@ export function SectionBusquedas() {
   const hasNext = page < totalPages;
 
   const updateStatus = useCallback(async (id: string, newStatus: SearchRequest['status']) => {
+    const labels: Record<string, string> = { activa: 'activa', resuelta: 'resuelta', cerrada: 'cerrada' };
+    if (!window.confirm(`¿Estás seguro de marcar esta solicitud como "${labels[newStatus]}"?`)) return;
     try {
       await api.patch(`/admin/searches/${id}`, { status: newStatus });
       mutate();
