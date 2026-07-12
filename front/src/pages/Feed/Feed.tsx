@@ -40,6 +40,7 @@
  *   Se renderiza condicionalmente desde App.tsx.
  */
 import React, { useState, useRef, useEffect } from 'react';
+import * as Sentry from '@sentry/react';
 import { Search, AlertTriangle, Users, MapPin, Loader2, PawPrint } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -100,8 +101,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         isMinor: false
       });
       addToast('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.', 'success');
-    } catch (e: any) {
-      addToast(e.response?.data?.error || 'Error al crear alerta de búsqueda', 'error');
+    } catch (e) {
+      const err = e as { response?: { data?: { error?: string } } };
+      addToast(err.response?.data?.error || 'Error al crear alerta de búsqueda', 'error');
     } finally {
       setCreatingAlert(false);
     }
@@ -139,7 +141,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: counts.missing },
     { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: counts.found },
-    { key: 'animals',   icon: <PawPrint size={13} />,      label: 'Mascotas',      count: (counts as any).animals || 0 },
+    { key: 'animals',   icon: <PawPrint size={13} />,      label: 'Mascotas',      count: (counts as unknown as {animals: number}).animals || 0 },
     { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: counts.total },
     { key: 'disasters', icon: <AlertTriangle size={13} />, label: 'Desastres',     count: disasters.length },
   ];
@@ -298,3 +300,7 @@ export const FeedSidebar: React.FC<{
     </p>
   </div>
 );
+
+export default Sentry.withErrorBoundary(FeedPage, {
+  fallback: <div className="error-boundary-fallback">Ocurrió un error al cargar el feed.</div>
+});
