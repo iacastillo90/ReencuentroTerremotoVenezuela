@@ -1,17 +1,38 @@
-import { upsertPerson } from '../../services/person.service';
-import { PersonModel } from '../../models/unified-person.model';
-
-jest.mock('../../queues/person-matching.queue', () => ({
-  personMatchingQueue: {
-    enqueue: jest.fn().mockResolvedValue(undefined),
-  },
-}));
+jest.mock('ioredis', () => {
+  const MockRedis = {
+    status: 'ready',
+    on: jest.fn(),
+    once: jest.fn(),
+    emit: jest.fn(),
+    connect: jest.fn().mockResolvedValue(undefined),
+    disconnect: jest.fn().mockResolvedValue(undefined),
+    quit: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    setex: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
+    isCluster: false,
+    options: {},
+  };
+  return { __esModule: true, default: jest.fn(() => MockRedis), Redis: jest.fn(() => MockRedis) };
+});
 
 jest.mock('../../models/unified-person.model', () => ({
   PersonModel: {
     findOneAndUpdate: jest.fn()
   }
 }));
+
+jest.mock('../../queues/ia-process.queue', () => ({ addJobToIAQueue: jest.fn() }));
+jest.mock('../../queues/manual-audit.queue', () => ({ addJobToManualAudit: jest.fn() }));
+jest.mock('../../queues/person-matching.queue', () => ({ personMatchingQueue: { enqueue: jest.fn().mockResolvedValue(undefined) } }));
+jest.mock('../../services/outbox.service', () => ({ addToOutbox: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('../../services/sync-state.service', () => ({ checkSyncState: jest.fn() }));
+jest.mock('../../models/audit-log.model', () => ({ AuditLogModel: { create: jest.fn() } }));
+jest.mock('../../utils/person-view.util', () => ({ toPublicPerson: jest.fn(p => p) }));
+
+import { upsertPerson } from '../../services/person.service';
+import { PersonModel } from '../../models/unified-person.model';
 
 describe('person.service', () => {
   afterEach(() => {
@@ -45,14 +66,9 @@ describe('person.service', () => {
     expect(PersonModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
     const callArgs = (PersonModel.findOneAndUpdate as jest.Mock).mock.calls[0];
     
-    // Check idHash
     expect(callArgs[0]).toHaveProperty('idHash');
-    
-    // Check $set
     expect(callArgs[1].$set).toHaveProperty('name', 'Juan Perez');
     expect(callArgs[1].$set['metadata.lastSync']).toEqual(mockDate);
-    
-    // Check $addToSet
     expect(callArgs[1].$addToSet.externalIds.source).toBe('whatsapp');
     expect(callArgs[1].$addToSet.externalIds.id).toBe('msg-123');
 
