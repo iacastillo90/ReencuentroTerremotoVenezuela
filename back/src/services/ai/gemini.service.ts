@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { IAIProvider, AIProcessResult, ImageDraftAnalysis, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class GeminiProvider implements IAIProvider {
   private client: GoogleGenAI;
@@ -24,7 +25,7 @@ export class GeminiProvider implements IAIProvider {
       
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('Gemini Error:', error);
+      logger.error({ err: error }, 'Gemini Error');
       throw error;
     }
   }
@@ -53,7 +54,7 @@ export class GeminiProvider implements IAIProvider {
 
       return response.text || '';
     } catch (error) {
-      console.error('Gemini Transcription Error:', error);
+      logger.error({ err: error }, 'Gemini Transcription Error');
       throw new Error('No se pudo transcribir el audio usando Gemini.');
     }
   }
@@ -89,7 +90,7 @@ No agregues comentarios ni markdown fuera del JSON.
       const text = response.text || '{}';
       return JSON.parse(text) as ImageDraftAnalysis;
     } catch (error) {
-      console.error('Gemini Image Analysis Error:', error);
+      logger.error({ err: error }, 'Gemini Image Analysis Error');
       throw new Error('No se pudo analizar la imagen usando Gemini.');
     }
   }
@@ -102,7 +103,7 @@ No agregues comentarios ni markdown fuera del JSON.
       });
       return response.embeddings?.[0]?.values || [];
     } catch (error) {
-      console.error('Gemini Embedding Error:', error);
+      logger.error({ err: error }, 'Gemini Embedding Error');
       throw new Error('No se pudo generar el embedding con Gemini.');
     }
   }

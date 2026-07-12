@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { IAIProvider, AIProcessResult, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class AnthropicProvider implements IAIProvider {
   private client: Anthropic;
@@ -32,7 +33,7 @@ export class AnthropicProvider implements IAIProvider {
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('Anthropic Error:', error);
+      logger.error({ err: error }, 'Anthropic Error');
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { IAIProvider, AIProcessResult, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class OpenAIProvider implements IAIProvider {
   private client: OpenAI;
@@ -22,7 +23,7 @@ export class OpenAIProvider implements IAIProvider {
       const text = response.choices[0].message.content || '{}';
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('OpenAI Error:', error);
+      logger.error({ err: error }, 'OpenAI Error');
       throw error;
     }
   }
@@ -40,7 +41,7 @@ export class OpenAIProvider implements IAIProvider {
       });
       return response.text;
     } catch (error) {
-      console.error('OpenAI Transcription Error:', error);
+      logger.error({ err: error }, 'OpenAI Transcription Error');
       throw new Error('No se pudo transcribir el audio usando OpenAI Whisper.');
     }
   }

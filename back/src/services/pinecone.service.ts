@@ -1,4 +1,5 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import { logger } from '../utils/logger.util';
 
 let pineconeClient: Pinecone | null = null;
 
@@ -29,9 +30,9 @@ export async function upsertVectorToPinecone(id: string, embedding: number[], me
         }
       ]
     });
-    console.log(`[Pinecone] Vector upserted for ID: ${id}`);
+    logger.info({ id }, '[Pinecone] Vector upserted');
   } catch (error) {
-    console.error('[Pinecone] Upsert Error:', error);
+    logger.error({ err: error }, '[Pinecone] Upsert error');
   }
 }
 
@@ -49,7 +50,7 @@ export async function queryPinecone(embedding: number[], topK: number = 10) {
     
     return queryResponse.matches || [];
   } catch (error) {
-    console.error('[Pinecone] Query Error:', error);
+    logger.error({ err: error }, '[Pinecone] Query error');
     return [];
   }
 }
