@@ -36,8 +36,8 @@ router.get('/csrf-token', (req: Request, res: Response) => {
   // desarrollo (http://localhost) `secure` debe ser false o el navegador la descarta.
   res.cookie('csrf-token', token, {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
+    sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24h
   });
   return res.json({ token });
@@ -99,8 +99,8 @@ router.post('/google', authLimiter, async (req: Request, res: Response, next: Ne
 
     res.cookie('token', authToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
+      sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
     });
 
@@ -129,8 +129,8 @@ function issueSession(res: Response, user: any): string {
   );
   res.cookie('token', authToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
+    sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
   });
   return authToken;
@@ -253,8 +253,8 @@ router.post('/profile', requireUser, async (req: Request, res: Response, next: N
 
     res.cookie('token', authToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
+      sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
     });
 
