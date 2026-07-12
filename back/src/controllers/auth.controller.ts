@@ -216,7 +216,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 
     const user = await UserModel.findByIdAndUpdate(
       req.user!.userId,
-      { sector, contactNumber, isProfileComplete: true },
+      { sector, contactNumber, isProfileComplete: true, $inc: { tokenVersion: 1 } },
       { new: true }
     );
 
