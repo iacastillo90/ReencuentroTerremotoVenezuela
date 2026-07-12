@@ -24,6 +24,7 @@ import { requireAdminApiKey } from './middlewares/auth.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
 import { auditLog } from './middlewares/audit.middleware';
 import { errorHandler } from './middlewares/error.middleware';
+import { correlationMiddleware } from './middlewares/correlation.middleware';
 import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { logger } from './utils/logger.util';
 import { bullBoardRouter } from './services/bull-board.service';
@@ -34,7 +35,10 @@ const app = express();
 // Trust reverse proxy (necesario en Render para rate limiting y cookies 'secure')
 app.set('trust proxy', 1);
 
-// --- 1. Seguridad HTTP con Helmet + CSP ---
+// --- 1a. Correlation ID (antes que cualquier logging) ---
+app.use(correlationMiddleware);
+
+// --- 1b. Seguridad HTTP con Helmet + CSP ---
 const isDev = process.env.NODE_ENV !== 'production';
 const frameAncestors = ["'self'"];
 if (isDev) frameAncestors.push('http://localhost:5173');
