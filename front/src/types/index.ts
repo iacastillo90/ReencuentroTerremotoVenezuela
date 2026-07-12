@@ -148,5 +148,5 @@ export interface Disaster {
     coordinates: [number, number];
   };
   occurredAt: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }

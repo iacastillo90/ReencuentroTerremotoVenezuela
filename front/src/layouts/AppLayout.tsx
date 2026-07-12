@@ -172,10 +172,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               </div>
 
               {/* Botón perfil mobile */}
-              <button className="hide-desktop" onClick={() => go('profile')} title="Mi perfil"
-                style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none',
-                  color: '#e2e8f0', cursor: 'pointer', marginLeft: '0.5rem' }}>
+              <button className="hide-desktop nav-profile-btn-mobile" onClick={() => go('profile')} title="Mi perfil">
                 <UserIcon size={20} />
               </button>
             </>
