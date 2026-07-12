@@ -1,9 +1,12 @@
 import io
+import ipaddress
 import logging
+import socket
 import traceback
 import asyncio
 from contextlib import asynccontextmanager
 from typing import Optional
+from urllib.parse import urlparse
 
 import face_recognition
 import httpx
@@ -14,6 +17,24 @@ from PIL import Image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vision")
+
+
+_SSRF_CACHE: dict[str, bool] = {}
+
+def _is_safe_url(url: str) -> bool:
+    hostname = urlparse(url).hostname
+    if not hostname:
+        return False
+    if hostname in _SSRF_CACHE:
+        return _SSRF_CACHE[hostname]
+    try:
+        ip = socket.gethostbyname(hostname)
+        addr = ipaddress.ip_address(ip)
+        safe = addr.is_global
+        _SSRF_CACHE[hostname] = safe
+        return safe
+    except Exception:
+        return False
 
 
 class ExtractFaceRequest(BaseModel):
@@ -103,12 +124,20 @@ def _process_image_cpu_bound(content: bytes, image_url: str) -> ExtractFaceRespo
 @app.post("/extract-face", response_model=ExtractFaceResponse)
 async def extract_face(req: ExtractFaceRequest):
     try:
-        logger.info(f"Downloading image: {req.image_url}")
+        image_url = str(req.image_url)
+        logger.info(f"Downloading image: {image_url}")
+
+        if not _is_safe_url(image_url):
+            logger.warning(f"SSRF blocked: {image_url}")
+            return ExtractFaceResponse(
+                face_detected=False,
+                error="URL no permitida (SSRF protection)",
+            )
         
         # Descarga ASÍNCRONA: El Event Loop puede atender otras peticiones mientras espera MinIO/AWS.
         async with httpx.AsyncClient(timeout=req.timeout) as client:
             resp = await client.get(
-                str(req.image_url),
+                image_url,
                 headers={"User-Agent": "ReencuentrosVision/1.0"}
             )
             resp.raise_for_status()
