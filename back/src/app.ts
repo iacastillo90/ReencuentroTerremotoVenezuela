@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -132,7 +133,15 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// --- 9. Error handling middleware (must be last) ---
+// Sentry verification endpoint (intentional error)
+app.get('/debug-sentry', (req, res) => {
+  throw new Error('My first Sentry error!');
+});
+
+// --- 9. Sentry Error Handler (debe ir antes del nuestro) ---
+Sentry.setupExpressErrorHandler(app);
+
+// --- 10. Error handling middleware (must be last) ---
 app.use(errorHandler);
 
 export default app;
