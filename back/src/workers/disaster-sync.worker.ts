@@ -12,14 +12,15 @@ import { runInamehJob } from '../jobs/inameh.job';
 import { runCorpoelecJob } from '../jobs/corpoelec.job';
 import { runProteccionCivilJob } from '../jobs/proteccion-civil.job';
 import { runCruzRojaJob } from '../jobs/cruz-roja.job';
+import { logger } from '../utils/logger.util';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
 if (mongoose.connection.readyState === 0) {
-  console.log(`[disaster-sync] Conectando a MongoDB en ${MONGO_URI}...`);
+  logger.info({ mongoUri: MONGO_URI }, '[disaster-sync] Connecting to MongoDB...');
   mongoose.connect(MONGO_URI)
-    .then(() => console.log('[disaster-sync] MongoDB Conectado exitosamente.'))
-    .catch((err) => console.error('[disaster-sync] Error al conectar a MongoDB:', err));
+    .then(() => logger.info('[disaster-sync] MongoDB connected'))
+    .catch((err) => logger.error({ err }, '[disaster-sync] MongoDB connection error'));
 }
 
 interface SyncJob {
@@ -48,26 +49,29 @@ const syncJobs: SyncJob[] = [
   { name: 'Cruz Roja', handler: runCruzRojaJob },
 ];
 
+const SYNC_DELAY_MS = 2000;
+
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
-  const results = await Promise.allSettled(
-    syncJobs.map(async (syncJob) => {
-      try {
-        await syncJob.handler();
-        return { name: syncJob.name, status: 'fulfilled' as const };
-      } catch (error) {
-        return { name: syncJob.name, status: 'rejected' as const, error };
-      }
-    })
-  );
+  const results: Array<{ name: string; status: 'fulfilled' | 'rejected'; error?: any }> = [];
+
+  for (const syncJob of syncJobs) {
+    try {
+      await syncJob.handler();
+      results.push({ name: syncJob.name, status: 'fulfilled' });
+    } catch (error) {
+      results.push({ name: syncJob.name, status: 'rejected', error });
+    }
+    await new Promise(r => setTimeout(r, SYNC_DELAY_MS));
+  }
 
   const successCount = results.filter(r => r.status === 'fulfilled').length;
   const failCount = results.filter(r => r.status === 'rejected').length;
-  console.log(`[disaster-sync] Job ${job.id}: ${successCount}/${syncJobs.length} sources synced`);
+  logger.info({ jobId: job.id, successCount, total: syncJobs.length }, '[disaster-sync] Sync cycle completed');
 
   if (failCount > 0) {
     results
-      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .forEach(r => console.error(`[disaster-sync] Failed: ${(r.reason as any)?.name || 'unknown'}`, r.reason));
+      .filter(r => r.status === 'rejected')
+      .forEach(r => logger.error({ job: r.name, err: r.error }, '[disaster-sync] Sync failed'));
   }
 }, {
   connection: connection as any,

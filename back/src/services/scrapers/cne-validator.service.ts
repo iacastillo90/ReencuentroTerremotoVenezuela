@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../../utils/logger.util';
 
 /**
  * Servicio para consultar y validar números de Cédula de Identidad de Venezuela.
@@ -51,7 +52,7 @@ export class CNEValidatorService {
       return { valid: false, error: 'No se pudo extraer el nombre del registro electoral' };
 
     } catch (error: any) {
-      console.error('[CNEValidator] Error de conexión con el CNE:', error.message);
+      logger.error({ err: (error as Error).message }, '[CNEValidator] Connection error');
       return { valid: false, error: 'Servicio CNE inaccesible momentáneamente' };
     }
   }

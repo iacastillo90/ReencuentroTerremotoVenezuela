@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuditLogModel, IAuditLog } from '../models/audit-log.model';
+import { logger } from '../utils/logger.util';
 
 export function createAuditMiddleware(
   eventType: IAuditLog['eventType'],
@@ -13,7 +14,7 @@ export function createAuditMiddleware(
     const originalEnd = res.end;
     res.end = function (this: Response, ...args: any[]) {
       const duration = Date.now() - startTime;
-      const actor = (req as any).user?.userId || req.ip || 'unknown';
+      const actor = req.user?.userId || req.ip || 'unknown';
 
       const entry: Partial<IAuditLog> = {
         eventType,
@@ -29,7 +30,7 @@ export function createAuditMiddleware(
 
       // Fire-and-forget — never block the response
       AuditLogModel.create(entry).catch((err: Error) => {
-        console.error('[AuditLog] Failed to create audit entry:', err.message);
+        logger.error({ err: err.message }, '[AuditLog] Failed to create audit entry');
       });
 
       return originalEnd.apply(this, args as any);
@@ -64,6 +65,6 @@ export async function auditLog(params: {
       timestamp: new Date(),
     });
   } catch (err: any) {
-    console.error('[AuditLog] Failed to create audit entry:', err.message);
+    logger.error({ err: err.message }, '[AuditLog] Failed to create audit entry');
   }
 }

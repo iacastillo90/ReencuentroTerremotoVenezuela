@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq';
 import { connection } from '../config/redis.config';
+import { logger } from '../utils/logger.util';
 
 export const DISASTER_SYNC_QUEUE_NAME = 'disaster-sync';
 
@@ -74,5 +75,5 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '*/20 * * * *' }
   });
 
-  console.log('[DisasterSync] Cron jobs registered.');
+  logger.info('[DisasterSync] Cron jobs registered.');
 }
