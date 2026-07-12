@@ -12,3 +12,4 @@ export { StepProgressBar } from './StepProgressBar';
 export { CategorySelector, DEFAULT_CATEGORIES, SEARCH_CATEGORIES } from './CategorySelector';
 export { ModalOverlay } from './ModalOverlay';
 export { ChatWidget } from './ChatWidget';
+// ErrorBoundary ahora es Sentry.ErrorBoundary (ver main.tsx)
