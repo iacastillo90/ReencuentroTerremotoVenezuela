@@ -110,7 +110,7 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
 });
 
 UnifiedPersonSchema.index({ normalizedName: 1, 'lastSeen.state': 1 });
-UnifiedPersonSchema.index({ idHash: 1 }, { unique: true });
+// El índice unique de idHash ya está declarado en la definición del esquema
 UnifiedPersonSchema.index({ status: 1, 'metadata.urgencyScore': -1 });
 UnifiedPersonSchema.index({ 'lastSeen.coordinates': '2dsphere' });
 UnifiedPersonSchema.index({ 'externalIds.source': 1, 'externalIds.id': 1 });
