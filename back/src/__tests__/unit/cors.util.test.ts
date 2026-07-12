@@ -1,4 +1,4 @@
-import { buildAllowedOrigins, isOriginAllowed, normalizeOrigin } from '../../src/utils/cors.util';
+import { buildAllowedOrigins, isOriginAllowed, normalizeOrigin } from '../../utils/cors.util';
 
 describe('cors.util', () => {
   const allowed = buildAllowedOrigins('http://localhost:5173,https://app.example.com');

@@ -1,25 +1,25 @@
 import request from 'supertest';
-import app from '../../src/app';
-import { manualAuditQueue } from '../../src/queues/manual-audit.queue';
-import { upsertPerson } from '../../src/services/person.service';
-import { PersonModel } from '../../src/models/unified-person.model';
+import app from '../../app';
+import { manualAuditQueue } from '../../queues/manual-audit.queue';
+import { upsertPerson } from '../../services/person.service';
+import { PersonModel } from '../../models/unified-person.model';
 
-jest.mock('../../src/queues/manual-audit.queue', () => ({
+jest.mock('../../queues/manual-audit.queue', () => ({
   manualAuditQueue: {
     getWaiting: jest.fn(),
     getJob: jest.fn()
   }
 }));
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
-jest.mock('../../src/services/person.service', () => ({
+jest.mock('../../services/person.service', () => ({
   upsertPerson: jest.fn()
 }));
 
-jest.mock('../../src/models/unified-person.model', () => ({
+jest.mock('../../models/unified-person.model', () => ({
   PersonModel: {
     findOne: jest.fn()
   }

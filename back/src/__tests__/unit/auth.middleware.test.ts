@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { requireUser, requireProfileComplete, requireWebhookApiKey } from '../../src/middlewares/auth.middleware';
-import { UserModel } from '../../src/models/user.model';
+import { requireUser, requireProfileComplete, requireWebhookApiKey } from '../../middlewares/auth.middleware';
+import { UserModel } from '../../models/user.model';
 
 jest.mock('jsonwebtoken');
-jest.mock('../../src/models/user.model');
+jest.mock('../../models/user.model');
 
 describe('Auth Middleware', () => {
   let mockReq: Partial<Request>;

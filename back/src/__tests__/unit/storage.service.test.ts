@@ -8,7 +8,7 @@ jest.mock('minio', () => ({
   }))
 }));
 
-import { getPresignedUrl, getPresignedUploadUrl } from '../../src/services/storage.service';
+import { getPresignedUrl, getPresignedUploadUrl } from '../../services/storage.service';
 
 describe('storage.service', () => {
   beforeEach(() => {

@@ -1,7 +1,7 @@
 import request from 'supertest';
-import app from '../../src/app';
+import app from '../../app';
 
-jest.mock('../../src/models/localizado.model', () => ({
+jest.mock('../../models/localizado.model', () => ({
   LocalizadoModel: {
     find: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
@@ -12,20 +12,20 @@ jest.mock('../../src/models/localizado.model', () => ({
   }
 }));
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
-jest.mock('../../src/queues/manual-audit.queue', () => ({
+jest.mock('../../queues/manual-audit.queue', () => ({
   manualAuditQueue: { getWaiting: jest.fn(), getJob: jest.fn() },
   addJobToManualAudit: jest.fn()
 }));
 
-jest.mock('../../src/config/redis.config', () => ({
+jest.mock('../../config/redis.config', () => ({
   connection: {}
 }));
 
-jest.mock('../../src/services/storage.service', () => ({
+jest.mock('../../services/storage.service', () => ({
   uploadMedia: jest.fn(),
   getPresignedUrl: jest.fn(),
   getPresignedUploadUrl: jest.fn(),
@@ -33,7 +33,7 @@ jest.mock('../../src/services/storage.service', () => ({
   minioClient: {},
 }));
 
-jest.mock('../../src/middlewares/auth.middleware', () => ({
+jest.mock('../../middlewares/auth.middleware', () => ({
   requireUser: jest.fn((req: any, _res: any, next: any) => {
     req.user = { userId: 'test-user', role: 'user', tokenVersion: 0 };
     next();
@@ -63,7 +63,7 @@ describe('Localizado Route Security', () => {
     });
 
     it('should return 200 with a valid short query', async () => {
-      const { LocalizadoModel } = require('../../src/models/localizado.model');
+      const { LocalizadoModel } = require('../../models/localizado.model');
       (LocalizadoModel.find as jest.Mock).mockReturnValue({
         sort: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),

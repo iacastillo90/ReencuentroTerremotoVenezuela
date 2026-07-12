@@ -1,9 +1,9 @@
 import request from 'supertest';
-import app from '../../src/app';
+import app from '../../app';
 
 const PARTNER_API_KEY = 'test-partner-key';
 
-jest.mock('../../src/middlewares/auth.middleware', () => ({
+jest.mock('../../middlewares/auth.middleware', () => ({
   requireUser: jest.fn((req: any, _res: any, next: any) => {
     req.user = { userId: 'test-user', role: 'user', tokenVersion: 0 };
     next();
@@ -18,23 +18,23 @@ jest.mock('../../src/middlewares/auth.middleware', () => ({
   getJwtSecret: jest.fn(() => 'test-secret'),
 }));
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
-jest.mock('../../src/queues/manual-audit.queue', () => ({
+jest.mock('../../queues/manual-audit.queue', () => ({
   manualAuditQueue: { getWaiting: jest.fn(), getJob: jest.fn() },
   addJobToManualAudit: jest.fn()
 }));
 
-jest.mock('../../src/config/redis.config', () => ({
+jest.mock('../../config/redis.config', () => ({
   connection: {
     keys: jest.fn().mockResolvedValue([]),
     del: jest.fn().mockResolvedValue(0),
   }
 }));
 
-jest.mock('../../src/models/unified-person.model', () => {
+jest.mock('../../models/unified-person.model', () => {
   const mockSave = jest.fn().mockResolvedValue({ _id: 'mock-id-123' });
   const MockPersonModel = jest.fn().mockImplementation(() => ({
     save: mockSave,
@@ -49,7 +49,7 @@ jest.mock('../../src/models/unified-person.model', () => {
   return { PersonModel: MockPersonModel };
 });
 
-jest.mock('../../src/services/storage.service', () => ({
+jest.mock('../../services/storage.service', () => ({
   uploadMedia: jest.fn(),
   getPresignedUrl: jest.fn(),
   getPresignedUploadUrl: jest.fn(),
@@ -72,7 +72,7 @@ describe('Partner Route Security', () => {
 
   describe('Field whitelist', () => {
     it('should strip extra fields not defined in the schema', async () => {
-      const { PersonModel } = require('../../src/models/unified-person.model');
+      const { PersonModel } = require('../../models/unified-person.model');
 
       const response = await request(app)
         .post('/api/partners/cases')

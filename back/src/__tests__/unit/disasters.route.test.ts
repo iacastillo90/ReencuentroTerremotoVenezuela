@@ -1,19 +1,19 @@
 import request from 'supertest';
-import app from '../../src/app';
-import { DisasterEventModel } from '../../src/models/disaster-event.model';
+import app from '../../app';
+import { DisasterEventModel } from '../../models/disaster-event.model';
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
-jest.mock('../../src/queues/manual-audit.queue', () => ({
+jest.mock('../../queues/manual-audit.queue', () => ({
   manualAuditQueue: {
     getWaiting: jest.fn(),
     getJob: jest.fn()
   }
 }));
 
-jest.mock('../../src/models/disaster-event.model', () => ({
+jest.mock('../../models/disaster-event.model', () => ({
   DisasterEventModel: {
     find: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),

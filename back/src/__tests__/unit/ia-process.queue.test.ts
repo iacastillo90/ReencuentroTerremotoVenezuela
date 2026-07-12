@@ -1,8 +1,8 @@
-jest.mock('../../src/config/redis.config', () => ({
+jest.mock('../../config/redis.config', () => ({
   connection: {}
 }));
 
-import { iaProcessQueue } from '../../src/queues/ia-process.queue';
+import { iaProcessQueue } from '../../queues/ia-process.queue';
 
 describe('IA Process Queue Configuration', () => {
   it('should have removeOnFail with age and count properties', () => {

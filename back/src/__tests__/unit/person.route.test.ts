@@ -1,12 +1,12 @@
 import request from 'supertest';
-import app from '../../src/app';
-import { checkSyncState } from '../../src/services/sync-state.service';
-import { addJobToIAQueue } from '../../src/queues/ia-process.queue';
-import { PersonModel } from '../../src/models/unified-person.model';
+import app from '../../app';
+import { checkSyncState } from '../../services/sync-state.service';
+import { addJobToIAQueue } from '../../queues/ia-process.queue';
+import { PersonModel } from '../../models/unified-person.model';
 
 // Mock auth middleware to bypass JWT in tests
-jest.mock('../../src/middlewares/auth.middleware', () => {
-  const actual = jest.requireActual('../../src/middlewares/auth.middleware');
+jest.mock('../../middlewares/auth.middleware', () => {
+  const actual = jest.requireActual('../../middlewares/auth.middleware');
   return {
     ...actual,
     requireUser: jest.fn((req: any, _res: any, next: any) => {
@@ -21,11 +21,11 @@ jest.mock('../../src/middlewares/auth.middleware', () => {
 });
 
 // Mock dependencies
-jest.mock('../../src/services/sync-state.service', () => ({
+jest.mock('../../services/sync-state.service', () => ({
   checkSyncState: jest.fn()
 }));
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
@@ -34,7 +34,7 @@ const mockPersons = [
 ];
 const mockLean = jest.fn().mockResolvedValue(mockPersons);
 
-jest.mock('../../src/models/unified-person.model', () => ({
+jest.mock('../../models/unified-person.model', () => ({
   PersonModel: {
     find: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),

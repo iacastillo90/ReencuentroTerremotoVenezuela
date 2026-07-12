@@ -2,7 +2,7 @@ process.env.JWT_SECRET = 'test-secret';
 process.env.VITE_GOOGLE_CLIENT_ID = 'test-client-id';
 
 import request from 'supertest';
-import app from '../../src/app';
+import app from '../../app';
 
 jest.mock('google-auth-library', () => ({
   OAuth2Client: jest.fn().mockImplementation(() => ({
@@ -10,7 +10,7 @@ jest.mock('google-auth-library', () => ({
   }))
 }));
 
-jest.mock('../../src/middlewares/auth.middleware', () => ({
+jest.mock('../../middlewares/auth.middleware', () => ({
   requireUser: jest.fn((req: any, _res: any, next: any) => {
     req.user = { userId: 'test-user', role: 'user', tokenVersion: 0 };
     next();
@@ -25,11 +25,11 @@ jest.mock('../../src/middlewares/auth.middleware', () => ({
   getJwtSecret: jest.fn(() => 'test-secret'),
 }));
 
-jest.mock('../../src/middlewares/audit.middleware', () => ({
+jest.mock('../../middlewares/audit.middleware', () => ({
   auditLog: jest.fn()
 }));
 
-jest.mock('../../src/models/user.model', () => ({
+jest.mock('../../models/user.model', () => ({
   UserModel: {
     findOne: jest.fn(),
     create: jest.fn(),
@@ -38,20 +38,20 @@ jest.mock('../../src/models/user.model', () => ({
   }
 }));
 
-jest.mock('../../src/queues/ia-process.queue', () => ({
+jest.mock('../../queues/ia-process.queue', () => ({
   addJobToIAQueue: jest.fn()
 }));
 
-jest.mock('../../src/queues/manual-audit.queue', () => ({
+jest.mock('../../queues/manual-audit.queue', () => ({
   manualAuditQueue: { getWaiting: jest.fn(), getJob: jest.fn() },
   addJobToManualAudit: jest.fn()
 }));
 
-jest.mock('../../src/config/redis.config', () => ({
+jest.mock('../../config/redis.config', () => ({
   connection: {}
 }));
 
-jest.mock('../../src/services/storage.service', () => ({
+jest.mock('../../services/storage.service', () => ({
   uploadMedia: jest.fn(),
   getPresignedUrl: jest.fn(),
   getPresignedUploadUrl: jest.fn(),
@@ -77,7 +77,7 @@ describe('Auth Route Security', () => {
       expect(response.status).toBe(403);
       expect(response.body.error).toBe('DEV_MODE disabled in production');
 
-      const auditLog = require('../../src/middlewares/audit.middleware').auditLog;
+      const auditLog = require('../../middlewares/audit.middleware').auditLog;
       expect(auditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           eventType: 'security_violation',
