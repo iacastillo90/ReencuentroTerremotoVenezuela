@@ -1,42 +1,11 @@
-/**
- * ProfilePage.tsx — Perfil de usuario (datos, tabs, chat)
- *
- * PROPÓSITO:
- *   Muestra el perfil del usuario logueado con:
- *   1. Header: avatar, nombre, email, teléfono, sector, botón cerrar sesión.
- *   2. Card de rol: si es "user", puede solicitar ser verificador.
- *      Si es "verifier", muestra badge de verificado.
- *   3. Tabs: Mis Reportes, Posibles Coincidencias (IA), Conversaciones.
- *   4. ChatWidget: cuando se selecciona una conversación.
- *
- * ESTADO LOCAL:
- *   - myReports[]: reportes creados por el usuario (/persons/mine).
- *   - myMatches[]: coincidencias de IA para cada reporte.
- *   - messages[] / sentMessages[]: mensajes recibidos y enviados.
- *   - conversationList[]: conversaciones agrupadas por reportId + otherUserId.
- *   - activeConversation: conversación seleccionada para abrir ChatWidget.
- *
- * CHAT EN TIEMPO REAL:
- *   - Escucha eventos 'receive_message' del socket para agregar
- *     mensajes nuevos al inicio de messages[].
- *   - Al enviar un mensaje, hace POST /contacts y lo agrega a
- *     sentMessages[].
- *   - El ChatWidget se abre en un modal cuando hay activeConversation.
- *
- * COINCIDENCIAS (IA):
- *   - Al cargar myReports, itera cada reporte y pide /matches/:idHash.
- *   - No hay paginación ni límite por ahora (pueden ser muchos).
- *
- * FLUJO DE DATOS:
- *   fetchData(): carga reportes, mensajes recibidos y enviados en paralelo.
- *   useEffect [user]: llama fetchData al montar.
- *   useEffect [myReports]: llama fetchMatches cuando cambian los reportes.
- */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import * as Sentry from '@sentry/react';
+import { AxiosError } from 'axios';
 import { useAuth } from '../../store/AuthContext';
 import { useSocket } from '../../store/SocketContext';
 import { useToast } from '../../store/ToastContext';
 import { api } from '../../services/api';
+
 import type { Person } from '../../types';
 import {
   User, Mail, Phone, MapPin, LogOut,
@@ -48,6 +17,30 @@ import { TabReports } from './tabs/TabReports';
 import { TabMatches } from './tabs/TabMatches';
 import { TabChats } from './tabs/TabChats';
 import './Profile.css';
+
+interface ChatMessage {
+  _id: string;
+  senderId: string;
+  receiverId?: string;
+  reportId?: string;
+  message?: string;
+  createdAt?: string;
+}
+
+interface MatchItem {
+  _id: string;
+  matchScore?: number;
+  matchedPerson?: Partial<Person>;
+  originalReportName?: string;
+  status?: string;
+}
+
+interface ConversationGroup {
+  reportId: string;
+  otherUserId: string;
+  lastMessage: ChatMessage;
+  messages: ChatMessage[];
+}
 
 interface ProfilePageProps {
   onSelectPerson: (p: Person) => void;
@@ -63,11 +56,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   // ─── Estado de datos ────────────────────────────────
   const [myReports, setMyReports] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<any[]>([]);      // Recibidos
-  const [sentMessages, setSentMessages] = useState<any[]>([]); // Enviados
-  const [requestNotes, setRequestNotes] = useState('');      // Texto de solicitud de verificador
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sentMessages, setSentMessages] = useState<ChatMessage[]>([]);
+  const [requestNotes, setRequestNotes] = useState('');
   const [showRequestForm, setShowRequestForm] = useState(false);
-  const [myMatches, setMyMatches] = useState<any[]>([]);
+  const [myMatches, setMyMatches] = useState<MatchItem[]>([]);
+
+  const mountedRef = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>('reports');
   const [activeConversation, setActiveConversation] = useState<{
     reportId: string; otherUserId: string
@@ -84,8 +80,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       await api.post('/auth/verification-request', { notes: requestNotes });
       addToast('Solicitud enviada correctamente. Un moderador la revisará pronto.', 'success');
       setShowRequestForm(false);
-    } catch (err: any) {
-      addToast(err.response?.data?.error || 'Error al enviar la solicitud', 'error');
+    } catch (err) {
+      const axErr = err as { response?: { data?: { error?: string } } };
+      addToast(axErr.response?.data?.error || 'Error al enviar la solicitud', 'error');
     }
   };
 
@@ -94,30 +91,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   //   - /persons/mine: reportes del usuario.
   //   - /contacts/received: mensajes recibidos.
   //   - /contacts/sent: mensajes enviados.
-  const fetchData = async () => {
+const fetchData = async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     const gen = ++fetchGenRef.current;
     try {
       const [res, msgs, sent] = await Promise.all([
-        api.get<Person[]>('/persons/mine'),
-        api.get('/contacts/received'),
-        api.get('/contacts/sent'),
+        api.get<Person[]>('/persons/mine', { signal: ctrl.signal }),
+        api.get('/contacts/received', { signal: ctrl.signal }),
+        api.get('/contacts/sent', { signal: ctrl.signal }),
       ]);
-      if (fetchGenRef.current !== gen) return;
+      if (fetchGenRef.current !== gen || !mountedRef.current) return;
       setMyReports(res.data);
       setMessages(msgs.data);
       setSentMessages(sent.data);
     } catch (err) {
-      if (fetchGenRef.current !== gen) return;
+      if (fetchGenRef.current !== gen || !mountedRef.current) return;
       console.error('Error fetching data', err);
     } finally {
-      if (fetchGenRef.current !== gen) return;
+      if (fetchGenRef.current !== gen || !mountedRef.current) return;
       setLoading(false);
     }
   };
 
-  // Carga inicial de datos cuando el usuario está disponible.
   useEffect(() => {
     if (user) fetchData();
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
   }, [user]);
 
   // ─── fetchMatches: obtiene coincidencias de IA ─────
@@ -128,7 +131,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       const gen = ++fetchGenRef.current;
       if (myReports.length > 0) {
         try {
-          const allMatches: any[] = [];
+          const allMatches: MatchItem[] = [];
           for (let i = 0; i < myReports.length; i += 5) {
             const batch = myReports.slice(i, i + 5);
             const results = await Promise.allSettled(
@@ -143,7 +146,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
                 const { report, data } = result.value;
                 if (data.length > 0) {
                   allMatches.push(
-                    ...data.map((m: any) => ({
+                    ...data.map((m: MatchItem) => ({
                       ...m,
                       originalReportName: report.name
                     }))
@@ -156,7 +159,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
           setMyMatches(allMatches);
         } catch (err) {
           if (fetchGenRef.current !== gen) return;
-          console.error('Error fetching matches', err);
+          console.debug('Error fetching matches', err);
         }
       }
     };
@@ -168,7 +171,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   // al inicio de messages[] (si no está duplicado).
   useEffect(() => {
     if (!socket) return;
-    const handleReceiveMessage = (msg: any) => {
+    const handleReceiveMessage = (msg: ChatMessage) => {
       setMessages(prev =>
         prev.some(m => m._id === msg._id) ? prev : [msg, ...prev]
       );
@@ -180,7 +183,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   // ─── Acciones de match ─────────────────────────────
   // handleRequestMediation: pide una sala de mediación para menores.
   // handleStartDirectChat: pide una sala de chat directo.
-  const handleRequestMediation = (match: any) => {
+  const handleRequestMediation = (match: MatchItem) => {
     if (!socket) {
       addToast('Desconectado del servidor de chat', 'error');
       return;
@@ -189,7 +192,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     addToast('Se ha solicitado la sala de mediación. Un moderador se unirá pronto.', 'success');
   };
 
-  const handleStartDirectChat = (match: any) => {
+  const handleStartDirectChat = (match: MatchItem) => {
     if (!socket) {
       addToast('Desconectado del servidor de chat', 'error');
       return;
@@ -212,8 +215,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
       });
       setSentMessages(prev => [...prev, res.data]);
       setReplyText('');
-    } catch (err: any) {
-      addToast(err.response?.data?.error || 'Error al enviar mensaje', 'error');
+    } catch (err) {
+      const axiosErr = err as AxiosError<{error: string}>;
+      addToast(axiosErr.response?.data?.error || 'Error al enviar mensaje', 'error');
     }
   };
 
@@ -233,13 +237,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     uniqueMessagesMap.set(msg._id, msg)
   );
   const allMessages = Array.from(uniqueMessagesMap.values()).sort(
-    (a: any, b: any) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    (a: ChatMessage, b: ChatMessage) =>
+      new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime()
   );
 
   // Agrupa mensajes por conversación (reportId + otherUserId).
-  const conversationsMap = new Map<string, any>();
-  allMessages.forEach((msg: any) => {
+  const conversationsMap = new Map<string, ConversationGroup>();
+  allMessages.forEach((msg: ChatMessage) => {
     const isSender = msg.senderId === user._id;
     const otherUserId = isSender ? msg.receiverId : msg.senderId;
     if (!otherUserId) return;
@@ -250,21 +254,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
         lastMessage: msg, messages: []
       });
     }
-    conversationsMap.get(key).messages.push(msg);
-    conversationsMap.get(key).lastMessage = msg;
+    conversationsMap.get(key)!.messages.push(msg);
+    conversationsMap.get(key)!.lastMessage = msg;
   });
 
   // Ordena conversaciones por fecha del último mensaje (más reciente primero).
   const conversationList = Array.from(conversationsMap.values()).sort(
     (a, b) =>
-      new Date(b.lastMessage.createdAt).getTime() -
-      new Date(a.lastMessage.createdAt).getTime()
+      new Date(b.lastMessage.createdAt || '').getTime() -
+      new Date(a.lastMessage.createdAt || '').getTime()
   );
 
   // Filtra mensajes del hilo activo (reportId + otherUserId).
   const activeThreadMessages = activeConversation
     ? allMessages.filter(
-        (msg: any) =>
+        (msg: ChatMessage) =>
           msg.reportId === activeConversation.reportId &&
           ((msg.senderId === user._id &&
             msg.receiverId === activeConversation.otherUserId) ||
@@ -324,6 +328,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
                 value={requestNotes}
                 onChange={e => setRequestNotes(e.target.value)}
                 required
+                aria-label="Notas de solicitud de verificación"
                 className="profile-textarea"
               />
               <div className="profile-form-actions">
@@ -395,3 +400,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     </div>
   );
 };
+
+export default Sentry.withErrorBoundary(ProfilePage, {
+  fallback: <div className="error-boundary-fallback">Ocurrió un error al cargar el perfil.</div>
+});
