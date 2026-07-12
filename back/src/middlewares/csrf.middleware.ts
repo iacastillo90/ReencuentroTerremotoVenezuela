@@ -15,8 +15,7 @@ export const CSRF_EXEMPT_PATHS = [
   '/api/webhooks',
   '/api/partners',
   '/api/auth/google',
-  '/api/admin',         // protected by requireAdminApiKey (JWT + API key)
-  '/api/localizados',   // ingestion endpoint protected by requirePartnerApiKey
+  '/api/localizados',
 ];
 
 /**
@@ -30,8 +29,15 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  // Skip exempt paths
-  const isExempt = CSRF_EXEMPT_PATHS.some((path) => req.path.startsWith(path));
+  // Skip for API-key-authenticated requests (no cookie session)
+  if (req.headers['x-api-key']) {
+    next();
+    return;
+  }
+
+  const isExempt = CSRF_EXEMPT_PATHS.some((path) => {
+    return req.path === path || req.path.startsWith(path + '/');
+  });
   if (isExempt) {
     next();
     return;
@@ -41,13 +47,12 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   const headerToken: string | undefined = req.headers['x-csrf-token'] as string;
 
   if (!cookieToken || !headerToken) {
-    res.status(403).json({ error: 'Invalid CSRF token' });
+    res.status(403).json({ error: 'Token CSRF inválido' });
     return;
   }
 
-  // timingSafeEqual requires equal-length buffers
   if (cookieToken.length !== headerToken.length) {
-    res.status(403).json({ error: 'Invalid CSRF token' });
+    res.status(403).json({ error: 'Token CSRF inválido' });
     return;
   }
 
@@ -57,11 +62,11 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
       Buffer.from(headerToken),
     );
     if (!match) {
-      res.status(403).json({ error: 'Invalid CSRF token' });
+      res.status(403).json({ error: 'Token CSRF inválido' });
       return;
     }
   } catch {
-    res.status(403).json({ error: 'Invalid CSRF token' });
+    res.status(403).json({ error: 'Token CSRF inválido' });
     return;
   }
 

@@ -1,10 +1,12 @@
 import * as Sentry from '@sentry/node';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import { personRouter } from './routes/person.route';
 import { webhooksRouter } from './routes/webhooks.route';
@@ -19,10 +21,13 @@ import { cneRouter } from './routes/cne.route';
 import { searchRouter } from './routes/search.route';
 import { matchesRouter } from './routes/matches.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
-import { bullBoardRouter } from './services/bull-board.service';
-import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { csrfProtection } from './middlewares/csrf.middleware';
+import { auditLog } from './middlewares/audit.middleware';
 import { errorHandler } from './middlewares/error.middleware';
+import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
+import { logger } from './utils/logger.util';
+import { bullBoardRouter } from './services/bull-board.service';
+import { connection as redis } from './config/redis.config';
 
 const app = express();
 
@@ -37,11 +42,11 @@ if (isDev) frameAncestors.push('http://localhost:5173');
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
-    reportOnly: process.env.CSP_ENFORCE !== 'true',
+    reportOnly: !isDev,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      scriptSrc: isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
+      styleSrc: isDev ? ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'] : ["'self'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https://*.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
@@ -52,7 +57,7 @@ app.use(helmet({
       reportUri: '/api/csp-report',
     },
   },
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: isDev ? false : true,
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
@@ -75,7 +80,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    console.error(`[CORS RECHAZADO] Origin del cliente: '${origin}'. Valores permitidos en Render:`, [...corsOrigins]);
+    logger.error({ origin, allowedOrigins: [...corsOrigins] }, '[CORS] Origin rejected');
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -97,7 +102,10 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// --- 5. Cookie parser (needed for CSRF) ---
+// --- 5. Compression (gzip/brotli) ---
+app.use(compression());
+
+// --- 6. Cookie parser (needed for CSRF) ---
 app.use(cookieParser());
 
 // --- 6. CSRF Protection ---
@@ -128,9 +136,15 @@ app.use('/api/cne', cneRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/matches', matchesRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get('/health', async (req, res) => {
+  const checks: Record<string, string> = {};
+
+  checks.mongodb = mongoose.connection.readyState === 1 ? 'ok' : 'disconnected';
+  checks.redis = redis.status === 'ready' ? 'ok' : redis.status;
+
+  const allOk = Object.values(checks).every(v => v === 'ok');
+
+  res.status(allOk ? 200 : 503).json({ status: allOk ? 'ok' : 'degraded', checks });
 });
 
 // Sentry verification endpoint (intentional error)
