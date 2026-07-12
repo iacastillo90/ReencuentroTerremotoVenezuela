@@ -107,7 +107,7 @@ services:
     image: reencuentros-api:latest
     container_name: reencuentros_worker
     restart: always
-    command: ["node", "dist/src/workers/ia-processor.worker.js"]
+    command: ["node", "dist/src/worker.js"]
     env_file:
       - ./back/.env
     environment:

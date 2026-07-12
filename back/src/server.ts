@@ -1,3 +1,4 @@
+import './sentry'; // INICIALIZAR SENTRY PRIMERO (monitoreo de errores)
 import 'dotenv/config'; // Carga back/.env ANTES que cualquier módulo lea process.env (JWT_SECRET, etc.)
 import mongoose from 'mongoose';
 import http from 'http';
@@ -22,10 +23,17 @@ async function bootstrap() {
     await mongoose.connect(MONGO_URI);
     console.log('[Server] MongoDB Conectado exitosamente.');
 
-    // Importar workers después de establecer conexión a DB
-    require('./workers/disaster-sync.worker');
-    require('./workers/ia-processor.worker');
-    require('./workers/matching.worker');
+    // En desarrollo local (npm run dev) corremos todo en un solo proceso.
+    // En producción (Docker), el API y el Worker se ejecutan en contenedores separados,
+    // así que el contenedor API no debe iniciar los workers (evita duplicación de jobs y uso de CPU).
+    if (process.env.NODE_ENV !== 'production' || process.env.RUN_WORKERS_IN_API === 'true') {
+      console.log('[Server] Iniciando workers internos (modo monolito)...');
+      require('./workers/disaster-sync.worker');
+      require('./workers/ia-processor.worker');
+      require('./workers/matching.worker');
+    } else {
+      console.log('[Server] Workers internos deshabilitados (se asume contenedor dedicado).');
+    }
 
     // Alinea los índices del modelo User con el esquema
     try {
