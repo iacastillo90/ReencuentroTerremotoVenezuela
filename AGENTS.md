@@ -8,6 +8,7 @@ Este archivo es un despachador. Carga el sub-archivo correspondiente al área do
 |---|---|
 | `back/` | `back/AGENTS.md` |
 | `front/` | `front/AGENTS.md` |
+| `vision/` | `vision/AGENTS.md` |
 
 **Siempre lee el sub-archivo antes de editar código en ese directorio.**
 

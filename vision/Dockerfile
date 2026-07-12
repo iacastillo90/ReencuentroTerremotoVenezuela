@@ -35,7 +35,7 @@ WORKDIR /app
 
 # Solo runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libopenblas-base \
+    libopenblas0 \
     liblapack3 \
     libx11-6 \
     && rm -rf /var/lib/apt/lists/*
