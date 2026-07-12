@@ -2,16 +2,49 @@ import { OutboxModel } from '../models/outbox.model';
 import { personMatchingQueue } from '../queues/person-matching.queue';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { addJobToManualAudit } from '../queues/manual-audit.queue';
+import { findNearbyDisasters, calculateDisasterUrgencyBonus } from './disaster.service';
+import { PersonModel } from '../models/unified-person.model';
 import { logger } from '../utils/logger.util';
 
 const BATCH_SIZE = 50;
 const POLL_INTERVAL_MS = 5000;
 
 export async function addToOutbox(
-  type: 'person-matching' | 'manual-audit' | 'ia-processing',
+  type: 'person-matching' | 'manual-audit' | 'ia-processing' | 'geo-enrich',
   payload: Record<string, unknown>
 ): Promise<void> {
   await OutboxModel.create({ type, payload });
+}
+
+async function handleGeoEnrich(payload: Record<string, unknown>) {
+  const { idHash, coordinates } = payload as { idHash: string; coordinates: [number, number] };
+  const person = await PersonModel.findOne({ idHash });
+  if (!person) return;
+
+  const nearbyEvents = await findNearbyDisasters(coordinates, 30);
+
+  if (nearbyEvents.length === 0) return;
+
+  const newDisasterIds = nearbyEvents.map(e => (e as any)._id.toString());
+  const existingIds = (person.possiblyRelatedDisasters || []).map(id => id.toString());
+  const mergedIds = Array.from(new Set([...existingIds, ...newDisasterIds]));
+
+  const urgencyBonus = calculateDisasterUrgencyBonus(nearbyEvents);
+  const currentScore = person.metadata?.urgencyScore || 0;
+  const finalScore = Math.min(100, currentScore + urgencyBonus);
+
+  await PersonModel.updateOne(
+    { _id: person._id },
+    {
+      $set: {
+        possiblyRelatedDisasters: mergedIds,
+        'metadata.urgencyScore': finalScore,
+        'metadata.updatedAt': new Date(),
+      }
+    }
+  );
+
+  logger.info({ idHash, disasterCount: nearbyEvents.length, urgencyBonus, finalScore }, '[GeoEnrich] Persona enriquecida con desastres cercanos');
 }
 
 export async function processOutbox(): Promise<number> {
@@ -36,6 +69,9 @@ export async function processOutbox(): Promise<number> {
           break;
         case 'ia-processing':
           await addJobToIAQueue(event.payload);
+          break;
+        case 'geo-enrich':
+          await handleGeoEnrich(event.payload);
           break;
       }
 

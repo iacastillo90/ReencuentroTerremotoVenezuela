@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface OutboxEvent extends Document {
-  type: 'person-matching' | 'manual-audit' | 'ia-processing';
+  type: 'person-matching' | 'manual-audit' | 'ia-processing' | 'geo-enrich';
   payload: Record<string, unknown>;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   attempts: number;
@@ -12,7 +12,7 @@ export interface OutboxEvent extends Document {
 }
 
 const outboxSchema = new Schema<OutboxEvent>({
-  type: { type: String, enum: ['person-matching', 'manual-audit', 'ia-processing'], required: true },
+  type: { type: String, enum: ['person-matching', 'manual-audit', 'ia-processing', 'geo-enrich'], required: true },
   payload: { type: Schema.Types.Mixed, required: true },
   status: { type: String, enum: ['pending', 'processing', 'completed', 'failed'], default: 'pending' },
   attempts: { type: Number, default: 0 },
