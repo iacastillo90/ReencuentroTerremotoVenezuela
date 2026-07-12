@@ -24,6 +24,8 @@
   "homepage": "https://github.com/iacastillo90/ReencuentroTerremotoVenezuela#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
+    "@bull-board/api": "^8.1.2",
+    "@bull-board/express": "^8.1.2",
     "@google/genai": "^2.10.0",
     "@pinecone-database/pinecone": "^8.0.0",
     "axios": "^1.18.1",

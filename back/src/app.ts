@@ -18,6 +18,7 @@ import { cneRouter } from './routes/cne.route';
 import { searchRouter } from './routes/search.route';
 import { matchesRouter } from './routes/matches.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
+import { bullBoardRouter } from './services/bull-board.service';
 import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { csrfProtection } from './middlewares/csrf.middleware';
 import { errorHandler } from './middlewares/error.middleware';
@@ -28,24 +29,29 @@ const app = express();
 app.set('trust proxy', 1);
 
 // --- 1. Seguridad HTTP con Helmet + CSP ---
+const isDev = process.env.NODE_ENV !== 'production';
+const frameAncestors = ["'self'"];
+if (isDev) frameAncestors.push('http://localhost:5173');
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
     reportOnly: process.env.CSP_ENFORCE !== 'true',
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https://*.googleapis.com'],
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
+      frameAncestors,
       baseUri: ["'self'"],
       formAction: ["'self'"],
       reportUri: '/api/csp-report',
     },
   },
+  crossOriginEmbedderPolicy: false,
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
@@ -73,7 +79,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-partner-api-key', 'x-csrf-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-partner-api-key', 'x-csrf-token', 'sentry-trace', 'baggage'],
 }));
 
 // --- 3. Logging de peticiones HTTP (Morgan) ---
@@ -103,6 +109,12 @@ app.use(hpp());
 // --- 8. Rutas de la Aplicación ---
 app.use('/api/persons', personRouter);
 app.use('/api/webhooks', webhooksRouter);
+// Panel de monitoreo de colas BullMQ (debe ir ANTES del adminRouter genérico)
+// Nota: middleware que elimina X-Frame-Options solo para esta ruta (necesario para iframe desde frontend)
+app.use('/api/admin/queues', (_req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  next();
+}, requireAdminApiKey, bullBoardRouter);
 // Ruta administrativa protegida
 app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);

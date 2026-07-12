@@ -66,4 +66,4 @@ export interface AdminCounts {
  * Se usa tanto para el estado (useState<AdminSection>)
  * como para el tipado de NAV_ITEMS.
  */
-export type AdminSection = 'resumen' | 'matches' | 'registros' | 'busquedas' | 'moderacion' | 'usuarios';
+export type AdminSection = 'resumen' | 'matches' | 'registros' | 'busquedas' | 'moderacion' | 'usuarios' | 'colas';

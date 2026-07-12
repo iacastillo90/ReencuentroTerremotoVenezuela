@@ -27,7 +27,7 @@
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, ShieldCheck,
-  Search, ShieldAlert, ArrowLeft
+  Search, ShieldAlert, ArrowLeft, Activity
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { PersonRow, AdminCounts, AdminSection } from './types';
@@ -62,6 +62,7 @@ const NAV_ITEMS: { key: AdminSection; label: string; Icon: React.ComponentType<{
   { key: 'registros',  label: 'Control Registros',  Icon: ShieldCheck },
   { key: 'busquedas',  label: 'Solicitudes (Familias)', Icon: Search },
   { key: 'usuarios',   label: 'Usuarios (Roles)',   Icon: Users },
+  { key: 'colas',      label: 'Colas (BullMQ)',     Icon: Activity },
 ];
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
@@ -107,7 +108,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     matches: 'Revisión y Fusión de Perfiles',
     registros: 'Control de Registros',
     busquedas: 'Búsquedas Activas de Familiares',
-    usuarios: 'Gestión de Usuarios y Roles'
+    usuarios: 'Gestión de Usuarios y Roles',
+    colas: 'Monitoreo de Procesos en Segundo Plano'
   }[activeSection];
 
   return (
@@ -169,6 +171,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             />
           )}
           {activeSection === 'usuarios' && <SectionUsuarios />}
+          {activeSection === 'colas' && (
+            <div style={{ width: '100%', height: 'calc(100vh - 80px)', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+              <iframe
+                src={`${api.defaults.baseURL}/admin/queues?_t=${Date.now()}`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title="Bull-Board Queues"
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>
