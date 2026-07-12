@@ -129,12 +129,17 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   <div className="chat-bubble">
                     {msg.message}
                     {/* Timestamp: hora local sin segundos */}
-                    <span className="chat-time">
+                    <time className="chat-time"
+                      dateTime={msg.createdAt}
+                      aria-label={new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}>
                       {new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
-                    </span>
+                    </time>
                   </div>
                 </div>
               );
@@ -153,9 +158,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             value={replyText}
             onChange={(e) => onReplyTextChange(e.target.value)}
             required
+            aria-label="Escribir mensaje de chat"
           />
           {/* Botón deshabilitado si el input está vacío */}
-          <button type="submit" className="chat-send-btn" disabled={!replyText.trim()}>
+          <button type="submit" className="chat-send-btn" disabled={!replyText.trim()} aria-label="Enviar mensaje">
             <Send size={18} />
           </button>
         </form>
