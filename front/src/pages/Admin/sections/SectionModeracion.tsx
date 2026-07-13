@@ -66,8 +66,8 @@ interface ChatMessage {
   senderId: string;
   receiverId?: string;
   reportId?: string;
-  message?: string;
-  createdAt?: string;
+  message: string;
+  createdAt: string;
 }
 
 export function SectionModeracion() {
@@ -133,6 +133,7 @@ export function SectionModeracion() {
   // ─── handleEditSubmit: guarda cambios del drawer ────
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingPerson) return;
     try {
       // Construye el payload con los campos editables.
       const payload: Record<string, unknown> = {
@@ -168,7 +169,7 @@ export function SectionModeracion() {
   // ─── handleSendChat: envía un mensaje en el chat ────
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatMessage.trim()) return;
+    if (!chatMessage.trim() || !chattingPerson || !chattingPerson.metadata?.reportedBy) return;
     try {
       // Extrae el ID del reportero desde metadata.reportedBy
       // (puede ser un string o un objeto { _id, name }.
@@ -413,8 +414,8 @@ export function SectionModeracion() {
           currentUserId=""  // El admin no tiene un userId fijo aquí
           isSenderFn={(msg) => {
             // Determina si el mensaje es del admin (no del reportero).
-            const reportedBy = chattingPerson.metadata.reportedBy;
-            const reportedById = typeof reportedBy === 'object' ? reportedBy._id : reportedBy;
+            const reportedBy = chattingPerson?.metadata?.reportedBy;
+            const reportedById = typeof reportedBy === 'object' && reportedBy !== null ? reportedBy._id : reportedBy;
             return msg.senderId !== reportedById;
           }}
           replyText={chatMessage}

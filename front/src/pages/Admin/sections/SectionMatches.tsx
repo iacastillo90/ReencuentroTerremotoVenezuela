@@ -410,8 +410,8 @@ export function SectionMatches() {
               </Button>
               <Button className="admin-merge-footer-confirm"
                 onClick={() => handleMergeConfirm(
-                  mergingMatch.matchedPerson?.idHash || mergingMatch.searchRequestId?._id,
-                  mergingMatch.person?.idHash
+                  mergingMatch.matchedPerson?.idHash || mergingMatch.searchRequestId?._id || "",
+                  mergingMatch.person?.idHash || ""
                 )} disabled={isMerging}>
                 {isMerging ? (
                   <span className="admin-merge-spinner"><Loader2 className="spinner" size={20} /> Ejecutando Fusión...</span>

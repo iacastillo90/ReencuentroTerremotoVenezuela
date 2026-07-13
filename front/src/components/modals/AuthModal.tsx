@@ -45,8 +45,6 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const { login, user } = useAuth();
 
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-  const isDevMode = import.meta.env.DEV;
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

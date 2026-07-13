@@ -23,7 +23,7 @@ const stepInfoMap: Record<number, { dot: number; paso: string; title: string } |
 };
 
 const ReportModalInner: React.FC = () => {
-  const { step, setStep, error, setError, audioText, isSubmitting, onClose } = useReport();
+  const { step, setStep, error, setError, audioText, onClose } = useReport();
 
   const stepInfo = step < 7 ? stepInfoMap[step] : null;
 

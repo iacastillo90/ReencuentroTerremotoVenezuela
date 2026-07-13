@@ -22,9 +22,9 @@ interface ChatMessage {
   _id: string;
   senderId: string;
   receiverId?: string;
-  reportId?: string;
-  message?: string;
-  createdAt?: string;
+  reportId: string;
+  message: string;
+  createdAt: string;
 }
 
 interface MatchItem {

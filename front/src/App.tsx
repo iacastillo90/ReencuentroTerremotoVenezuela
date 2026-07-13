@@ -223,11 +223,6 @@ function App() {
       {isReporting && (
         <ReportModal
           onClose={() => setIsReporting(false)}
-          onNavigate={navigate}
-          onGoDirectory={() => {
-            setIsReporting(false);
-            setActiveView('directorio');
-          }}
         />
       )}
     </>
