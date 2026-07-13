@@ -23,6 +23,17 @@ import type { Person, Disaster } from '../types';
 
 const PAGE_SIZE = 50;
 
+interface Localizado {
+  _id: string;
+  name: string;
+  origin?: string;
+  location?: string;
+  createdAt?: string;
+  cedula?: string;
+  sourceUrl?: string;
+  isVerified?: boolean;
+}
+
 interface Counts {
   missing: number;
   found: number;
@@ -73,14 +84,14 @@ export function usePersons(): UsePersonsReturn {
         api.get<{ total: number; persons: Person[] }>(endpoint),
         api.get<Disaster[]>('/disasters/active').catch(() => ({ data: [] })),
         api.get<Counts>('/persons/counts').catch(() => ({ data: { missing: 0, found: 0, total: 0, animals: 0 } })),
-        api.get<{ data: any[]; total: number }>(
+        api.get<{ data: Localizado[]; total: number }>(
           `/localizados?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`
         ).catch(() => ({ data: { data: [], total: 0 } })),
       ]);
 
       const { total: t, persons: p } = pRes.data;
 
-      const localizadosAsPersons: Person[] = (locRes.data?.data || []).map((loc: any) => ({
+      const localizadosAsPersons: Person[] = (locRes.data?.data || []).map((loc: Localizado) => ({
         idHash: `loc-${loc._id}`,
         name: loc.name,
         status: 'found' as const,
@@ -120,7 +131,6 @@ export function usePersons(): UsePersonsReturn {
         setPersons(!query && newOffset === 0 ? shuffle(combined) : combined);
       }
     } catch (e) {
-      console.debug('Error fetching data:', e);
     }
   };
 
@@ -143,7 +153,6 @@ export function usePersons(): UsePersonsReturn {
       await fetchPersons(searchQuery, newOffset, true);
       setOffset(newOffset);
     } catch (e) {
-      console.debug('Error loading more:', e);
     } finally {
       setLoadingMore(false);
       isFetchingRef.current = false;
