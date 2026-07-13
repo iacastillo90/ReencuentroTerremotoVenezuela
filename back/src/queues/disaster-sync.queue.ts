@@ -91,5 +91,10 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '*/20 * * * *' }
   });
 
+  // BARRIDO BIOMÉTRICO cada 12 horas (Sanitización Self-Healing)
+  await disasterSyncQueue.add('sync-biometric-sweep', {}, {
+    repeat: { pattern: '0 */12 * * *' }
+  });
+
   logger.info('[DisasterSync] Cron jobs registered.');
 }

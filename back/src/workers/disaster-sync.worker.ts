@@ -42,6 +42,7 @@ import { runInamehJob } from '../jobs/inameh.job';
 import { runCorpoelecJob } from '../jobs/corpoelec.job';
 import { runProteccionCivilJob } from '../jobs/proteccion-civil.job';
 import { runCruzRojaJob } from '../jobs/cruz-roja.job';
+import { runBiometricSweepJob } from '../jobs/biometric-sweep.job';
 import { logger } from '../utils/logger.util';
 
 connectDB('Worker');
@@ -70,6 +71,7 @@ const syncJobs: SyncJob[] = [
   { name: 'CORPOELEC', handler: runCorpoelecJob },
   { name: 'Proteccion Civil', handler: runProteccionCivilJob },
   { name: 'Cruz Roja', handler: runCruzRojaJob },
+  { name: 'Biometric Sweep', handler: runBiometricSweepJob },
 ];
 
 const SYNC_DELAY_MS = 2000;
