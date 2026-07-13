@@ -67,6 +67,14 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+function euclideanDistance(vecA: number[], vecB: number[]): number {
+  let sum = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    sum += Math.pow(vecA[i] - vecB[i], 2);
+  }
+  return Math.sqrt(sum);
+}
+
 /**
  * Servicio básico de matching. En el futuro esto puede ser reemplazado
  * por búsquedas vectoriales (embeddings) o IA real.
@@ -218,6 +226,41 @@ export async function runMatchingForNewPerson(personIdHash: string) {
       });
       
       matchingRequests = scoredRequests.sort((a, b) => b.score - a.score).slice(0, 10);
+    }
+
+    // --- Face Encoding Matching (Biometrics) ---
+    // Extract faceEncoding if available
+    let faceEncoding = person.faceEncoding;
+    if (!faceEncoding || faceEncoding.length === 0) {
+      const fullPerson = await PersonModel.findById(person._id).select('+faceEncoding').lean();
+      faceEncoding = fullPerson?.faceEncoding;
+    }
+
+    if (faceEncoding && faceEncoding.length > 0) {
+      // Find other people with face encodings (Not SearchRequests, but other PersonModels)
+      // Since matching here is Person vs SearchRequests usually, wait!
+      // The user wants Person vs Person matching (duplicate reports of the same person).
+      // Let's do a Person vs Person face matching!
+      const allFaces = await PersonModel.find({ 
+        _id: { $ne: person._id },
+        faceEncoding: { $exists: true, $ne: [] } 
+      }).select('+faceEncoding').lean();
+
+      for (const otherPerson of allFaces) {
+        if (!otherPerson.faceEncoding) continue;
+        const distance = euclideanDistance(faceEncoding, otherPerson.faceEncoding);
+        // Face recognition threshold is usually 0.6. Lower is better.
+        if (distance < 0.6) {
+          // Calculate a confidence score where 0.0 distance = 1.0 score, 0.6 distance = 0.6 score.
+          const faceScore = 1.0 - (distance / 0.6) * 0.4;
+          
+          await MatchModel.findOneAndUpdate(
+            { reportId: person.idHash, matchedPersonId: otherPerson.idHash },
+            { score: faceScore, status: faceScore > 0.85 ? 'probable' : 'posible' },
+            { upsert: true, new: true }
+          );
+        }
+      }
     }
 
     for (const request of matchingRequests) {
