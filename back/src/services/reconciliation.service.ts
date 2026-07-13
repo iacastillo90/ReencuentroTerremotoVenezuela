@@ -78,6 +78,25 @@ export async function processAndReconcilePerson(
     throw new Error('Missing required fields: normalizedName or lastSeen.state');
   }
 
+  // 1. Exact Biometric Match (Same photo)
+  if (personData.metadata?.biometricHash) {
+    const existingBiometricMatch = await PersonModel.findOne({ 'metadata.biometricHash': personData.metadata.biometricHash }).lean();
+    if (existingBiometricMatch) {
+      // Auto-merge: exact same photo was uploaded.
+      const mergedPerson = await upsertPerson(source, externalId, {
+        ...personData,
+        normalizedName: existingBiometricMatch.normalizedName,
+        name: existingBiometricMatch.name,
+        age: existingBiometricMatch.age,
+        metadata: {
+          ...personData.metadata,
+          auditStatus: 'merged',
+        }
+      });
+      return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to identical biometric hash (exact same photo).' };
+    }
+  }
+
   const similarCandidates = await findSimilarPersons(personData.normalizedName, personData.lastSeen.state);
 
   if (similarCandidates.length > 0) {
@@ -89,11 +108,11 @@ export async function processAndReconcilePerson(
       const mergedPerson = await upsertPerson(source, externalId, {
         ...personData,
         normalizedName: topCandidate.person.normalizedName,
-        name: topCandidate.person.name, // Keep existing name string
-        age: topCandidate.person.age, // Keep existing age to ensure idHash stays identical
+        name: topCandidate.person.name,
+        age: topCandidate.person.age,
         metadata: {
           ...personData.metadata,
-          auditStatus: 'merged'
+          auditStatus: 'merged',
         } as any
       });
       return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to high similarity (>95%).' };
