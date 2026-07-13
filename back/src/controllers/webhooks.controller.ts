@@ -1,3 +1,40 @@
+/**
+ * controllers/webhooks.controller.ts — Webhooks de mensajería externa
+ *
+ * PROPÓSITO:
+ *   Recibe mensajes de plataformas externas (WhatsApp, Telegram) vía
+ *   webhooks n8n, los valida y los encola para procesamiento por IA.
+ *   Es el punto de entrada para la ingesta de datos desde canales
+ *   de mensajería.
+ *
+ * CARACTERÍSTICAS:
+ *   - receiveWhatsApp: Webhook para mensajes de WhatsApp (n8n)
+ *   - receiveTelegram: Webhook para mensajes de Telegram (n8n)
+ *   - Ambos validan con Zod y encolan a IA queue
+ *   - Audit log en validación y envío
+ *   - Respuesta 202: Aceptado para procesamiento async
+ *
+ * FLUJO DE DATOS:
+ *   1. n8n envía POST al webhook con messageId, text, sender, timestamp
+ *   2. Zod valida (webhookWhatsAppSchema / webhookTelegramSchema)
+ *   3. Si inválido: 400 + audit log con issues de validación
+ *   4. Si válido: addJobToIAQueue(payload) → BullMQ queue
+ *   5. Audit log con resource = externalId
+ *   6. Respuesta 202: mensaje encolado para extracción por IA
+ *
+ * SEGURIDAD:
+ *   - x-webhook-api-key: Solo n8n autenticado (CSRF exento)
+ *   - Zod validation: Texto máx 5000 chars, sender máx 200 chars
+ *   - Audit log en fallos y éxitos: Trazabilidad completa
+ *   - No ejecuta IA directamente: Encola para procesamiento async
+ *   - source fijo: 'whatsapp-n8n' o 'telegram-n8n' (no confía en input)
+ *
+ * ENDPOINTS:
+ *   POST /api/webhooks/n8n/whatsapp — Webhook WhatsApp
+ *   POST /api/webhooks/n8n/telegram — Webhook Telegram
+ *
+ * @module webhooks.controller
+ */
 import { Request, Response, NextFunction } from 'express';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
 import { webhookWhatsAppSchema, webhookTelegramSchema } from '../validators/webhooks.validator';

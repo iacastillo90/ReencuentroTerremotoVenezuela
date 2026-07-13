@@ -1,3 +1,46 @@
+/**
+ * controllers/contact.controller.ts — Controlador de mensajería
+ *
+ * PROPÓSITO:
+ *   Maneja la mensajería entre usuarios del sistema: enviar mensajes
+ *   relacionados a reportes de personas, recibir mensajes, y listar
+ *   conversaciones. Los mensajes en tiempo real se envían vía Socket.IO.
+ *
+ * CARACTERÍSTICAS:
+ *   - sendContactMessage: Enviar mensaje sobre un reporte
+ *   - getSentMessagesHandler: Mensajes enviados (paginado)
+ *   - getReceivedMessagesHandler: Mensajes recibidos (paginado)
+ *   - Receptor automático: Si no se especifica receiverId, busca al creador del reporte
+ *
+ * FLUJO DE DATOS:
+ *   1. Usuario envía mensaje con reportId + message
+ *   2. Zod valida input (reportId, message, optional receiverId)
+ *   3. findPersonByReportId verifica que el reporte existe
+ *   4. Si no hay receiverId, usa metadata.reportedBy del reporte
+ *   5. createContact persiste + emite socket al receptor
+ *   6. Receptor recibe notificación en tiempo real
+ *
+ * SEGURIDAD:
+ *   - requireUser en todos los endpoints (solo usuarios autenticados)
+ *   - Zod validation: message max 5000 chars, reportId max 50 chars
+ *   - findPersonByReportId: Verifica existencia del reporte antes de enviar
+ *   - No exponer mensajes de otros usuarios: Filtrado por senderId/receiverId
+ *
+ * ENDPOINTS:
+ *   POST   /api/contact/send — Enviar mensaje
+ *   GET    /api/contact/sent — Mensajes enviados
+ *   GET    /api/contact/received — Mensajes recibidos
+ *
+ * DECISIONES TÉCNICAS:
+ *   - receiverId opcional: Simplifica el flujo (el sistema infiere el receptor)
+ *   - Paginación separada sent/received: Mejor UX que un solo feed mezclado
+ *   - 201 para envío: Recurso creado (mensaje es un recurso persistente)
+ *   - Socket.IO emit: Notificación en tiempo real sin polling
+ *
+ * CÓMO USAR:
+ *   POST /api/contact/send { reportId: 'abc123', message: 'Tengo información' }
+ *   GET /api/contact/sent?limit=20&offset=0
+ */
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { ValidationError } from '../middlewares/error.middleware';

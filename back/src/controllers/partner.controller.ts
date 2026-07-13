@@ -1,3 +1,41 @@
+/**
+ * controllers/partner.controller.ts — API de integración con partners
+ *
+ * PROPÓSITO:
+ *   Endpoints para integración con organizaciones aliadas (ONGs,
+ *   protección civil, etc.). Los partners envían casos de personas
+ *   desaparecidas/encontradas via POST, y pueden consultar casos
+ *   existentes via GET. Autenticación via x-partner-api-key.
+ *
+ * CARACTERÍSTICAS:
+ *   - getPartnerCasesHandler: Consulta paginada con filtro por status
+ *   - postPartnerCasesHandler: Ingesta masiva de casos via upsertPerson
+ *   - Cache invalidation: Invalida cache Redis 'persons:*' tras ingesta
+ *   - Audit log: Registra ingestiones exitosas
+ *   - externalId: Generado con SHA-256 (name + estado + edad), deterministico
+ *
+ * FLUJO DE INGESTA:
+ *   1. Partner envía POST /api/partner/cases con arreglo de casos
+ *   2. partnerCasesPayloadSchema valida con Zod
+ *   3. Por cada caso: upsertPerson('partner_api', externalId, data)
+ *   4. Redis cache invalidation: persons:* keys eliminadas
+ *   5. Audit log con conteo de casos insertados
+ *   6. Respuesta 201 con array de IDs insertados
+ *
+ * SEGURIDAD:
+ *   - x-partner-api-key: Solo partners autorizados (CSRF exento)
+ *   - Zod validation en cada payload
+ *   - ExternalId deterministico: Previene duplicados
+ *   - Audit log completo (validación fallida y exitosa)
+ *   - Cache invalidation forzada: Datos frescos siempre
+ *   - Limit en GET: Máximo 1000 resultados
+ *
+ * ENDPOINTS:
+ *   GET  /api/partner/cases — Consultar casos
+ *   POST /api/partner/cases — Ingresar casos
+ *
+ * @module partner.controller
+ */
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { connection as redis } from '../config/redis.config';
