@@ -1,3 +1,17 @@
+/**
+ * validators/localizado.validator — Esquemas Zod para reportes de localizados
+ *
+ * PROPÓSITO:
+ *   Define esquemas de validación para el reporte masivo de personas
+ *   localizadas en refugios y hospitales por parte de socios (partners).
+ *
+ * SCHEMAS:
+ *   - localizadoSubmissionSchema: nombre, cédula, edad, género, origen, ubicación
+ *   - localizadoPayloadSchema: array de submissions (hasta 5000 registros)
+ *
+ * @module localizado.validator
+ */
+
 import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
 

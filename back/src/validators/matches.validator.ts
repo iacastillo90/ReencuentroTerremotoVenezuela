@@ -1,3 +1,16 @@
+/**
+ * validators/matches.validator — Esquemas Zod para coincidencias
+ *
+ * PROPÓSITO:
+ *   Define el esquema de validación para el parámetro de ruta reportId
+ *   en las operaciones de coincidencias.
+ *
+ * SCHEMAS:
+ *   - reportIdParamSchema: reportId como string seguro
+ *
+ * @module matches.validator
+ */
+
 import { z } from 'zod';
 import { safeIdString } from '../utils/sanitize.util';
 

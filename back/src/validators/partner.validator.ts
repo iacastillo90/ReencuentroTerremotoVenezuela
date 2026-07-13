@@ -1,3 +1,17 @@
+/**
+ * validators/partner.validator — Esquemas Zod para API de socios
+ *
+ * PROPÓSITO:
+ *   Define esquemas de validación para la API de integración con socios
+ *   (partners), permitiendo el envío masivo de casos de personas.
+ *
+ * SCHEMAS:
+ *   - partnerCaseSchema: nombre, estado, última ubicación, edad, género, foto, aliases, contacto
+ *   - partnerCasesPayloadSchema: array de casos (hasta 1000 registros)
+ *
+ * @module partner.validator
+ */
+
 import { z } from 'zod';
 import { sanitizedString, sanitizedStringOptional } from '../utils/sanitize.util';
 

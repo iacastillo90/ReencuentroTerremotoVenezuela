@@ -1,3 +1,17 @@
+/**
+ * validators/person.validator — Esquemas Zod para reportes de personas
+ *
+ * PROPÓSITO:
+ *   Define esquemas de validación para la búsqueda y creación de reportes
+ *   de personas, así como el tipo PersonPayload utilizado por los adaptadores.
+ *
+ * SCHEMAS:
+ *   - personSearchQuerySchema: búsqueda con filtros (q, status, state, paginación)
+ *   - personPayloadSchema: payload completo de persona (source, name, estado, datos, etc.)
+ *
+ * @module person.validator
+ */
+
 import { z } from 'zod';
 import { sanitizedString, sanitizedStringOptional, sanitizedQueryParam } from '../utils/sanitize.util';
 

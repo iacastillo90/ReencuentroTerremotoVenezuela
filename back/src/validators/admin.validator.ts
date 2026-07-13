@@ -1,3 +1,22 @@
+/**
+ * validators/admin.validator — Esquemas Zod para rutas de administración
+ *
+ * PROPÓSITO:
+ *   Define esquemas de validación para las operaciones administrativas:
+ *   actualización de estado, fusión, moderación, gestión de matches y usuarios.
+ *
+ * SCHEMAS:
+ *   - adminStatusUpdateSchema: status (missing/found/deceased/unknown)
+ *   - adminMergeSchema: targetIdHash
+ *   - adminModerateSchema: action (approve/reject)
+ *   - adminUpdateMatchStatusSchema: status (pending/confirmed/rejected)
+ *   - adminUpdateUserRoleSchema: role (user/admin)
+ *   - adminUpdateUserStatusSchema: status (pending/approved/suspended)
+ *   - adminAuditStatusQuerySchema: filtros de auditoría con paginación
+ *
+ * @module admin.validator
+ */
+
 import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
 
