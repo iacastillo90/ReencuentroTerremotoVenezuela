@@ -1,3 +1,19 @@
+/**
+ * services/ai/gemini.service — Proveedor de IA Google Gemini
+ *
+ * PROPÓSITO:
+ *   Implementa IAIProvider usando el SDK de Google GenAI para procesar
+ *   reportes de texto, transcribir audio y analizar imágenes.
+ *
+ * CARACTERÍSTICAS:
+ *   - processRecord: extrae datos estructurados (usa responseMimeType JSON)
+ *   - transcribeAudio: transcripción nativa de archivos de audio
+ *   - analyzeImageDraft: separa rasgos permanentes de ropa/accesorios
+ *   - generateEmbedding: genera embeddings con text-embedding-004
+ *
+ * @module gemini.service
+ */
+
 import { GoogleGenAI } from '@google/genai';
 import { IAIProvider, AIProcessResult, ImageDraftAnalysis, SYSTEM_PROMPT } from './ai.interface';
 import { logger } from '../../utils/logger.util';

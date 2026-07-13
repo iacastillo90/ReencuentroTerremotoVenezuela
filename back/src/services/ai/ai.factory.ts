@@ -1,3 +1,17 @@
+/**
+ * services/ai/ai.factory — Fábrica de proveedores de IA
+ *
+ * PROPÓSITO:
+ *   Provee una función factory que retorna la implementación concreta
+ *   del proveedor de IA según la variable de entorno AI_PROVIDER.
+ *
+ * CARACTERÍSTICAS:
+ *   - Soporta anthropic (default), openai y gemini
+ *   - Fácil extensión: solo agregar nuevo case al switch
+ *
+ * @module ai.factory
+ */
+
 import { IAIProvider } from './ai.interface';
 import { AnthropicProvider } from './anthropic.service';
 import { OpenAIProvider } from './openai.service';
