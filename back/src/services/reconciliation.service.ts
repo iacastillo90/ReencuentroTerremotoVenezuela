@@ -105,20 +105,24 @@ export async function processAndReconcilePerson(
   if (personData.metadata?.biometricHash) {
     const existingBiometricMatch = await PersonModel.findOne({ 'metadata.biometricHash': personData.metadata.biometricHash }).lean();
     if (existingBiometricMatch) {
-      // Auto-merge: exact same photo was uploaded.
-      const mergedPerson = await upsertPerson(source, externalId, {
-        ...personData,
-        normalizedName: existingBiometricMatch.normalizedName,
-        name: existingBiometricMatch.name,
-        age: existingBiometricMatch.age,
-        metadata: {
-          ...personData.metadata,
-          auditStatus: 'merged',
-        }
-      });
+      // Enviar a auditoría manual en lugar de auto-fusionar
+      await addToOutbox('manual-audit', {
+        incoming: { source, externalId, personData },
+        candidates: [{ idHash: existingBiometricMatch.idHash, name: existingBiometricMatch.name, score: 1.0 }]
+      } as Record<string, unknown>);
       
-      await logAutoMerge(mergedPerson.idHash, personData.name || 'Desconocido', existingBiometricMatch.name, 'Biometric Hash', 1.0);
-      return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to identical biometric hash (exact same photo).' };
+      // Ya no hace auto-merge, sino que avisa al log (como info)
+      await AuditLogModel.create({
+        eventType: 'system_action',
+        severity: 'info',
+        actor: 'system',
+        action: 'sent_to_audit',
+        resource: existingBiometricMatch.idHash,
+        detail: { incomingName: personData.name, matchedName: existingBiometricMatch.name, reason: 'Biometric Hash', score: 1.0 },
+        ip: personData.metadata?.reporterIp || 'unknown',
+        timestamp: new Date()
+      });
+      return { status: 'pending_audit', message: 'Sent to manual audit due to exact biometric hash match.' };
     }
   }
 
