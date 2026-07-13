@@ -106,3 +106,17 @@ export async function dismissAuditJob(jobId: string, actor: string, req: Request
 
   return { status: 200, data: { status: 'inserted_as_new', idHash: newPerson.idHash } };
 }
+
+import { AuditLogModel } from '../../models/audit-log.model';
+
+export async function getAuditLogs(limit: number = 100, offset: number = 0, eventType?: string) {
+  const filter: Record<string, any> = eventType ? { eventType } : {};
+  const logs = await AuditLogModel.find(filter)
+    .sort({ timestamp: -1 })
+    .skip(offset)
+    .limit(limit)
+    .lean();
+    
+  const total = await AuditLogModel.countDocuments(filter);
+  return { data: logs, total };
+}

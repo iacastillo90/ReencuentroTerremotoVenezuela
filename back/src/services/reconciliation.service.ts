@@ -37,6 +37,7 @@ import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
 import { calculateSimilarity } from '../utils/fuzzy-match.util';
 import { addToOutbox } from './outbox.service';
 import { upsertPerson } from './person.service';
+import { AuditLogModel } from '../models/audit-log.model';
 
 export interface SimilarityResult {
   person: UnifiedPerson;
@@ -78,6 +79,28 @@ export async function processAndReconcilePerson(
     throw new Error('Missing required fields: normalizedName or lastSeen.state');
   }
 
+  // Helper to log auto-merges
+  const logAutoMerge = async (masterId: string, incomingName: string, matchedName: string, reason: string, score: number) => {
+    await AuditLogModel.create({
+      eventType: 'system_action',
+      severity: 'warning',
+      actor: 'system',
+      action: 'auto_merge',
+      resource: masterId,
+      detail: { incomingName, matchedName, reason, score },
+      ip: personData.metadata?.reporterIp || 'unknown',
+      timestamp: new Date()
+    });
+    
+    // Si el nombre es diferente, lo agregamos como alias usando update
+    if (incomingName && incomingName.toLowerCase() !== matchedName.toLowerCase()) {
+      await PersonModel.updateOne(
+        { idHash: masterId },
+        { $addToSet: { aliases: incomingName } }
+      );
+    }
+  };
+
   // 1. Exact Biometric Match (Same photo)
   if (personData.metadata?.biometricHash) {
     const existingBiometricMatch = await PersonModel.findOne({ 'metadata.biometricHash': personData.metadata.biometricHash }).lean();
@@ -93,6 +116,8 @@ export async function processAndReconcilePerson(
           auditStatus: 'merged',
         }
       });
+      
+      await logAutoMerge(mergedPerson.idHash, personData.name || 'Desconocido', existingBiometricMatch.name, 'Biometric Hash', 1.0);
       return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to identical biometric hash (exact same photo).' };
     }
   }
@@ -115,6 +140,8 @@ export async function processAndReconcilePerson(
           auditStatus: 'merged',
         } as any
       });
+      
+      await logAutoMerge(mergedPerson.idHash, personData.name || 'Desconocido', topCandidate.person.name, 'High Similarity Name', topCandidate.score);
       return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to high similarity (>95%).' };
     } else {
       // Send to manual audit queue via Transactional Outbox
@@ -130,3 +157,4 @@ export async function processAndReconcilePerson(
   const newPerson = await upsertPerson(source, externalId, personData);
   return { status: 'inserted', idHash: newPerson.idHash, message: 'Inserted as new record.' };
 }
+

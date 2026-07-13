@@ -69,6 +69,7 @@ import {
   getAdminUsersHandler, updateUserRoleHandler, updateUserStatusHandler,
   getVerificationsHandler, getAdminSearchesHandler,
   postApiKeyHandler, getApiKeysHandler, deleteApiKeyHandler,
+  getAuditLogsHandler,
 } from '../controllers/admin.controller';
 import rateLimit from 'express-rate-limit';
 
@@ -87,6 +88,7 @@ router.post('/merge/:id1/:id2', mergeProfilesHandler);
 router.get('/audit', getAuditJobsHandler);
 router.post('/audit/:jobId/merge', mergeAuditJobHandler);
 router.post('/audit/:jobId/dismiss', dismissAuditJobHandler);
+router.get('/audit-logs', getAuditLogsHandler);
 router.patch('/persons/:idHash/status', updatePersonStatusHandler);
 router.patch('/persons/:idHash/moderate', moderatePersonHandler);
 router.put('/persons/:idHash', putPersonHandler);

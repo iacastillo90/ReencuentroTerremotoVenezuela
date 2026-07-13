@@ -48,7 +48,7 @@ import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
 import { adminStatusUpdateSchema, adminMergeSchema, adminModerateSchema, adminUpdateMatchStatusSchema, adminUpdateUserRoleSchema, adminUpdateUserStatusSchema, adminAuditStatusQuerySchema } from '../validators/admin.validator';
 import { mergeProfiles, getAdminPersons, putPerson, updatePersonStatus, moderatePerson, getPersonContacts } from '../services/admin/person.service';
-import { getAuditJobs, mergeAuditJob, dismissAuditJob } from '../services/admin/audit.service';
+import { getAuditJobs, mergeAuditJob, dismissAuditJob, getAuditLogs } from '../services/admin/audit.service';
 import { getAdminMatches, updateMatchStatus } from '../services/admin/match.service';
 import { getAdminUsers, updateUserRole, updateUserStatus, getVerifications } from '../services/admin/user.service';
 import { getAdminSearches } from '../services/admin/search.service';
@@ -85,6 +85,18 @@ export async function getAuditJobsHandler(req: Request, res: Response, next: Nex
   try {
     const jobs = await getAuditJobs();
     return res.status(200).json(jobs);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAuditLogsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const eventType = typeof req.query.eventType === 'string' ? req.query.eventType : undefined;
+    const result = await getAuditLogs(limit, offset, eventType);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }

@@ -29,6 +29,7 @@ export interface IAuditLog {
     | 'auth_login_failure'
     | 'auth_logout'
     | 'admin_action'
+    | 'system_action'
     | 'ingestion_webhook'
     | 'ingestion_partner'
     | 'validation_failure'
@@ -51,6 +52,7 @@ const AuditLogSchema = new Schema<IAuditLog>({
       'auth_login_failure',
       'auth_logout',
       'admin_action',
+      'system_action',
       'ingestion_webhook',
       'ingestion_partner',
       'validation_failure',
