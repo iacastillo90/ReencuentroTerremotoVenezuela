@@ -1,9 +1,22 @@
 /**
- * Normaliza un origin/entrada de allowlist para comparación: recorta espacios,
- * pasa a minúsculas y elimina barras finales. NO elimina el esquema: el esquema
- * forma parte del origin web y tratarlo como equivalente (http ≡ https) abriría
- * un downgrade con credenciales. Si un despliegue necesita ambos esquemas,
- * deben listarse explícitamente en CORS_ORIGINS.
+ * utils/cors.util.ts — Utilitario CORS (allowlist exacta)
+ *
+ * PROPÓSITO:
+ *   Configuración de CORS con allowlist exacta para prevenir
+ *   ataques de origin reflection. NO usa comodines ni coincidencia
+ *   por sufijo. El esquema (http vs https) debe coincidir exactamente.
+ *
+ * CARACTERÍSTICAS:
+ *   - normalizeOrigin: Limpia origin (trim, lowercase, sin trailing slash)
+ *   - buildAllowedOrigins: Construye Set desde CSV de ENV
+ *   - isOriginAllowed: Coincidencia exacta (no substring/suffix)
+ *
+ * SEGURIDAD:
+ *   - NO coincidencia por sufijo: https://evil.com?localhost:5173 NO pasa
+ *   - NO equivalencia http/https: Debe listarse explícitamente
+ *   - Entradas vacías descartadas: Comas extra en CORS_ORIGINS no rompen
+ *
+ * @module cors.util
  */
 export function normalizeOrigin(value: string): string {
   return value.trim().toLowerCase().replace(/\/+$/, '');

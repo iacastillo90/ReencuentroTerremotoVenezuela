@@ -1,3 +1,18 @@
+/**
+ * utils/geo.util.ts — Bounding box geográfico
+ *
+ * PROPÓSITO:
+ *   Define el bounding box del país objetivo (Venezuela por defecto)
+ *   y provee validación de puntos geográficos. Se usa para filtrar
+ *   coordenadas inválidas o fuera del área de interés.
+ *
+ * CARACTERÍSTICAS:
+ *   - getTargetBoundingBox: Retorna bbox desde ENV o default Venezuela
+ *   - isPointInsideBBox: Verifica si coordenadas están dentro del bbox
+ *   - Fallback a Venezuela si ENV inválido: -73.4,0.6,-59.8,12.2
+ *
+ * @module geo.util
+ */
 import { logger } from './logger.util';
 
 export interface BoundingBox {

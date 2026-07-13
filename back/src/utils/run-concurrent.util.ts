@@ -1,3 +1,21 @@
+/**
+ * utils/run-concurrent.util.ts — Ejecución concurrente con límite
+ *
+ * PROPÓSITO:
+ *   Ejecuta una función async sobre un array de items con un límite
+ *   de concurrencia configurable. Útil para operaciones que no deben
+ *   saturar recursos (BD, API externa) pero quieren paralelismo.
+ *
+ * CARACTERÍSTICAS:
+ *   - runConcurrent: Procesa items con N workers en paralelo
+ *   - Mantiene orden de resultados (index-based)
+ *   - Límite de concurrencia dinámico (min(concurrency, items.length))
+ *
+ * CÓMO USAR:
+ *   const results = await runConcurrent(urls, 5, fetchUrl);
+ *
+ * @module run-concurrent.util
+ */
 export async function runConcurrent<T, R>(
   items: T[],
   concurrency: number,

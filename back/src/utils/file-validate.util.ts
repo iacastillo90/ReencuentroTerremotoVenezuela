@@ -1,3 +1,56 @@
+/**
+ * utils/file-validate.util.ts — Validación de archivos (MIME + Magic Bytes)
+ *
+ * PROPÓSITO:
+ *   Provee validación de archivos subidos para prevenir MIME type forgery
+ *   attacks. Verifica que el contenido real del archivo (magic bytes)
+ *   coincida con el MIME type declarado. Usa file-type como primary,
+ *   con fallback a firmas personalizadas.
+ *
+ * CARACTERÍSTICAS:
+ *   - ALLOWED_MIME_TYPES: Tipos permitidos (JPEG, PNG, GIF, WebP, MP4)
+ *   - IMAGE_MAX_SIZE: 5MB para imágenes
+ *   - VIDEO_MAX_SIZE: 20MB para videos
+ *   - validateMagicBytes: Verifica contenido real vs MIME declarado
+ *   - sanitizeFilename: Limpia nombres (path traversal, caracteres no ASCII)
+ *   - MAGIC_BYTE_SIGNATURES: Firmas hex para fallback
+ *
+ * FLUJO DE VALIDACIÓN:
+ *   1. Multer verifica MIME type y tamaño
+ *   2. validateMagicBytes lee magic bytes del buffer
+ *   3. file-type library: Verificación primaria (más precisa)
+ *   4. Fallback a MAGIC_BYTE_SIGNATURES si file-type falla
+ *   5. Si no coincide → 400 + audit log
+ *   6. sanitizeFilename limpia el nombre antes de persistir
+ *
+ * SEGURIDAD:
+ *   - MIME type forgery prevention: Valida contenido, no header HTTP
+ *   - file-type como primary: Detecta JPEG camuflado como .exe
+ *   - Magic bytes fallback: Sin dependencias externas, 100% coverage
+ *   - 5MB/20MB limits: Previene DoS por archivos monstruosos
+ *   - sanitizeFilename: Elimina ../, ~, caracteres no ASCII
+ *   - Audit log en rechazos: Trazabilidad de intentos maliciosos
+ *
+ * MAGIC BYTES SOPORTADOS:
+ *   JPEG: 0xFF 0xD8 0xFF
+ *   PNG: 0x89 0x50 0x4E...
+ *   GIF: 0x47 0x49 0x46 (87a y 89a)
+ *   WebP: 0x52 0x49 0x46 0x46 (RIFF header)
+ *   MP4: ftyp box variants
+ *
+ * DECISIONES TÉCNICAS:
+ *   - file-type > fallback: La librería maneja más formatos y edge cases
+ *   - Magic bytes en servidor: No confiar en headers HTTP (fáciles de falsear)
+ *   - sanitizeFilename con timestamp: Colisión prevention + path traversal safe
+ *   - Dos capas de validación: Defensa en profundidad
+ *
+ * CÓMO USAR:
+ *   const isValid = await validateMagicBytes(fileBuffer, 'image/jpeg');
+ *   const safeName = sanitizeFilename('../../etc/passwd.jpg');
+ *   // safeName → '1234567890_passwd.jpg'
+ *
+ * @module file-validate.util
+ */
 import crypto from 'crypto';
 
 export const ALLOWED_MIME_TYPES = [
