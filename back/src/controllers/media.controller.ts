@@ -120,3 +120,17 @@ export async function transcribeAudio(req: Request, res: Response, next: NextFun
     next(error);
   }
 }
+
+import { minioClient } from '../services/storage.service';
+
+export async function getMediaFile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const filename = req.params.filename as string;
+    const bucket = process.env.MINIO_BUCKET || 'reencuentro-media';
+    const stream = await minioClient.getObject(bucket, filename);
+    stream.pipe(res);
+  } catch (error: any) {
+    if (error.code === 'NoSuchKey') return res.status(404).send('Not found');
+    next(error);
+  }
+}

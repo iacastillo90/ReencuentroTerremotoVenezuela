@@ -110,5 +110,5 @@ export async function uploadMedia(fileBuffer: Buffer, originalName: string, mime
     'Content-Type': mimeType
   });
 
-  return getPresignedUrl(fileName);
+  return `/api/media/${fileName}`;
 }

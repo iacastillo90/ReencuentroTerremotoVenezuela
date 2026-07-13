@@ -24,7 +24,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { requireUser } from '../middlewares/auth.middleware';
-import { uploadFile, analyzeImage, transcribeAudio } from '../controllers/media.controller';
+import { uploadFile, analyzeImage, transcribeAudio, getMediaFile } from '../controllers/media.controller';
 import { ALLOWED_MIME_TYPES, IMAGE_MAX_SIZE, VIDEO_MAX_SIZE } from '../utils/file-validate.util';
 
 const router = Router();
@@ -55,7 +55,7 @@ const uploadGeneral = multer({
   storage,
   limits: { fileSize: VIDEO_MAX_SIZE },
   fileFilter: (req, file, cb) => {
-    if (ALLOWED_MIME_TYPES.includes(file.mimetype as any)) {
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype as typeof ALLOWED_MIME_TYPES[number])) {
       cb(null, true);
     } else {
       cb(new Error('Formato no permitido. Solo imágenes y videos (MP4).'));
@@ -78,5 +78,6 @@ const uploadAudio = multer({
 router.post('/', requireUser, mediaUploadLimiter, uploadGeneral.single('file'), uploadFile);
 router.post('/analyze-image', requireUser, mediaUploadLimiter, uploadImage.single('image'), analyzeImage);
 router.post('/audio-transcribe', requireUser, mediaUploadLimiter, uploadAudio.single('audio'), transcribeAudio);
+router.get('/:filename', getMediaFile);
 
 export const mediaRouter = router;
