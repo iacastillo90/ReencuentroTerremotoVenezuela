@@ -127,6 +127,18 @@ export async function getMediaFile(req: Request, res: Response, next: NextFuncti
   try {
     const filename = req.params.filename as string;
     const bucket = process.env.MINIO_BUCKET || 'reencuentro-media';
+    
+    // Set Content-Type from MinIO object metadata
+    const stat = await minioClient.statObject(bucket, filename);
+    if (stat.metaData && stat.metaData['content-type']) {
+      res.setHeader('Content-Type', stat.metaData['content-type']);
+    } else {
+      // Fallback based on extension
+      if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) res.setHeader('Content-Type', 'image/jpeg');
+      else if (filename.endsWith('.png')) res.setHeader('Content-Type', 'image/png');
+      else if (filename.endsWith('.webp')) res.setHeader('Content-Type', 'image/webp');
+    }
+    
     const stream = await minioClient.getObject(bucket, filename);
     stream.pipe(res);
   } catch (error: any) {
