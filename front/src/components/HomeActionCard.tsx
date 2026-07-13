@@ -33,23 +33,20 @@ interface HomeActionCardProps {
   title: string;
   onClick: () => void;
   style?: React.CSSProperties;
+  className?: string;
 }
 
-export const HomeActionCard: React.FC<HomeActionCardProps> = ({ icon, title, onClick, style }) => {
+export const HomeActionCard: React.FC<HomeActionCardProps> = ({ icon, title, onClick, style, className }) => {
   return (
-    <Button 
+    <Button
       variant="primary"
       fullWidth
       onClick={onClick}
-      style={{
-        maxWidth: '358px',
-        height: '51px',
-        margin: '0 auto',
-        ...style
-      }}
+      className={`home-action-card ${className || ''}`.trim()}
+      style={style}
     >
-      <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}>{icon}</div>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+      <span className="hg__btn-icon">{icon}</span>
+      <span className="hg__btn-label">{title}</span>
     </Button>
   );
 };

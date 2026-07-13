@@ -28,7 +28,7 @@ interface BrandMarkProps {
 export const BrandMark: React.FC<BrandMarkProps> = ({ size = 36, className }) => (
   <svg width={size} height={size} viewBox="0 0 58 52" fill="none"
     role="img" aria-label="Reencuentros Venezuela"
-    className={className} style={{ flex: '0 0 auto' }}>
+    className={`brand-mark ${className || ''}`.trim()}>
     {/* Ala amarilla (izquierda) */}
     <rect x="6" y="9" width="31" height="36" rx="10" fill="#FFC107"
       transform="rotate(-42 21.5 27)" opacity="0.95" />

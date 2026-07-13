@@ -489,6 +489,20 @@
   color: var(--clr-text-muted);
 }
 
+.auth-modal-pending {
+  text-align: center;
+  padding: 20px;
+}
+
+.auth-modal-pending h3 {
+  color: #d97706;
+  margin-bottom: 10px;
+}
+
+.auth-modal-pending-btn {
+  margin-top: 15px;
+}
+
 .auth-modal-login-actions {
   display: flex;
   flex-direction: column;
@@ -623,14 +637,11 @@
 }
 
 .report-modal-content {
-  width: 100%;
-  max-width: none;
-  height: 100dvh;
-  max-height: none;
-  border-radius: 0;
-  border: 0;
-  box-shadow: none;
-  background: var(--clr-bg);
+  z-index: 1000;
+}
+
+.report-modal-content--auth {
+  max-width: 400px;
 }
 .report-modal-title {
   font-size: var(--text-xl);

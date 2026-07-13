@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../../services/api';
-import { db } from '../../db/offlineDb';
+import { addPendingReport } from '../../db/offlineDb';
+import { registerBackgroundSync } from '../../utils/sync-utils';
 
 export interface ReportContextType {
   step: number; setStep: (s: number | ((prev: number) => number)) => void;
@@ -114,7 +115,7 @@ Vestimenta: ${sinVestimenta ? 'Sin info' : `Sup: ${prendaSup} (${colorSup}), Inf
 Señas Particulares: ${senasSelected.join(', ')}
 Detalles Adicionales: ${detalleAdicional}
 Ubicación: ${calleEstado}`;
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         source: 'manual', externalId: `reporte_${Date.now()}`,
         type: categoria === 'mascota' ? 'animal' : 'person',
         name: nombreCompleto || (audioText ? 'Reporte Anónimo (Asistente)' : 'Reporte Manual'),
@@ -122,10 +123,10 @@ Ubicación: ${calleEstado}`;
         isMinor: categoria === 'niño/a o adolescente', reporterLocation,
       };
       if (!navigator.onLine) {
-        await db.offlineReports.add({
-          reportData: payload, photoFile: file || undefined,
-          status: 'draft_offline', createdAt: Date.now()
-        });
+        const csrfCookie = document.cookie.split('; ').find((r) => r.startsWith('csrf-token='));
+        const csrfToken = csrfCookie ? decodeURIComponent(csrfCookie.split('=')[1]) : undefined;
+        await addPendingReport(payload, file || undefined, csrfToken);
+        await registerBackgroundSync();
         setIsOfflineSaved(true); setStep(7); return;
       }
       if (file) {
@@ -135,9 +136,10 @@ Ubicación: ${calleEstado}`;
       }
       await api.post('/persons', payload);
       setStep(7);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.response?.data?.error || 'Error al enviar reporte.');
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Error al enviar reporte.');
     } finally { setIsSubmitting(false); }
   }, [calleEstado, audioText, nombreCompleto, edad, categoria, genero, complexion, piel, cabello, ojos, prendaSup, colorSup, prendaInf, colorInf, sinVestimenta, senasSelected, detalleAdicional, file, reporterLocation]);
 

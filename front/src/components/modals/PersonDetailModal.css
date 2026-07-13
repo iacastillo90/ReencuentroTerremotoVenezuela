@@ -368,6 +368,31 @@
 .info-section-warning-title { color: var(--clr-amber); }
 .info-section-warning-text { font-size: var(--text-md); color: var(--text-primary); font-style: italic; }
 
+.person-modal-input-notes { min-height: 60px; }
+.person-modal-input-message { min-height: 80px; }
+
+.biometric-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.biometric-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #c084fc;
+}
+
+.biometric-hash {
+  font-family: monospace;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+  margin: 0;
+  color: #e9d5ff;
+}
+
 .inline-icon {
   display: inline;
   margin-right: 4px;

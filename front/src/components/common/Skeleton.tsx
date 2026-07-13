@@ -31,16 +31,16 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 );
 
 export const FeedCardSkeleton: React.FC = () => (
-  <div className="feed-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+  <div className="feed-card skeleton-card">
+    <div className="skeleton-card__row">
       <Skeleton width="48px" height="48px" borderRadius="50%" />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      <div className="skeleton-card__text">
         <Skeleton width="60%" height="16px" />
         <Skeleton width="40%" height="12px" />
       </div>
     </div>
     <Skeleton width="100%" height="160px" borderRadius="var(--radius-md)" />
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+    <div className="skeleton-card__desc">
       <Skeleton width="80%" height="12px" />
       <Skeleton width="50%" height="12px" />
     </div>

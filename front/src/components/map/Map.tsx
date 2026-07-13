@@ -43,7 +43,7 @@ import './Map.css';
 
 // Fix para iconos de Leaflet en webpack/vite.
 // Sin esto, los marcadores aparecen como cuadrados rotos.
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -112,7 +112,7 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
                       <p><strong>Última vez visto:</strong> {person.lastSeen.description}</p>
                       <p><strong>Urgencia:</strong> {person.metadata.urgencyScore}</p>
                       {onSelectPerson && (
-                        <div style={{ marginTop: '10px' }}>
+                        <div className="popup-action">
                           <Button fullWidth size="sm" onClick={() => onSelectPerson(person)}>
                             Ver perfil completo
                           </Button>
@@ -142,7 +142,7 @@ export function InteractiveMap({ persons, disasters, layers, onToggleLayer, onSe
               <Marker position={[lat, lng]} icon={disasterIcon}>
                 <Popup>
                   <div className="popup-card disaster-popup">
-                    <h3 style={{ color }}>{disaster.title}</h3>
+                    <h3 data-severity={disaster.severity}>{disaster.title}</h3>
                     <p><strong>Tipo:</strong> {getDisasterName(disaster.type)}</p>
                     <p><strong>Severidad:</strong> {getSeverityName(disaster.severity).toUpperCase()}</p>
                   </div>

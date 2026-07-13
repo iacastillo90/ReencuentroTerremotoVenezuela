@@ -71,7 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       if (res.data.user.isProfileComplete && res.data.user.status !== 'pending') {
         onSuccess();
       }
-    } catch (err: any) {
+    } catch (err) {
       console.debug(err);
       setError('Error al iniciar sesión con Google.');
     } finally {
@@ -107,7 +107,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
   return (
     <div className="report-modal-overlay">
-      <div className="report-modal-content" role="dialog" aria-modal="true" style={{ maxWidth: '400px' }}>
+      <div className="report-modal-content report-modal-content--auth" role="dialog" aria-modal="true">
         <header className="report-modal-header">
           <h2 className="report-modal-title">
             {isPendingReview
@@ -189,14 +189,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
           ) : user?.status === 'pending' ? (
             /* Estado 3: Cuenta pendiente de revisión por moderador */
-            <div className="auth-modal-login-container" style={{ textAlign: 'center', padding: '20px' }}>
-              <h3 style={{ color: '#d97706', marginBottom: '10px' }}>Cuenta en Revisión</h3>
+            <div className="auth-modal-pending">
+              <h3>Cuenta en Revisión</h3>
               <p className="auth-modal-login-text">
                 Tu cuenta ha sido registrada y actualmente está pendiente de revisión
                 por un moderador para verificar la autenticidad de los datos.
                 Te notificaremos pronto.
               </p>
-              <Button fullWidth onClick={onClose} style={{ marginTop: '15px' }}>Entendido</Button>
+              <Button fullWidth onClick={onClose} className="auth-modal-pending-btn">Entendido</Button>
             </div>
           ) : null}
         </div>

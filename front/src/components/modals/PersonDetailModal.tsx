@@ -33,7 +33,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Person } from '../../types';
 import {
   X, MapPin, User, CheckCircle, Heart,
-  MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck
+  MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck, Fingerprint
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
@@ -111,8 +111,8 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
 
   // Determina si el usuario actual es el dueño del reporte
   const isOwner = user?.role === 'admin' ||
-    ((person.metadata?.reportedBy as any)?._id === user?._id) ||
-    ((person.metadata?.reportedBy as any) === user?._id);
+    ((person.metadata?.reportedBy as { _id?: string })?._id === user?._id) ||
+    ((person.metadata?.reportedBy as string | undefined) === user?._id);
 
   // ─── Enviar mensaje enmascarado al reportante ───
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -129,8 +129,9 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         setShowContactForm(false);
         setMessage('');
       }
-    } catch (e: any) {
-      setToastMessage(e.response?.data?.error || "Error al enviar mensaje");
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setToastMessage(axiosErr.response?.data?.error || "Error al enviar mensaje");
     } finally {
       if (isMountedRef.current) setSending(false);
     }
@@ -154,13 +155,14 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         setClosing(false);
         onCaseClosed?.();
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Rollback en caso de error
       if (isMountedRef.current) {
         setOptimisticStatus(previousStatus);
         setClosing(false);
       }
-      setToastMessage(e.response?.data?.error || 'Error al cerrar el caso');
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setToastMessage(axiosErr.response?.data?.error || 'Error al cerrar el caso');
     }
   };
 
@@ -211,7 +213,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
           <div className="person-hero">
             <div className="hero-image-wrapper">
               {person.photoUrl ? (
-                <img src={person.photoUrl} alt={`Foto de ${person.name}`} className="hero-image" />
+                <img src={person.photoUrl.replace(/http:\/\/minio:9000\/[^/]+\//, '/api/media/').split('?')[0]} alt={`Foto de ${person.name}`} className="hero-image" />
               ) : (
                 <User size={48} color="var(--text-secondary)" />
               )}
@@ -290,7 +292,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
               <form onSubmit={handleCloseCase} className="person-modal-form">
                 <select
                   value={closeResolution}
-                  onChange={e => setCloseResolution(e.target.value as any)}
+                  onChange={e => setCloseResolution(e.target.value as 'found' | 'deceased' | 'erroneous')}
                   className="person-modal-input"
                 >
                   <option value="found">La persona ha sido Localizada (Viva)</option>
@@ -302,8 +304,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   placeholder="Detalles del reencuentro o resolución (Opcional)..."
                   value={closeNotes}
                   onChange={e => setCloseNotes(e.target.value)}
-                  className="person-modal-input"
-                  style={{ minHeight: '60px' }}
+                  className="person-modal-input person-modal-input-notes"
                 />
 
                 <div className="person-modal-form-actions">
@@ -332,8 +333,7 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   required
-                  className="person-modal-input"
-                  style={{ minHeight: '80px' }}
+                  className="person-modal-input person-modal-input-message"
                 />
                 <div className="person-modal-form-actions">
                   <Button type="submit" disabled={sending}>
@@ -361,6 +361,16 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
                 <label>Género</label>
                 <p>{getGenderText(person.gender)}</p>
               </div>
+              {person.metadata?.biometricHash && (
+                <div className="info-item biometric-card">
+                  <label className="biometric-label">
+                    <Fingerprint size={14} /> Huella Biométrica Facial
+                  </label>
+                  <p className="biometric-hash">
+                    {person.metadata.biometricHash.toUpperCase().match(/.{1,4}/g)?.join('-')}
+                  </p>
+                </div>
+              )}
               <div className="info-item">
                 <label>Última vez visto en</label>
                 <p>{person.lastSeen?.municipality ? `${person.lastSeen.municipality}, ` : ''}{person.lastSeen?.state || 'Desconocido'}</p>
