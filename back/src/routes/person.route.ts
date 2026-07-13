@@ -57,11 +57,35 @@ const getPersonsQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+const getPersonsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
+
+const getCountsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
+
+const closeCaseLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
+
 const router = Router();
 
-router.get('/counts', getCounts);
+router.get('/counts', getCountsLimiter, getCounts);
 router.get('/mine', requireUser, getMyReports);
-router.get('/', validateQuery(getPersonsQuerySchema), getPersons);
+router.get('/', getPersonsLimiter, validateQuery(getPersonsQuerySchema), getPersons);
 
 const createPersonLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -72,6 +96,6 @@ const createPersonLimiter = rateLimit({
 });
 
 router.post('/', createPersonLimiter, requireProfileComplete, createPerson);
-router.post('/:idHash/close', requireUser, closeCase);
+router.post('/:idHash/close', closeCaseLimiter, requireUser, closeCase);
 
 export const personRouter = router;

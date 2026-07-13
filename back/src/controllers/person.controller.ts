@@ -44,6 +44,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { personPayloadSchema, personSearchQuerySchema } from '../validators/person.validator';
 import * as personService from '../services/person.service';
+import * as personReadService from '../services/person-read.service';
 import { ValidationError } from '../middlewares/error.middleware';
 
 const closeCaseSchema = z.object({
@@ -53,7 +54,7 @@ const closeCaseSchema = z.object({
 
 export async function getCounts(_req: Request, res: Response, next: NextFunction) {
   try {
-    const counts = await personService.getCounts();
+    const counts = await personReadService.getCounts();
     return res.status(200).json(counts);
   } catch (error) {
     next(error);
@@ -66,7 +67,7 @@ export async function getMyReports(req: Request, res: Response, next: NextFuncti
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const result = await personService.getMyReports(userId, limit, offset);
+    const result = await personReadService.getMyReports(userId, limit, offset);
     return res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -81,7 +82,7 @@ export async function getPersons(req: Request, res: Response, next: NextFunction
     }
     const viewerRole = req.user?.role;
 
-    const result = await personService.getPersons(parsed.data, viewerRole);
+    const result = await personReadService.getPersons(parsed.data, viewerRole);
 
     return res.status(200).json(result);
   } catch (error) {
