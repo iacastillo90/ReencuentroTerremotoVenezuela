@@ -1,9 +1,10 @@
-"""Interfaces para los modelos de datos del frontend.
-
-PROPÓSITO:
-Centralizar los tipos usados en la aplicación para evitar `any` y mejorar la
-seguridad de tipos.
-"""
+/**
+ * Interfaces para los modelos de datos del frontend.
+ *
+ * PROPÓSITO:
+ * Centralizar los tipos usados en la aplicación para evitar `any` y mejorar la
+ * seguridad de tipos.
+ */
 
 export interface Person {
   idHash: string;

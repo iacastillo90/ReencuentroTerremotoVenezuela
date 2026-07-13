@@ -81,30 +81,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     }
   };
 
-  // ─── Bypass para desarrollo local ───
-  // REMOVED: Auth bypass was a security risk. Use real Google OAuth in development.
-  // const handleBypassLogin = async () => { ... }
-        email: safeEmail,
-        name: `Usuario ${safeEmail.split('@')[0]}`,
-        picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${mockId}`
-      };
-      const mockToken =
-        btoa(JSON.stringify({ alg: "HS256", typ: "JWT" })) + '.' +
-        btoa(JSON.stringify(mockPayload)) + '.signature';
-
-      const res = await api.post('/auth/google', { token: mockToken });
-      login(res.data.user);
-
-      if (res.data.user.isProfileComplete) {
-        onSuccess();
-      }
-    } catch (err: any) {
-      console.debug(err);
-      setError('Error al iniciar sesión en modo desarrollador.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // ─── Guardar perfil (sector + teléfono) ───
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -169,15 +145,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                   onError={() => setError('Google Login Failed')}
                 />
 
-                {isDevMode && (
-                  <Button
-                    variant="outline"
-                    onClick={handleBypassLogin}
-                    disabled={isSubmitting}
-                  >
-                    Bypass Login (Modo de Desarrollo)
-                  </Button>
-                )}
+
               </div>
             </div>
 
