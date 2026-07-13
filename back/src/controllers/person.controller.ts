@@ -1,3 +1,45 @@
+/**
+ * controllers/person.controller.ts — Controlador de personas
+ *
+ * PROPÓSITO:
+ *   Maneja las operaciones CRUD principales sobre personas reportadas:
+ *   listar (con búsqueda y filtros), crear reportes, cerrar casos,
+ *   y obtener conteos estadísticos. Es el controller más importante
+ *   del sistema — recibe la mayor parte del tráfico de la API.
+ *
+ * CARACTERÍSTICAS:
+ *   - getCounts: Estadísticas cacheadas (auspiciado, encontrado, total, pendiente)
+ *   - getMyReports: Reportes del usuario autenticado (paginado)
+ *   - getPersons: Búsqueda pública con filtros (nombre, estado, categoría, ubicación)
+ *   - createPerson: Creación de reporte con upsert + dedup automático
+ *   - closeCase: Cierre de caso con resolución (encontrado, fallecido, erróneo)
+ *
+ * FLUJO DE DATOS:
+ *   - getPersons: Zod valida query params → personService.getPersons → toPublicPerson (excluye PII)
+ *   - createPerson: Zod valida body → personService.createPerson → outbox (matching + IA)
+ *   - closeCase: Zod valida body → personService.closeCase → log auditoría
+ *
+ * SEGURIDAD:
+ *   - personSearchQuerySchema: sanitizedQueryParam en texto (previene NoSQL/ReDoS)
+ *   - personPayloadSchema: Zod valida + sanitiza todo el payload
+ *   - closeCaseSchema: resolución limitada a enum cerrado (found, deceased, erroneous)
+ *   - toPublicPerson: Excluye embedding, faceEncoding, metadata sensibles
+ *   - isAnonymous: Permite reportes anónimos (sin userId)
+ *   - Rate limiting: 10 req/min para creación
+ *
+ * ENDPOINTS:
+ *   GET    /api/persons/counts — Estadísticas
+ *   GET    /api/persons/mine — Mis reportes (auth)
+ *   GET    /api/persons — Búsqueda pública
+ *   POST   /api/persons — Crear reporte (rate limit 10/min)
+ *   POST   /api/persons/:idHash/close — Cerrar caso (auth)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - 3 schemas Zod separados: Cada handler tiene su propia validación
+ *   - parseInt con fallback: getMyReports usa coerción manual (no Zod)
+ *   - 202 para creación: Respuesta aceptada (procesamiento async vía outbox)
+ *   - 200 para skipped: Si es duplicado exacto, responde OK sin crear
+ */
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { personPayloadSchema, personSearchQuerySchema } from '../validators/person.validator';

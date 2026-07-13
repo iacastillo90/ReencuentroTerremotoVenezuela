@@ -1,3 +1,38 @@
+/**
+ * controllers/search-request.controller.ts — Solicitudes de búsqueda
+ *
+ * PROPÓSITO:
+ *   Permite a usuarios crear y gestionar solicitudes de búsqueda de
+ *   personas desaparecidas. Cada solicitud activa (status='activa')
+ *   alimenta el motor de matching que busca coincidencias en la BD.
+ *
+ * CARACTERÍSTICAS:
+ *   - createSearchRequestHandler: Crear solicitud con validación Zod
+ *   - getMySearchRequestsHandler: Listar mis solicitudes (sin paginación)
+ *   - updateSearchRequestStatusHandler: Cambiar estado (activa/resuelta/cancelada)
+ *   - Sólo el dueño puede modificar su solicitud
+ *
+ * FLUJO DE DATOS:
+ *   1. Usuario crea solicitud con searchName + description opcional
+ *   2. Zod valida (createSearchRequestSchema)
+ *   3. search-request.service.createSearchRequest persiste
+ *   4. Encolar matching job (vía outbox o directo)
+ *   5. Usuario consulta estado vía GET /mine
+ *   6. Si encuentra persona: updateStatus a 'resuelta'
+ *
+ * SEGURIDAD:
+ *   - requireUser: Solo usuarios autenticados
+ *   - userId propagation: Cada handler toma userId de req.user
+ *   - Ownership check en update: updateSearchRequestStatus valida dueño
+ *   - Status enum cerrado: 'activa' | 'resuelta' | 'cancelada'
+ *
+ * ENDPOINTS:
+ *   POST   /api/search-requests — Crear solicitud
+ *   GET    /api/search-requests/mine — Mis solicitudes
+ *   PATCH  /api/search-requests/:id/status — Cambiar estado
+ *
+ * @module search-request.controller
+ */
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { ValidationError } from '../middlewares/error.middleware';
