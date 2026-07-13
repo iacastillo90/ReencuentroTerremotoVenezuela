@@ -68,6 +68,7 @@ export interface Person {
   idHash: string;
   type?: 'person' | 'animal';
   name: string;
+  protected?: boolean;
   status: 'missing' | 'found' | 'deceased' | 'unknown';
   lastSeen: {
     state: string;
@@ -85,7 +86,8 @@ export interface Person {
   metadata: {
     urgencyScore: number;
     createdAt?: string;
-    reportedBy?: { name: string };
+    reportedBy?: { _id: string; name: string };
+    biometricHash?: string;
   };
   data?: {
     cedula?: string;
@@ -94,6 +96,10 @@ export interface Person {
     verificado_por?: string;
   };
 }
+
+export type View = 'home' | 'feed' | 'search' | 'map' | 'report'
+  | 'admin' | 'library' | 'profile' | 'logistics'
+  | 'login' | 'register' | 'manual' | 'directorio';
 
 /**
  * Desastre natural activo.
@@ -149,4 +155,13 @@ export interface Disaster {
   };
   occurredAt: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface LibraryItem {
+  id: string;
+  name: string;
+  url: string;
+  description: string;
+  notes?: string;
+  verified?: boolean;
 }
