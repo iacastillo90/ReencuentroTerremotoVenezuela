@@ -77,16 +77,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
       const res = await api.post('/auth/login', { email, password });
       login(res.data.user);
       onSuccess();
-    } catch (err: any) {
-      setError(humanizeError(err, 'No se pudo iniciar sesión.'));
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(humanizeError(axiosErr, 'No se pudo iniciar sesión.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--clr-bg)' }}>
-      <nav className="navbar" style={{ position: 'relative' }}>
+    <div className="login-page">
+      <nav className="navbar login-navbar">
         <div className="nav-left">
           <button className="nav-brand" onClick={onBack} aria-label="Volver">
             <BrandMark size={34} />

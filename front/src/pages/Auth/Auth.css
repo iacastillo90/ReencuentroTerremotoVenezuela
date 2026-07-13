@@ -1,6 +1,16 @@
 /* ════════════════════════════════════════════════
    Auth (Login / Registro) — mockups #2 y #3 (tema claro)
    ════════════════════════════════════════════════ */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--clr-bg);
+}
+.login-navbar {
+  position: relative;
+}
+
 .auth-page {
   position: relative;
   flex: 1;

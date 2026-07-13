@@ -21,8 +21,23 @@
 import { MessageCircle, Clock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../../store/AuthContext';
 
+interface MessageItem {
+  _id: string;
+  senderId: string;
+  message: string;
+  createdAt: string;
+  isRead?: boolean;
+}
+
+interface ConversationItem {
+  reportId: string;
+  otherUserId: string;
+  messages: MessageItem[];
+  lastMessage: MessageItem;
+}
+
 interface Props {
-  conversationList: any[];
+  conversationList: ConversationItem[];
   onSelectConversation: (reportId: string, otherUserId: string) => void;
 }
 
@@ -51,7 +66,7 @@ export function TabChats({ conversationList, onSelectConversation }: Props) {
                 <h4>Caso: {conv.reportId}</h4>
                 <span className="status-badge found">
                   {conv.messages.filter(
-                    (m: any) => !m.isRead && m.senderId !== user._id
+                    (m: MessageItem) => !m.isRead && m.senderId !== user._id
                   ).length > 0 ? 'Nuevos' : 'Activo'}
                 </span>
               </div>

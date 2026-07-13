@@ -52,6 +52,37 @@
   .home-stats span { font-size: var(--text-2xs); }
 }
 
+.home-stats-wrapper { margin-top: 2rem; }
+
+.home__btn--primary button,
+.home__btn--primary .btn {
+  background-color: var(--clr-primary) !important;
+  border: 1px solid var(--clr-primary) !important;
+  color: var(--ink) !important;
+}
+
+.home__btn--outline button,
+.home__btn--outline .btn {
+  background-color: transparent !important;
+  border: 1px solid var(--clr-primary) !important;
+  color: var(--clr-text) !important;
+}
+
+.home__manual-btn {
+  margin-top: 1.5rem;
+  color: var(--clr-primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
 .home-primary { display: flex; flex-direction: column; gap: .75rem; margin: 1.25rem 0 1.75rem; }
 .home-btn-override { padding: 1rem 1.25rem !important; height: auto !important; }
 

@@ -80,11 +80,11 @@ export function ManualPage() {
         <h3 className="manual-block-title"><Activity size={18} /> Guía de buenas prácticas para reportes</h3>
         <div className="manual-protocols">
           <div className="manual-protocol tone-blue">
-            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <ul className="manual-guidelines">
               {GUIDELINES.map(item => (
-                <li key={item.strong} style={{ lineHeight: '1.4' }}>
-                  <strong style={{ display: 'block', marginBottom: '0.2rem' }}>{item.strong}</strong>
-                  <span style={{ color: 'var(--clr-text-muted)' }}>{item.text}</span>
+                <li className="manual-guideline" key={item.strong}>
+                  <strong>{item.strong}</strong>
+                  <span>{item.text}</span>
                 </li>
               ))}
             </ul>

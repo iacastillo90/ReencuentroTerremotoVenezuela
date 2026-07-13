@@ -32,7 +32,7 @@ import { EmptyState } from '../../../components/common/EmptyState';
 import type { SearchRequest } from '../../../types';
 
 const LIMIT = 10;
-const fetcher = (url: string) => api.get(url).then(res => res.data as SearchRequest[]);
+const fetcher = (url: string) => api.get(url).then(res => (res.data.searches || []) as SearchRequest[]);
 
 export function SectionBusquedas() {
   const { data, error, isLoading, mutate } = useSWR('/admin/searches', fetcher);
@@ -67,7 +67,7 @@ export function SectionBusquedas() {
         <span className="admin-badge pending">{activeCount} Activas</span>
       </div>
 
-      {error && <div className="admin-error-text">{(error as any)?.response?.data?.error || 'Error cargando búsquedas'}</div>}
+      {error && <div className="admin-error-text">{((error as { response?: { data?: { error?: string } } }).response?.data?.error) || 'Error cargando búsquedas'}</div>}
 
       <div className="table-responsive-wrapper">
         <table className="admin-table">
@@ -77,7 +77,7 @@ export function SectionBusquedas() {
               <th>Descripción</th>
               <th>Familiar / Contacto</th>
               <th>Estado</th>
-              <th style={{ width: 60 }}>{'⋮'}</th>
+              <th className="srch-action-cell">{'⋮'}</th>
             </tr>
           </thead>
           <tbody>

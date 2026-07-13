@@ -36,7 +36,7 @@ export interface PersonRow {
   'metadata.urgencyScore'?: number;
   'metadata.auditStatus'?: string;
   'metadata.source'?: string;
-  metadata?: { urgencyScore: number; auditStatus: string; source: string; reportedBy?: any };
+  metadata?: { urgencyScore: number; auditStatus: string; source: string; reportedBy?: Record<string, unknown> };
   data?: { cedula?: string };
   idHash: string;
   contactPerson?: { name?: string; phone?: string; relationship?: string };

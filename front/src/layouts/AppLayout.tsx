@@ -35,6 +35,8 @@ import { useNotifications } from '../store/SocketContext';
 import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/ui/Button';
 import { MobileBottomNav } from './MobileBottomNav';
+import { NetworkBadge } from '../components/common/NetworkBadge';
+import { useBackgroundSync } from '../hooks/useBackgroundSync';
 import './AppLayout.css';
 
 type View =
@@ -58,6 +60,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const [notifOpen, setNotifOpen] = useState(false);
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAllAsRead, clearNotifications } = useNotifications();
+  useBackgroundSync();
 
   const moreNav: { view: View; icon: React.ReactNode; label: string; desc: string }[] = [
     { view: 'logistics',  icon: <Truck size={20} />,       label: 'Logística',           desc: 'Refugios y vías' },
@@ -189,6 +192,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </nav>
 
+      <NetworkBadge />
+
       {/* ═══ Body ═══ */}
       <div className="app-body">
         {sidebar && <aside className="sidebar">{sidebar}</aside>}
@@ -196,7 +201,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       </div>
 
       {/* ═══ Bottom Nav (móvil) ═══ */}
-      <MobileBottomNav activeView={activeView} onNavigate={(v) => go(v as any)} onReport={onReport} />
+      <MobileBottomNav activeView={activeView} onNavigate={(v) => go(v)} onReport={onReport} />
 
       {/* ═══ Hoja "Más" ═══ */}
       {moreOpen && (

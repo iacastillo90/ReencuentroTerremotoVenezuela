@@ -82,9 +82,10 @@ export function SectionModeracion() {
     try {
       setLoading(true);
       const res = await api.get('/admin/persons?limit=200&auditStatus=pending_moderation');
-      setPersons(res.data);
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || 'Error cargando moderación');
+      setPersons(res.data.persons || []);
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setErrorMsg(axiosErr.response?.data?.error || 'Error cargando moderación');
     } finally {
       setLoading(false);
     }
@@ -125,8 +126,9 @@ export function SectionModeracion() {
       await api.patch(`/admin/persons/${idHash}/moderate`, { action });
       // Elimina la fila de la tabla local (sin recargar).
       setPersons(prev => prev.filter(p => p.idHash !== idHash));
-    } catch (e: any) {
-      addToast(e.response?.data?.error || 'Error al procesar la moderación', 'error');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error al procesar la moderación', 'error');
     }
   };
 
@@ -161,8 +163,9 @@ export function SectionModeracion() {
       ));
       setEditingPerson(null);
       addToast('Datos actualizados correctamente', 'success');
-    } catch (err: any) {
-      addToast(err.response?.data?.error || 'Error al actualizar', 'error');
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error al actualizar', 'error');
     }
   };
 
@@ -185,8 +188,9 @@ export function SectionModeracion() {
       // Agrega el mensaje al historial local.
       setChatMessages(prev => [...prev, res.data]);
       setChatMessage('');
-    } catch (err: any) {
-      addToast(err.response?.data?.error || 'Error al enviar mensaje', 'error');
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error al enviar mensaje', 'error');
     }
   };
 

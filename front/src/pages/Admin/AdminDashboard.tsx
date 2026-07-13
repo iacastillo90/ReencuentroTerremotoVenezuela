@@ -86,7 +86,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
       api.get('/admin/persons?limit=200'),
       api.get('/persons/counts')
     ]).then(([personsRes, countsRes]) => {
-      setPersons(personsRes.data || []);
+      setPersons(personsRes.data.persons || []);
       setCounts(countsRes.data);
     }).finally(() => setLoading(false));
   }, []);
@@ -160,7 +160,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
 
         {/* Contenido dinámico según sección activa */}
         <div className="admin-content">
-          <Sentry.ErrorBoundary fallback={<div style={{ padding: '1rem', textAlign: 'center', color: 'var(--clr-text-muted)' }}>Error al cargar la sección.</div>}>
+          <Sentry.ErrorBoundary fallback={<div className="admin-section-fallback">Error al cargar la sección.</div>}>
             {activeSection === 'resumen' && <SectionResumen counts={counts} />}
             {activeSection === 'moderacion' && <SectionModeracion />}
             {activeSection === 'matches' && <SectionMatches />}
@@ -174,10 +174,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             )}
             {activeSection === 'usuarios' && <SectionUsuarios />}
             {activeSection === 'colas' && (
-              <div style={{ width: '100%', height: 'calc(100vh - 80px)', backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="admin-queue-frame">
                 <iframe
                   src={`${api.defaults.baseURL}/admin/queues?_t=${Date.now()}`}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  className="admin-queue-frame-iframe"
                   title="Bull-Board Queues"
                 />
               </div>

@@ -32,6 +32,10 @@
   align-items: center;
 }
 
+.library-note svg {
+  flex-shrink: 0;
+}
+
 .library-tabs {
   display: flex;
   gap: 1rem;

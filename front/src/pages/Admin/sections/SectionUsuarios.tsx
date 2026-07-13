@@ -62,8 +62,8 @@ export function SectionUsuarios() {
         api.get('/admin/users'),
         api.get('/admin/verifications')
       ]);
-      setUsers(usersRes.data);
-      setVerifications(verifRes.data);
+      setUsers(usersRes.data.users || []);
+      setVerifications(verifRes.data || []);
     } catch (e) {
       console.debug(e);
       addToast('Error cargando datos (¿Eres admin?)', 'error');
@@ -79,8 +79,9 @@ export function SectionUsuarios() {
     try {
       await api.patch(`/admin/users/${id}/role`, { role: newRole });
       setUsers(prev => prev.map(u => u._id === id ? { ...u, role: newRole } : u));
-    } catch (e: any) {
-      addToast(e.response?.data?.error || 'Error cambiando rol', 'error');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error cambiando rol', 'error');
     }
   };
 
@@ -89,8 +90,9 @@ export function SectionUsuarios() {
     try {
       await api.patch(`/admin/users/${id}/status`, { status: newStatus });
       setUsers(prev => prev.map(u => u._id === id ? { ...u, status: newStatus } : u));
-    } catch (e: any) {
-      addToast(e.response?.data?.error || 'Error cambiando estado', 'error');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error cambiando estado', 'error');
     }
   };
 
@@ -103,8 +105,9 @@ export function SectionUsuarios() {
       if (newStatus === 'approved') {
         loadData(); // Recarga para que el usuario aparezca con el nuevo rol.
       }
-    } catch (e: any) {
-      addToast(e.response?.data?.error || 'Error actualizando solicitud', 'error');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error actualizando solicitud', 'error');
     }
   };
 

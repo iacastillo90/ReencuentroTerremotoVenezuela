@@ -429,7 +429,7 @@
 }
 
 /* --- Sección Búsquedas: action menu & paginación --- */
-.srch-action-cell { position: relative; text-align: center; }
+.srch-action-cell { position: relative; text-align: center; width: 60px; }
 .srch-action-trigger {
   background: none; border: none; color: var(--clr-text-muted);
   font-size: var(--text-xl); cursor: pointer; padding: 4px 8px; border-radius: 4px;
@@ -1337,4 +1337,24 @@
   .admin-merge-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.admin-section-fallback {
+  padding: 1rem;
+  text-align: center;
+  color: var(--clr-text-muted);
+}
+
+.admin-queue-frame {
+  width: 100%;
+  height: calc(100vh - 80px);
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-queue-frame-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }

@@ -27,12 +27,21 @@
  */
 import { User, MapPin, Shield, MessageCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
+import type { Person } from '../../../types';
+
+interface MatchItem {
+  _id: string;
+  matchScore?: number;
+  matchedPerson?: Partial<Person>;
+  originalReportName?: string;
+  status?: string;
+}
 
 interface Props {
-  myMatches: any[];
+  myMatches: MatchItem[];
   loading: boolean;
-  handleRequestMediation: (match: any) => void;
-  handleStartDirectChat: (match: any) => void;
+  handleRequestMediation: (match: MatchItem) => void;
+  handleStartDirectChat: (match: MatchItem) => void;
 }
 
 export function TabMatches({
@@ -60,7 +69,7 @@ export function TabMatches({
             const isMinor = p.age !== undefined && p.age < 18;
 
             // Score de confianza y color dinámico.
-            const scorePercent = Math.round(match.score * 100);
+            const scorePercent = Math.round((match.matchScore ?? 0) * 100);
             const scoreColor = scorePercent > 90
               ? '#10b981'  // verde
               : scorePercent > 80

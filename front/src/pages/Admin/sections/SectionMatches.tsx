@@ -110,12 +110,12 @@ export function SectionMatches() {
     try {
       setLoading(true);
       const res = await api.get('/admin/matches');
-      setMatches(res.data);
+      setMatches(res.data.data || []);
       setErrorMsg('');
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      // Mensaje amigable si el token expiró o no es admin.
-      setErrorMsg(e.response?.data?.error ||
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setErrorMsg(axiosErr.response?.data?.error ||
         'Acceso Denegado. Tu sesión actual no tiene los permisos de administrador actualizados en el servidor (el Token expiró o es antiguo). Por favor, Cierra Sesión y vuelve a entrar.');
     } finally {
       setLoading(false);
@@ -131,8 +131,9 @@ export function SectionMatches() {
       setMatches(prev => prev.map(m =>
         m._id === id ? { ...m, status: newStatus } : m
       ));
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || 'Error actualizando match');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setErrorMsg(axiosErr.response?.data?.error || 'Error actualizando match');
     }
   };
 
@@ -147,8 +148,9 @@ export function SectionMatches() {
         m.person?.idHash !== id2 && m.searchRequestId?._id !== id1
       ));
       setMergingMatch(null);
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || 'Error al fusionar perfiles');
+    } catch (e) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setErrorMsg(axiosErr.response?.data?.error || 'Error al fusionar perfiles');
     } finally {
       setIsMerging(false);
     }

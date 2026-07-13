@@ -54,9 +54,9 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
     try {
       await api.patch(`/admin/persons/${idHash}/status`, { status: newStatus });
       onStatusChange(idHash, newStatus);
-    } catch (e: any) {
-      // alert es simple y no requiere librerías de toasts.
-      addToast(e.response?.data?.error || 'Error actualizando estado', 'error');
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error actualizando estado', 'error');
     }
   };
 

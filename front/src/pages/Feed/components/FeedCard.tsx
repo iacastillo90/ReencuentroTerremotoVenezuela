@@ -41,7 +41,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
 
   // Determina si el caso está protegido por LOPNNA
   const isProtected =
-    (person as any).protected === true ||
+    person.protected === true ||
     person.name === 'Caso protegido' ||
     (typeof person.age === 'number' && person.age < 18);
   const verifiedBy = person.data?.verificado_por;
@@ -54,13 +54,18 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
     return `hace ${Math.round(diff / 86400)} d`;
   };
 
+  const getMediaUrl = (url?: string) => {
+    if (!url) return undefined;
+    return url.replace(/http:\/\/minio:9000\/[^/]+\//, '/api/media/').split('?')[0];
+  };
+
   return (
     <article className="feed-card" tabIndex={0}>
       {/* Header: avatar, nombre, ubicación, badge de estado */}
       <div className="feed-card-header">
         <div className="feed-avatar">
           {person.photoUrl
-            ? <img src={person.photoUrl} alt={person.name} />
+            ? <img src={getMediaUrl(person.photoUrl)} alt={person.name} />
             : <Users size={24} />
           }
         </div>

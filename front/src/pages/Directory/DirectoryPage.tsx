@@ -26,6 +26,7 @@
  *   - Canal de coordinación + rol.
  */
 import { BadgeCheck, Radio, Building2 } from 'lucide-react';
+import type { View } from '../../types';
 import './Directory.css';
 
 interface Org {
@@ -46,7 +47,7 @@ const ORGS: Org[] = [
 ];
 
 interface DirectoryPageProps {
-  onNavigate?: (view: any) => void;
+  onNavigate?: (view: View) => void;
 }
 
 export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
@@ -67,7 +68,6 @@ export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
             key={org.id}
             className="org-card surface-card"
             onClick={() => onNavigate?.('library')}
-            style={{ cursor: 'pointer' }}
           >
             <div className="org-card-top">
               <span className="org-id">{org.id}</span>

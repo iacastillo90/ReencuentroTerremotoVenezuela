@@ -287,6 +287,10 @@
   text-align: center;
 }
 
+.feed-empty--no-pad-top {
+  padding-top: 0;
+}
+
 .feed-loading {
   display: flex;
   justify-content: center;

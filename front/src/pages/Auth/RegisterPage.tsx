@@ -85,8 +85,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
       });
       login(res.data.user);
       onSuccess();
-    } catch (err: any) {
-      setError(humanizeError(err, 'No se pudo crear la cuenta.'));
+    } catch (err) {
+      setError(humanizeError(err as { response?: { data?: { error?: string } } }, 'No se pudo crear la cuenta.'));
     } finally {
       setLoading(false);
     }

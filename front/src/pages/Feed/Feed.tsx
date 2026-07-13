@@ -218,7 +218,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             } : undefined}
           />
           {searchQuery && !user && (
-            <div className="feed-empty" style={{ paddingTop: 0 }}>
+            <div className="feed-empty feed-empty--no-pad-top">
               <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
             </div>
           )}
