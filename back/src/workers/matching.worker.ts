@@ -6,5 +6,9 @@ import { logger } from '../utils/logger.util';
 export const personMatchingWorker = new Worker('person-matching', async (job) => {
   const { idHash, source } = job.data;
   logger.info({ idHash, source }, '[matching-worker] Processing match');
-  await runMatchingForNewPerson(idHash);
+  try {
+    await runMatchingForNewPerson(idHash);
+  } catch (error) {
+    logger.error({ err: error, idHash, source }, '[matching-worker] Failed to process match');
+  }
 }, { connection: connection as any });
