@@ -116,7 +116,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    logger.error({ origin, allowedOrigins: [...corsOrigins] }, '[CORS] Origin rejected');
+    logger.error({ origin }, '[CORS] Origin rejected');
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,

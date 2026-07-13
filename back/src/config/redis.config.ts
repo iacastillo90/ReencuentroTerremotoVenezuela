@@ -26,8 +26,13 @@ export const connection = new Redis(redisUrl, {
   ...(isTLS ? { tls: { rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false' } } : {})
 });
 
+function sanitizeRedisError(err: Error): Error {
+  const msg = err.message.replace(/(redis(?:s)?:\/\/).+?@/, '$1***@');
+  return Object.assign(Object.create(Object.getPrototypeOf(err)), err, { message: msg });
+}
+
 connection.on('error', (err) => {
-  logger.error({ err }, 'Redis connection error');
+  logger.error({ err: sanitizeRedisError(err) }, 'Redis connection error');
 });
 
 connection.on('connect', () => {

@@ -58,7 +58,7 @@ export const logger = pino({
     res: pino.stdSerializers.res,
   },
   redact: {
-    paths: ['req.headers.authorization', 'req.headers.cookie', 'body.password', 'body.token'],
+    paths: ['req.headers.authorization', 'req.headers.cookie', 'body.password', 'body.token', 'body.contactNumber', 'body.cedula', 'body.phone', 'error.config'],
     censor: '[REDACTED]',
   },
   timestamp: pino.stdTimeFunctions.isoTime,

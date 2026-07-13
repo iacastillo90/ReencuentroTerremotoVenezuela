@@ -33,7 +33,8 @@ export function validateParams(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const parsed = schema.parse(req.params);
-      req.params = parsed as any;
+      Object.keys(req.params).forEach(key => delete req.params[key]);
+      Object.assign(req.params, parsed);
       next();
     } catch (error: any) {
       if (error?.issues || error?.name === 'ZodError') {
@@ -68,7 +69,8 @@ export function validateQuery(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const parsed = schema.parse(req.query);
-      req.query = parsed as any;
+      Object.keys(req.query).forEach(key => delete (req.query as any)[key]);
+      Object.assign(req.query, parsed);
       next();
     } catch (error: any) {
       if (error?.issues || error?.name === 'ZodError') {

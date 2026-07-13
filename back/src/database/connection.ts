@@ -39,9 +39,18 @@ import { logger } from '../utils/logger.util';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
+/** Redacta credenciales de la URI para logging seguro */
+function redactMongoUri(uri: string): string {
+  try {
+    return uri.replace(/\/\/[^:]+:[^@]+@/, '//__redacted__:__redacted__@');
+  } catch {
+    return uri;
+  }
+}
+
 export const connectDB = async (caller: 'Server' | 'Worker' = 'Server') => {
   try {
-    logger.info({ mongoUri: MONGO_URI, caller }, 'Connecting to MongoDB...');
+    logger.info({ mongoUri: redactMongoUri(MONGO_URI), caller }, 'Connecting to MongoDB...');
     await mongoose.connect(MONGO_URI);
     logger.info({ caller }, 'MongoDB connected');
 
