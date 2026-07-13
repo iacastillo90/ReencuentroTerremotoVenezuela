@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { PersonModel } from '../models/unified-person.model';
-import { MatchModel } from '../models/match.model';
+import { PersonModel } from '../src/models/unified-person.model';
+import { MatchModel } from '../src/models/match.model';
 import 'dotenv/config';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
@@ -40,7 +40,7 @@ async function runBackfill() {
 
   // Find people with a photo but no biometricHash
   const query = {
-    photoUrl: { $exists: true, $ne: null, $ne: '' },
+    photoUrl: { $exists: true, $nin: [null, ''] },
     'metadata.biometricHash': { $exists: false }
   };
 
@@ -56,6 +56,8 @@ async function runBackfill() {
     console.log(`\n[${count}/${total}] Processing ${person.name} (${person.idHash})`);
     
     let imageUrl = person.photoUrl;
+    if (!imageUrl) continue;
+    
     if (imageUrl.startsWith('/api/media/')) {
       imageUrl = `${API_BASE_URL}${imageUrl}`;
     }

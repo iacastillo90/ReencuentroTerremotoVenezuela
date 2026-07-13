@@ -34,7 +34,7 @@ export async function runBiometricSweepJob(): Promise<void> {
   logger.info('[BiometricSweep] Starting 12-hour sanitation sweep...');
 
   const query = {
-    photoUrl: { $exists: true, $ne: null, $ne: '' },
+    photoUrl: { $exists: true, $nin: [null, ''] },
     'metadata.biometricHash': { $exists: false }
   };
 
