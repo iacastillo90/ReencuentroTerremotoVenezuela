@@ -1,5 +1,15 @@
 import { z } from 'zod';
-import { sanitizedString, sanitizedStringOptional } from '../utils/sanitize.util';
+import { sanitizedString, sanitizedStringOptional, sanitizedQueryParam } from '../utils/sanitize.util';
+
+export const personSearchQuerySchema = z.object({
+  q: sanitizedQueryParam.optional(),
+  status: z.enum(['missing', 'found', 'unknown', 'deceased', 'animal', 'all']).optional(),
+  category: z.enum(['mascota', 'nino', 'adulto', 'adulto_mayor']).optional(),
+  state: z.string().max(100).optional(),
+  municipality: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
 export const personPayloadSchema = z.object({
   source: sanitizedString,
