@@ -42,9 +42,11 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { requireUser } from '../middlewares/auth.middleware';
 import {
-  getCsrfToken, googleAuth, register, login, getMe,
-  updateProfile, logout, googleGetStub
+  getCsrfToken, googleAuth, register, login, googleGetStub
 } from '../controllers/auth.controller';
+import {
+  getMe, updateProfile, logout
+} from '../controllers/auth-profile.controller';
 
 const router = Router();
 

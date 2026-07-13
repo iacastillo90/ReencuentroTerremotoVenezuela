@@ -75,6 +75,12 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return;
   }
 
+  // Skip for Bearer-token-authenticated requests (not cookie-based)
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+
   // Skip for API-key-authenticated requests (no cookie session)
   if (req.headers['x-api-key']) {
     next();
