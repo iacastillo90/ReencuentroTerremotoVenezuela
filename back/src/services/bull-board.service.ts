@@ -1,3 +1,18 @@
+/**
+ * services/bull-board.service — Panel de monitoreo de colas BullMQ
+ *
+ * PROPÓSITO:
+ *   Configura y exporta el router de Bull Board, una interfaz web
+ *   para monitorear y gestionar todas las colas BullMQ del sistema.
+ *
+ * CARACTERÍSTICAS:
+ *   - Integra todas las colas: iaProcess, disasterSync, manualAudit, personMatching
+ *   - Montado en /api/admin/queues (protegido con api key de admin)
+ *   - ExpressAdapter con basePath configurado
+ *
+ * @module bull-board.service
+ */
+
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';

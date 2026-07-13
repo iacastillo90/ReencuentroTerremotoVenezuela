@@ -1,3 +1,29 @@
+/**
+ * services/sync-source.service.ts — Sincronización de fuentes externas
+ *
+ * PROPÓSITO:
+ *   Procesa lotes de datos provenientes de adaptadores externos,
+ *   los normaliza, valida con Zod, y los upserta en la BD unificada.
+ *   Es el pipeline estándar de ingesta: adapter → validation → upsert.
+ *
+ * CARACTERÍSTICAS:
+ *   - syncFromSource: Pipeline completo de ingesta
+ *   - Normalización via adapter.normalize (cada fuente tiene su adapter)
+ *   - Validación Zod (personPayloadSchema)
+ *   - Upsert en chunks de 100 (parallel con Promise.allSettled)
+ *   - Métricas retornadas: processed / failed
+ *
+ * FLUJO DE DATOS:
+ *   1. items llegan desde scraper/adaptador externo
+ *   2. adapter.normalize(item): Convierte a formato interno
+ *   3. personPayloadSchema.safeParse: Valida con Zod
+ *   4. Si inválido: log warning + failed++
+ *   5. Si válido: agrega a batch
+ *   6. Batch en chunks de 100: upsertPerson paralelo con Promise.allSettled
+ *   7. allSettled: Fallos individuales no detienen el batch
+ *
+ * @module sync-source.service
+ */
 import { ISourceAdapter } from '../adapters/base.adapter';
 import { personPayloadSchema } from '../validators/person.validator';
 import { logger } from '../utils/logger.util';

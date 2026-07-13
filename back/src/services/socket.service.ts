@@ -1,3 +1,54 @@
+/**
+ * services/socket.service.ts — Servidor Socket.IO en tiempo real
+ *
+ * PROPÓSITO:
+ *   Provee comunicación bidireccional en tiempo real entre usuarios
+ *   (chats) y entre servidor y clientes (notificaciones). Soporta
+ *   Redis adapter para escalar horizontalmente entre procesos.
+ *
+ * CARACTERÍSTICAS:
+ *   - initializeSocketServer: Configura Socket.IO con CORS + Redis adapter
+ *   - Autenticación JWT en handshake (token query, cookie o headers)
+ *   - userSockets Map: Trackea sockets por usuario (múltiples dispositivos)
+ *   - Eventos: join-room, leave-room, send-message, new-message, typing
+ *   - Redis adapter opcional: Escala a múltiples procesos
+ *   - CORS restringido: Misma política que Express
+ *
+ * FLUJO DE AUTENTICACIÓN:
+ *   1. Cliente conecta con token en auth.handshake
+ *   2. Middleware io.use valida JWT con JWT_SECRET
+ *   3. Verifica tokenVersion en BD (sesión vigente)
+ *   4. Si válido: socket.data.userId = decoded.userId
+ *   5. Si inválido: next(new Error) → conexión rechazada
+ *
+ * FLUJO DE MENSAJES:
+ *   1. Cliente emite 'send-message' con { room, message }
+ *   2. Servidor recibe, persiste en BD, reemite a la sala
+ *   3. Receptor recibe 'new-message' con el mensaje completo
+ *
+ * SEGURIDAD:
+ *   - JWT validation en handshake: Solo usuarios autenticados conectan
+ *   - tokenVersion check: Sesiones invalidadas no pueden usar socket
+ *   - CORS restringido: Mismos orígenes que Express
+ *   - userSockets map: Facilita emitir a usuario específico sin broadcast global
+ *   - Redis adapter failover: Si no hay Redis, funciona en single process
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Redis adapter opcional: Devuelve fallback graceful si no hay Redis
+ *   - userSockets como Map: O(1) lookup vs recorrer todos los sockets
+ *   - Autenticación en middleware: Falla rápido, no procesa eventos no auth
+ *   - Token de cookie/query/header: Compatible con múltiples clientes
+ *
+ * CÓMO USAR:
+ *   // Servidor
+ *   initializeSocketServer(httpServer, ['http://localhost:5173']);
+ *   const io = getIO();
+ *   emitToUser(userId, 'notification', { text: 'Nuevo match' });
+ *
+ *   // Cliente
+ *   const socket = io('ws://localhost:4000', { auth: { token } });
+ *   socket.emit('send-message', { room: 'abc123', message: 'Hola' });
+ */
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';

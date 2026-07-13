@@ -1,3 +1,19 @@
+/**
+ * services/contact.service — Gestión de contactos entre usuarios
+ *
+ * PROPÓSITO:
+ *   Provee operaciones para crear y consultar mensajes de contacto
+ *   entre usuarios sobre reportes de personas, con notificaciones
+ *   en tiempo real vía Socket.io.
+ *
+ * CARACTERÍSTICAS:
+ *   - createContact: crea un mensaje y emite notificación al receptor
+ *   - findPersonByReportId: busca una persona por idHash
+ *   - getSentMessages / getReceivedMessages: consulta paginada de mensajes
+ *
+ * @module contact.service
+ */
+
 import { CaseContactModel } from '../models/case-contact.model';
 import { PersonModel } from '../models/unified-person.model';
 import { logger } from '../utils/logger.util';

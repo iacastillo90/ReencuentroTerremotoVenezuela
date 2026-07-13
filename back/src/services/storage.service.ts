@@ -1,3 +1,54 @@
+/**
+ * services/storage.service.ts — Almacenamiento de archivos (S3/MinIO)
+ *
+ * PROPÓSITO:
+ *   Provee almacenamiento de archivos multimedia (imágenes, videos, audios)
+ *   en MinIO (S3-compatible) local o cloud. Genera URLs pre-firmadas
+ *   para uploads y descargas seguras sin exponer credenciales.
+ *
+ * CARACTERÍSTICAS:
+ *   - initializeStorage: Crea bucket si no existe
+ *   - uploadMedia: Sube archivo con hash SHA-1 + extensión original
+ *   - getPresignedUrl: URL temporal (1h) para descarga
+ *   - getPresignedUploadUrl: URL temporal (1h) para upload directo
+ *   - Validación de credentials en production (fail fast)
+ *
+ * FLUJO DE DATOS (upload):
+ *   1. Controller recibe buffer de multer
+ *   2. uploadMedia genera hash único (timestamp + originalName)
+ *   3. Sube a MinIO con metadata (Content-Type)
+ *   4. Retorna URL pública del objeto
+ *
+ * FLUJO DE DATOS (download):
+ *   1. Cliente solicita URL de archivo
+ *   2. getPresignedUrl genera URL firmada (1h de expiración)
+ *   3. Cliente descarga directamente desde MinIO/S3
+ *
+ * SEGURIDAD:
+ *   - Fail fast en production con credentials default (minioadmin)
+ *   - Endpoint sanitizado (remueve https:// para evitar bugs)
+ *   - URLs pre-firmadas: expiran en 1h, no exponen access key
+ *   - Bucket creation idempotente (safe re-run)
+ *   - Hash SHA-1 en filenames: previene colisiones + path traversal
+ *
+ * CONFIGURACIÓN (env vars):
+ *   - MINIO_ENDPOINT: Host del servidor (ej: s3.amazonaws.com o localhost)
+ *   - MINIO_PORT: Puerto (9000 default para MinIO, 443 para S3)
+ *   - MINIO_ACCESS_KEY / MINIO_SECRET_KEY: Credenciales
+ *   - MINIO_USE_SSL: true para producción
+ *   - MINIO_BUCKET: Nombre del bucket (default: reencuentro-media)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - MinIO client único reutilizado (no crear por request)
+ *   - Hash en filename: único + seguro vs path traversal
+ *   - Presigned URLs: offload de tráfico al servidor de archivos
+ *   - Bucket auto-creation: facilita deploy inicial
+ *
+ * CÓMO USAR:
+ *   await initializeStorage(); // En bootstrap
+ *   const url = await uploadMedia(buffer, 'foto.jpg', 'image/jpeg');
+ *   const downloadUrl = await getPresignedUrl('abc123.jpg');
+ */
 import { Client } from 'minio';
 import crypto from 'crypto';
 import path from 'path';

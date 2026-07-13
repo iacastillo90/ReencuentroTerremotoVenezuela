@@ -1,3 +1,43 @@
+/**
+ * services/api-key.service.ts — Gestión de API keys
+ *
+ * PROPÓSITO:
+ *   Servicio para crear, validar, listar y revocar API keys utilizadas
+ *   por partners, webhooks y administradores. Las keys se almacenan
+ *   como hash SHA-256 (nunca en texto plano) con soporte de migración
+ *   para keys legacy sin hash.
+ *
+ * CARACTERÍSTICAS:
+ *   - createApiKey: Genera key con prefijo rtv_ + prefijo visible de 8 chars
+ *   - validateApiKey: Verifica key contra hash + tipo + vigencia
+ *   - listApiKeys: Lista keys sin el campo key (solo metadata)
+ *   - revokeApiKey: Desactiva key (active: false)
+ *   - Fallback legacy: Verifica también keys en texto plano
+ *   - lastUsedAt: Actualiza timestamp de último uso
+ *
+ * FLUJO DE VALIDACIÓN:
+ *   1. Cliente presenta API key en header (x-api-key, x-webhook-api-key, etc.)
+ *   2. hashApiKey(key) → hash SHA-256
+ *   3. Busca en ApiKeyModel por key hash + type + active + !expired
+ *   4. Si no encuentra: Fallback a búsqueda con key en texto plano (legacy)
+ *   5. Si legacy: Log warning + permite (migración gradual)
+ *   6. Si válida: update lastUsedAt + return true
+ *   7. Si inválida: return false
+ *
+ * SEGURIDAD:
+ *   - Hash SHA-256: Si hay leak de BD, keys no comprometidas
+ *   - keyPrefix de 8 chars: Identificación sin exponer key completa
+ *   - expiresAt check: Keys con expiración se rechazan automáticamente
+ *   - active flag: Revocación inmediata sin cambiar hash
+ *   - keyPrefix visible: Útil para logs sin exponer key completa
+ *   - Legacy fallback con warning: Migración segura sin downtime
+ *
+ * FORMATO DE KEY:
+ *   rtv_<64 hex chars> → prefijo rtv_ + 8 chars visibles (keyPrefix)
+ *   Ejemplo: rtv_a1b2c3d4...
+ *
+ * @module api-key.service
+ */
 import crypto from 'crypto';
 import { ApiKeyModel, ApiKeyDocument } from '../models/api-key.model';
 import { logger } from '../utils/logger.util';

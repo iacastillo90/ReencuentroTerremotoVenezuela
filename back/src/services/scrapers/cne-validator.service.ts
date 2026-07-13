@@ -1,10 +1,25 @@
+/**
+ * services/scrapers/cne-validator.service — Validador de cédulas CNE
+ *
+ * PROPÓSITO:
+ *   Consulta y valida números de Cédula de Identidad de Venezuela
+ *   contra el padrón electoral del CNE mediante scraping web.
+ *
+ * CARACTERÍSTICAS:
+ *   - Validación por nacionalidad (V/E) y número de cédula
+ *   - Extrae el nombre completo desde el HTML del CNE
+ *   - Timeout de 10s para tolerancia a caídas del servicio
+ *   - Manejo de errores con mensajes descriptivos en español
+ *
+ * SEGURIDAD:
+ *   - No persiste datos de cédula en la base de datos
+ *
+ * @module cne-validator.service
+ */
+
 import axios from 'axios';
 import { logger } from '../../utils/logger.util';
 
-/**
- * Servicio para consultar y validar números de Cédula de Identidad de Venezuela.
- * Utiliza APIs de terceros o métodos de scraping para acceder al padrón electoral (CNE/SAIME).
- */
 export class CNEValidatorService {
   /**
    * Valida una cédula y retorna el nombre completo si existe.
