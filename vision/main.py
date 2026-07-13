@@ -26,10 +26,11 @@ def _is_safe_url(url: str) -> bool:
     if not hostname:
         return False
         
-    # Whitelist interno para MinIO en Docker Compose
+    # Whitelist interno para MinIO y API en Docker Compose
     import os
     minio_host = os.environ.get("MINIO_ENDPOINT", "minio")
-    if hostname == minio_host:
+    api_host = os.environ.get("API_ENDPOINT", "api")
+    if hostname in [minio_host, api_host, "localhost", "127.0.0.1"]:
         return True
 
     if hostname in _SSRF_CACHE:
