@@ -76,7 +76,7 @@ async function handleGeoEnrich(payload: Record<string, unknown>) {
 
   if (nearbyEvents.length === 0) return;
 
-  const newDisasterIds = nearbyEvents.map(e => (e as any)._id.toString());
+  const newDisasterIds = nearbyEvents.map(e => e._id.toString());
   const existingIds = (person.possiblyRelatedDisasters || []).map(id => id.toString());
   const mergedIds = Array.from(new Set([...existingIds, ...newDisasterIds]));
 

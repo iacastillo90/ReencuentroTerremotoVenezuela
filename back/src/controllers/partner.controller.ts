@@ -38,19 +38,28 @@
  */
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { connection as redis } from '../config/redis.config';
 import { partnerCasesPayloadSchema } from '../validators/partner.validator';
 import { auditLog } from '../middlewares/audit.middleware';
 import { upsertPerson } from '../services/person.service';
 import { getPartnerCases } from '../services/partner.service';
 
+const partnerQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(1000).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+  status: z.enum(['missing', 'found', 'deceased', 'unknown']).optional(),
+});
+
 export async function getPartnerCasesHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
-    const offset = parseInt(req.query.offset as string) || 0;
-    const status = req.query.status as string;
+    const parsed = partnerQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Parámetros de consulta inválidos', details: parsed.error.issues });
+    }
 
-    const filter: any = {};
+    const { limit, offset, status } = parsed.data;
+    const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
 
     const result = await getPartnerCases(filter, limit, offset);

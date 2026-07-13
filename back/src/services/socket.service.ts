@@ -61,7 +61,9 @@ import { logger } from '../utils/logger.util';
 let RedisAdapter: any;
 try {
   RedisAdapter = require('@socket.io/redis-adapter');
-} catch {}
+} catch {
+  logger.warn('[Socket] @socket.io/redis-adapter not available — Redis clustering disabled');
+}
 
 let ioInstance: Server | null = null;
 
@@ -113,7 +115,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
       }
 
       // 2. Verify token
-      const decoded = jwt.verify(token, getJwtSecret()) as any;
+      const decoded = jwt.verify(token, getJwtSecret()) as { userId: string; email: string; tokenVersion: number; iat?: number; exp?: number };
 
       // 3. Fetch user and check tokenVersion
       const user = await UserModel.findById(decoded.userId).select('tokenVersion role');
@@ -143,7 +145,7 @@ export function initializeSocketServer(httpServer: HttpServer, corsOrigins: stri
     if (!user) return;
 
     const userId = user.userId;
-    logger.info({ userId, email: user.email, socketId: socket.id }, '[Socket] User connected');
+    logger.info({ userId, socketId: socket.id }, '[Socket] User connected');
 
     // Join personal user room
     socket.join(`user_${userId}`);

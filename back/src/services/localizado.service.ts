@@ -45,7 +45,7 @@ export async function getLocalizados(query: Record<string, any>, viewerRole?: st
   const filter: any = {};
 
   if (q) {
-    const sanitizedQ = safeRegexQuery(q);
+    const sanitizedQ = safeRegexQuery(String(q));
     if (sanitizedQ) {
       const searchRegex = new RegExp(sanitizedQ, 'i');
       filter.$or = [
@@ -56,7 +56,7 @@ export async function getLocalizados(query: Record<string, any>, viewerRole?: st
   }
 
   if (location) {
-    const sanitizedLocation = safeRegexQuery(location);
+    const sanitizedLocation = safeRegexQuery(String(location));
     if (sanitizedLocation) {
       filter.location = new RegExp(sanitizedLocation, 'i');
     }

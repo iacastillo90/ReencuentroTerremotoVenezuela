@@ -34,6 +34,10 @@ export async function updateUserRole(id: string, role: string, actor: string, re
     return { status: 400, error: 'Rol inválido' };
   }
 
+  if (id === actor) {
+    return { status: 403, error: 'No puedes cambiar tu propio rol' };
+  }
+
   const user = await UserModel.findByIdAndUpdate(id, { role }, { new: true });
   if (!user) return { status: 404, error: 'Usuario no encontrado' };
 
@@ -53,6 +57,10 @@ export async function updateUserRole(id: string, role: string, actor: string, re
 export async function updateUserStatus(id: string, status: string, actor: string, req: Request) {
   if (!VALID_STATUSES.includes(status as any)) {
     return { status: 400, error: 'Estado inválido' };
+  }
+
+  if (id === actor) {
+    return { status: 403, error: 'No puedes cambiar tu propio estado' };
   }
 
   const user = await UserModel.findByIdAndUpdate(id, { status }, { new: true });
