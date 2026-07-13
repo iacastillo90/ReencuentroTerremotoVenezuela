@@ -1,3 +1,51 @@
+/**
+ * services/matcher.service.ts — Motor de matching de personas
+ *
+ * PROPÓSITO:
+ *   Implementa el algoritmo de matching entre personas reportadas y
+ *   personas encontradas. Soporta matching por embeddings vectoriales
+ *   (Pinecone, Atlas) y búsqueda directa por nombre+ubicación.
+ *   Es el núcleo del sistema de reconciliación.
+ *
+ * CARACTERÍSTICAS:
+ *   - cosineSimilarity: Similitud coseno entre vectores (embeddings)
+ *   - runMatchingForSearchRequest: Matches para solicitudes de búsqueda activas
+ *   - runMatchingForNewPerson: Busca matches para una persona recién creada
+ *   - Soporte para Atlas Vector Search y Pinecone
+ *   - Fallback a búsqueda local por nombre + ubicación si no hay vectores
+ *   - Generación de embeddings vía AI provider
+ *
+ * FLUJO DE MATCHING:
+ *   1. Nueva persona creada (upsertPerson) → outbox 'person-matching'
+ *   2. Worker encola job → este servicio procesa
+ *   3. Vector search: Pinecone/Atlas → candidatos con score
+ *   4. Si score > threshold: Crea MatchModel con status='revisar'
+ *   5. Notifica al admin vía Socket.IO
+ *   6. Admin revisa y decide: confirmar, descartar, o fusionar
+ *
+ * ALGORITMO:
+ *   1. Obtener embedding de la persona (AI provider o existente)
+ *   2. Buscar en vector DB (Pinecone/Atlas) los top-N candidatos
+ *   3. Si no hay vector DB: Buscar por normalizedName + lastSeen.state
+ *   4. Calcular score con cosineSimilarity
+ *   5. Threshold configurable: >0.7 → MatchModel, >0.9 → notificación inmediata
+ *
+ * SEGURIDAD:
+ *   - Solo procesa search requests con status='activa'
+ *   - Score threshold previene falsos positivos
+ *   - No expone datos de personas no autorizadas
+ *   - MatchModel con status='revisar': Siempre requiere confirmación humana
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Vector + fallback: No depende de un solo método
+ *   - threshold de score: Balance entre recall y precisión
+ *   - Embedding on-demand: Se genera si no existe (lazy loading)
+ *   - Status 'revisar' default: Siempre requiere confirmación humana
+ *
+ * CÓMO USAR:
+ *   await runMatchingForNewPerson('abc123');
+ *   await runMatchingForSearchRequest('search-req-456');
+ */
 import { PersonModel } from '../models/unified-person.model';
 import { SearchRequestModel } from '../models/search-request.model';
 import { MatchModel } from '../models/match.model';

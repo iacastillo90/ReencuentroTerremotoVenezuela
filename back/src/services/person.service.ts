@@ -1,3 +1,42 @@
+/**
+ * services/person.service.ts — Servicio principal de personas
+ *
+ * PROPÓSITO:
+ *   Maneja toda la lógica de negocio relacionada con personas reportadas:
+ *   creación (upsert), deduplicación, consultas, conteos cacheados,
+ *   y coordinación con el patrón outbox para eventos downstream.
+ *
+ * CARACTERÍSTICAS:
+ *   - Upsert con deduplicación por idHash (nombre + estado + edad)
+ *   - Patrón outbox para eventos (person-matching, geo-enrich)
+ *   - Conteos cacheados en Redis con lock anti-stampede
+ *   - Proyección segura (excluye PII sensible)
+ *   - Integración con cola de IA para procesamiento asíncrono
+ *
+ * FLUJO DE DATOS:
+ *   1. upsertPerson recibe datos de fuentes externas
+ *   2. Genera idHash único para deduplicación
+ *   3. Hace upsert en MongoDB (crea o actualiza)
+ *   4. Encola eventos en outbox para procesamiento asíncrono
+ *   5. getCounts usa Redis con lock para evitar cache stampede
+ *
+ * SEGURIDAD:
+ *   - toPublicPerson excluye campos sensibles (embedding, faceEncoding)
+ *   - safeRegexQuery previene ReDoS en búsquedas
+ *   - checkSyncState valida permisos de fuente antes de upsert
+ *   - PII protegida por proyección de Mongoose
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Cache stampede prevention: lock de 10s con retry loop (5 intentos)
+ *   - Outbox pattern: garantiza entrega de eventos incluso si falla
+ *   - idHash determinístico: mismo nombre+estado+edad = misma persona
+ *   - TTL de cache: 300s (5 min) balancea frescura vs performance
+ *
+ * CÓMO USAR:
+ *   const person = await upsertPerson('web-form', 'ext-123', personData);
+ *   const counts = await getCounts(); // cacheado 5min
+ *   const persons = await getPersons({ name: 'Juan', limit: 20 }, 'user');
+ */
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
 import { AuditLogModel } from '../models/audit-log.model';
 import { connection as redis } from '../config/redis.config';

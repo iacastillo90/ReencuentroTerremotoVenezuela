@@ -1,3 +1,40 @@
+/**
+ * services/matches.service.ts — Coincidencias (matches) entre reportes
+ *
+ * PROPÓSITO:
+ *   Consulta matches generados por el motor de matching. Verifica
+ *   que el usuario tenga permiso para ver los matches de un reporte
+ *   (ownership check) y popula los datos de la persona matchada
+ *   con una proyección segura (sin PII sensible).
+ *
+ * CARACTERÍSTICAS:
+ *   - getMatchesByReport: Obtiene matches de un reporte específico
+ *   - Ownership check: user/role validation
+ *   - Proyección segura: Solo campos públicos (idHash, name, status, age, etc.)
+ *   - Populate manual: MatchModel find → PersonModel find con $in
+ *
+ * safeProjection:
+ *   idHash, name, type, status, gender, age, lastSeen, description,
+ *   photoUrl, data.origen, data.ficha_url, data.verificado_por,
+ *   metadata.createdAt, metadata.urgencyScore
+ *
+ * FLUJO DE DATOS:
+ *   1. Verificar que el reporte existe (PersonModel.findOne)
+ *   2. Verificar ownership (userId === reportedBy O role admin/moderator)
+ *   3. Buscar matches en MatchModel ordenados por score DESC
+ *   4. Extraer matchedPersonIds de los matches
+ *   5. PersonModel.find con $in + safeProjection
+ *   6. Mapear matches → { match, matchedPerson }
+ *   7. Filtrar nulls (matches sin persona encontrada)
+ *
+ * SEGURIDAD:
+ *   - ForbiddenError si no hay ownership: Previene fuga de datos
+ *   - safeProjection: No expone embedding, faceEncoding, metadata interno
+ *   - lean en ambas queries: Sin hidratación Mongoose
+ *   - filter null: No devuelve matches huérfanos
+ *
+ * @module matches.service
+ */
 import { MatchModel } from '../models/match.model';
 import { PersonModel } from '../models/unified-person.model';
 import { NotFoundError, ForbiddenError } from '../middlewares/error.middleware';

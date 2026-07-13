@@ -1,3 +1,35 @@
+/**
+ * services/pinecone.service.ts — Cliente Pinecone para búsqueda vectorial
+ *
+ * PROPÓSITO:
+ *   Wrapper alrededor del SDK de Pinecone para operaciones de upsert
+ *   y query vectorial. Se usa como backend de búsqueda semántica
+ *   (embeddings de personas). Es un servicio opt-in: solo se activa
+ *   si PINECONE_API_KEY está definida.
+ *
+ * CARACTERÍSTICAS:
+ *   - upsertVectorToPinecone: Indexa un vector con metadata
+ *   - queryPinecone: Busca los top-K vectores más similares
+ *   - Lazy initialization: Cliente se crea en primer uso
+ *   - Graceful degradation: Si falla, retorna [] en query, log en upsert
+ *
+ * FLUJO DE DATOS:
+ *   1. Persona creada → embedding generado → upsertVectorToPinecone
+ *   2. Búsqueda → embedding query → queryPinecone → matches con score
+ *   3. Matches se unen con MongoDB por idHash para datos completos
+ *
+ * SEGURIDAD:
+ *   - API key solo en variable de entorno (nunca en código)
+ *   - Graceful fallback: Si Pinecone no disponible, no bloquea operaciones
+ *   - Metadata incluida: name, status, source para contexto sin join extra
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Lazy init: No consume recursos si no se usa Pinecone
+ *   - SDK v8: Usa { records: [...] } (no el array directo de v7)
+ *   - includeMetadata: true en query: Evita roundtrip extra a MongoDB
+ *
+ * @module pinecone.service
+ */
 import { Pinecone } from '@pinecone-database/pinecone';
 import { logger } from '../utils/logger.util';
 
