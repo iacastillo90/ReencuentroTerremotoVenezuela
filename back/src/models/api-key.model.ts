@@ -1,3 +1,30 @@
+/**
+ * models/api-key.model.ts — API keys para autenticación de servicios
+ *
+ * PROPÓSITO:
+ *   Almacena API keys utilizadas para autenticación machine-to-machine
+ *   (partners, webhooks, administradores). La key completa se almacena
+ *   como hash SHA-256 (nunca en texto plano). Solo el keyPrefix (8 chars)
+ *   es visible para identificación en logs.
+ *
+ * CARACTERÍSTICAS:
+ *   - key: Hash SHA-256 de la API key (unique)
+ *   - keyPrefix: Primeros 8 chars para identificación visual
+ *   - name: Nombre descriptivo (ej. "Protección Civil")
+ *   - type: admin | webhook | partner
+ *   - active: Flag de activación (revocación lógica)
+ *   - lastUsedAt: Timestamp de último uso
+ *   - expiresAt: Fecha de expiración opcional
+ *   - permissions: Lista de permisos granular (futuro)
+ *
+ * ÍNDICES:
+ *   - key: unique (búsqueda por hash)
+ *   - keyPrefix: index (identificación)
+ *   - type: index (filtro por tipo)
+ *   - active: index (filtro de keys activas)
+ *
+ * @module api-key.model
+ */
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ApiKeyDocument extends Document {

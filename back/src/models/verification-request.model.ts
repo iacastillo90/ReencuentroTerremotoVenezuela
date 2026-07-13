@@ -1,3 +1,20 @@
+/**
+ * models/verification-request.model.ts — Solicitudes de verificación
+ *
+ * PROPÓSITO:
+ *   Almacena solicitudes de usuarios que desean convertirse en
+ *   "verificadores" (role verifier) para ayudar a moderar y verificar
+ *   reportes. Un admin revisa la evidencia y aprueba/rechaza.
+ *
+ * CARACTERÍSTICAS:
+ *   - user: Referencia al usuario solicitante
+ *   - requestedRole: Siempre 'verifier' (por ahora)
+ *   - evidenceUrl: URL con evidencia de identidad/credenciales
+ *   - notes: Notas del solicitante
+ *   - status: pending | approved | rejected
+ *
+ * @module verification-request.model
+ */
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IVerificationRequest extends Document {
