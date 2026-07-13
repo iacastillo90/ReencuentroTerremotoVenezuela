@@ -1,3 +1,41 @@
+/**
+ * controllers/auth.controller.ts — Autenticación y autorización
+ *
+ * PROPÓSITO:
+ *   Maneja el flujo completo de autenticación: Google OAuth,
+ *   registro con email/password, login, logout, y gestión de sesión.
+ *   Emite JWTs con tokenVersion para invalidación segura.
+ *
+ * CARACTERÍSTICAS:
+ *   - Google OAuth con validación de payload
+ *   - Registro con hash de contraseña (bcrypt)
+ *   - JWT con tokenVersion para revocación
+ *   - CSRF double-submit cookie
+ *   - Auditoría de todos los eventos auth
+ *   - Detección de admin por email (ENV)
+ *
+ * FLUJO DE DATOS:
+ *   1. Usuario envía credenciales (Google token o email/pass)
+ *   2. Se valida con Zod schema
+ *   3. Se busca/crea usuario en BD
+ *   4. Se genera JWT con tokenVersion actual
+ *   5. Se setea cookie httpOnly + CSRF cookie
+ *   6. Se loguea evento en AuditLog
+ *
+ * SEGURIDAD:
+ *   - Zod validation en todos los inputs
+ *   - Rate limiting específico por endpoint (login: 5/15min)
+ *   - Password hash con bcrypt (10 rounds)
+ *   - JWT firmado con RS256 o HS256
+ *   - tokenVersion incrementado en updateProfile
+ *   - PII excluida de responses (proyección Mongoose)
+ *
+ * CÓMO USAR:
+ *   POST /api/auth/google — { token: string } → { token, user }
+ *   POST /api/auth/register — { email, password, ... } → { token, user }
+ *   POST /api/auth/login — { email, password } → { token, user }
+ *   POST /api/auth/logout — (cookie) → 204
+ */
 import { Request, Response, NextFunction } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
@@ -12,6 +50,20 @@ import { logger } from '../utils/logger.util';
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+/**
+ * issueSession — Genera JWT y setea cookies para un usuario
+ *
+ * DECISIONES TÉCNICAS:
+ *   - JWT con tokenVersion para invalidación: si se cambia la
+ *     contraseña o se compromete la sesión, se incrementa
+ *     tokenVersion en BD y todos los JWT anteriores son inválidos.
+ *   - Cookie httpOnly + secure (prod) + sameSite=none (prod)
+ *   - CSRF cookie separada para doble submit
+ *
+ * @param res - Response de Express para setear cookies
+ * @param user - Datos del usuario (ID, email, role, tokenVersion)
+ * @returns El token JWT generado
+ */
 function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): string {
   const authToken = jwt.sign(
     { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,

@@ -1,3 +1,44 @@
+/**
+ * controllers/admin.controller.ts — Controlador de administración
+ *
+ * PROPÓSITO:
+ *   Maneja TODAS las operaciones de administración: moderación de personas,
+ *   gestión de usuarios, API keys, matches, auditoría, y fusiones de perfiles.
+ *   Cada handler valida con Zod y delega al service correspondiente.
+ *
+ * CARACTERÍSTICAS:
+ *   - Merge de perfiles duplicados (2 → 1 con externalIds consolidados)
+ *   - Moderación de personas (auditStatus: pending_review → clean/merged)
+ *   - Gestión de usuarios (role: admin/user/verifier, status: pending/approved/banned)
+ *   - API keys (crear, listar, revocar) para admin/webhook/partner
+ *   - Matches (aprobar/rechazar coincidencias del algoritmo)
+ *   - Auditoría (jobs de fusión automática, dismiss)
+ *
+ * FLUJO DE DATOS:
+ *   1. Request llega con params/body
+ *   2. Zod schema valida y sanitiza inputs
+ *   3. Service layer ejecuta lógica de negocio
+ *   4. Response con resultado + audit log implícito
+ *
+ * SEGURIDAD:
+ *   - requireAdminApiKey o JWT con role='admin' en todas las rutas
+ *   - Zod validation en todos los inputs (previene NoSQL injection)
+ *   - sanitizedString para campos de texto (previene XSS)
+ *   - auditLog implícito en operaciones críticas (merge, moderation, user changes)
+ *   - PII excluida de responses (toPublicPerson en services)
+ *
+ * ENDPOINTS PRINCIPALES:
+ *   POST /api/admin/merge/:id1/:id2 — Fusionar 2 perfiles
+ *   PATCH /api/admin/persons/:idHash/moderate — Moderar perfil
+ *   PATCH /api/admin/users/:id/role — Cambiar rol de usuario
+ *   POST /api/admin/api-keys — Crear API key
+ *   PATCH /api/admin/matches/:id/status — Aprobar/rechazar match
+ *
+ * DECISIONES TÉCNICAS:
+ *   - asString helper: normaliza params a string (evita bugs de tipo)
+ *   - Handlers delgados: toda la lógica está en services
+ *   - Zod schemas inline para casos simples, importados para complejos
+ */
 import { Request, Response, NextFunction } from 'express';
 
 function asString(v: string | string[] | undefined): string {
