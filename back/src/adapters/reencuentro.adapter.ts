@@ -1,3 +1,17 @@
+/**
+ * adapters/reencuentro.adapter — Adaptador para la API de Reencuentro
+ *
+ * PROPÓSITO:
+ *   Normaliza los datos de personas provenientes de la API de
+ *   Reencuentro/ApoyaVe al formato interno PersonPayload.
+ *
+ * CARACTERÍSTICAS:
+ *   - Mapea campos como nombre, apellido, estado, foto y edad
+ *   - Construye URLs absolutas para fotos relativas
+ *
+ * @module reencuentro.adapter
+ */
+
 import { ISourceAdapter } from './base.adapter';
 import { PersonPayload } from '../validators/person.validator';
 

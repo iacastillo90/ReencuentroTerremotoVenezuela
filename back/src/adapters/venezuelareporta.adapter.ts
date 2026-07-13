@@ -1,3 +1,17 @@
+/**
+ * adapters/venezuelareporta.adapter — Adaptador para VenezuelaReporta
+ *
+ * PROPÓSITO:
+ *   Normaliza los datos de personas reportadas por la plataforma
+ *   VenezuelaReporta al formato interno PersonPayload.
+ *
+ * CARACTERÍSTICAS:
+ *   - Mapea status "a_salvo"/"encontrado" → "found"
+ *   - Extrae nombre, ciudad, foto, edad y fecha del reporte
+ *
+ * @module venezuelareporta.adapter
+ */
+
 import { ISourceAdapter } from './base.adapter';
 import { PersonPayload } from '../validators/person.validator';
 

@@ -1,3 +1,17 @@
+/**
+ * adapters/web-form.adapter — Adaptador para formularios web públicos
+ *
+ * PROPÓSITO:
+ *   Normaliza los datos enviados desde el formulario web público de
+ *   reporte de personas al formato interno PersonPayload.
+ *
+ * CARACTERÍSTICAS:
+ *   - Soporta reportes de tipo persona y animal (mascota)
+ *   - Valida campos críticos (submission_id, nombre_completo, lugar_visto_estado)
+ *
+ * @module web-form.adapter
+ */
+
 import { ISourceAdapter } from './base.adapter';
 import { PersonPayload } from '../validators/person.validator';
 

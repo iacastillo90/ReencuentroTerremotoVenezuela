@@ -1,3 +1,18 @@
+/**
+ * adapters/factory.adapter — Fábrica y registro de adaptadores de fuentes
+ *
+ * PROPÓSITO:
+ *   Mantiene un registro centralizado de adaptadores disponibles y provee
+ *   una función factory para obtener la instancia correcta según la fuente.
+ *
+ * CARACTERÍSTICAS:
+ *   - Registro basado en mapa clave → instancia de adaptador
+ *   - Error temprano si se solicita una fuente no registrada
+ *   - Fácil extensión: solo agregar al registry
+ *
+ * @module factory.adapter
+ */
+
 import { ISourceAdapter } from './base.adapter';
 import { ReencuentroAdapter } from './reencuentro.adapter';
 import { VenezuelaReportaAdapter } from './venezuelareporta.adapter';

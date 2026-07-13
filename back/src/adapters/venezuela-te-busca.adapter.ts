@@ -1,3 +1,17 @@
+/**
+ * adapters/venezuela-te-busca.adapter — Adaptador para Venezuela Te Busca
+ *
+ * PROPÓSITO:
+ *   Normaliza los datos de personas reportadas por la plataforma
+ *   Venezuela Te Busca al formato interno PersonPayload.
+ *
+ * CARACTERÍSTICAS:
+ *   - Valida campos críticos (id_registro, nombres, estado_desaparicion)
+ *   - Mapea nombres compuestos, edad y estado de desaparición
+ *
+ * @module venezuela-te-busca.adapter
+ */
+
 import { ISourceAdapter } from './base.adapter';
 import { PersonPayload } from '../validators/person.validator';
 
