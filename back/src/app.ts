@@ -1,3 +1,35 @@
+/**
+ * app — Configuración de la aplicación Express
+ *
+ * PROPÓSITO:
+ *   Inicializa y configura la aplicación Express con todos los middleware
+ *   globales: seguridad (Helmet, CORS, CSP, rate limiting), parseo de
+ *   cuerpo, protección CSRF, logging, compresión y registro de rutas.
+ *
+ * CARACTERÍSTICAS:
+ *   - Helmet con CSP en modo reportOnly para desarrollo
+ *   - CORS restringido a orígenes permitidos (CORS_ORIGINS)
+ *   - Rate limiting global configurable (500 req / 15 min por defecto)
+ *   - CSRF double-submit cookie pattern
+ *   - Correlation ID para trazabilidad de peticiones
+ *   - Endpoint /health con estado de MongoDB y Redis
+ *   - Sentry error handler integrado
+ *
+ * SEGURIDAD:
+ *   - Helmet HSTS con preload y maxAge 1 año
+ *   - Referrer Policy estricta
+ *   - Prevención de parameter pollution (hpp)
+ *   - Límite de cuerpo JSON a 1MB
+ *
+ * ENDPOINTS:
+ *   GET  /health                         — Health check (MongoDB + Redis)
+ *   GET  /debug-sentry                   — Sentry verification (intentional error)
+ *   GET  /api/admin/queues               — Bull Board UI (admin)
+ *   POST /api/csp-report                 — CSP violation report endpoint
+ *
+ * @module app
+ */
+
 import * as Sentry from '@sentry/node';
 import express from 'express';
 import compression from 'compression';

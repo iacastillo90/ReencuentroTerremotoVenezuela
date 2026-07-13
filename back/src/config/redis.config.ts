@@ -1,3 +1,19 @@
+/**
+ * config/redis.config.ts — Conexión a Redis
+ *
+ * PROPÓSITO:
+ *   Configura y exporta la conexión a Redis usando ioredis. Soporta
+ *   TLS automático para Upstash (rediss://) y configuración de
+ *   maxRetriesPerRequest (null para compatibilidad con BullMQ).
+ *
+ * CARACTERÍSTICAS:
+ *   - Auto-detecta TLS para URLs rediss:// y upstash.io
+ *   - maxRetriesPerRequest: null (BullMQ requirement)
+ *   - Eventos: connect, error, close con logging
+ *   - REDIS_TLS_REJECT_UNAUTHORIZED: Configurable (false para self-signed)
+ *
+ * @module redis.config
+ */
 import Redis from 'ioredis';
 import { logger } from '../utils/logger.util';
 

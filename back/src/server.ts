@@ -1,3 +1,49 @@
+/**
+ * server.ts — Entry point del backend
+ *
+ * PROPÓSITO:
+ *   Bootstrap de la aplicación: inicializa MongoDB, Redis, colas BullMQ,
+ *   workers de procesamiento, outbox pattern, Socket.IO, y levanta el
+ *   servidor HTTP. Maneja graceful shutdown.
+ *
+ * FLUJO DE INICIALIZACIÓN:
+ *   1. Valida JWT_SECRET (requerido en producción)
+ *   2. Conecta a MongoDB con retry
+ *   3. Inicia workers (ia-processor, disaster-sync, matching) si está en monolith mode
+ *   4. Registra handler de unhandledRejection (fatal log + exit)
+ *   5. Inicia procesador de outbox
+ *   6. Crea servidor HTTP + Socket.IO
+ *   7. Escucha en PORT
+ *   8. Inicializa storage (S3/MinIO)
+ *   9. Setup de jobs programados (disaster sync)
+ *   10. Graceful shutdown handlers (SIGTERM, SIGINT)
+ *
+ * MODO DE OPERACIÓN:
+ *   - Monolith mode: RUN_WORKERS_IN_API=true o NODE_ENV=development
+ *     → Workers corren dentro del mismo proceso
+ *   - Microservices mode: NODE_ENV=production + RUN_WORKERS_IN_API=false
+ *     → Workers en containers separados
+ *
+ * SEGURIDAD:
+ *   - unhandledRejection handler: previene crashes silenciosos
+ *   - Graceful shutdown: cierra conexiones limpiamente
+ *   - Validación de env vars en startup: fail fast
+ *
+ * DEPENDENCIAS CRÍTICAS:
+ *   - MongoDB: Required (sin él no hay BD)
+ *   - Redis: Required (cache, colas, sockets)
+ *   - Storage: Optional (uploads de archivos)
+ *   - Workers: Optional (según modo de deploy)
+ *
+ * GRACEFUL SHUTDOWN:
+ *   1. Detiene servidor HTTP (deja de aceptar conexiones)
+ *   2. Cierra Socket.IO clients
+ *   3. Detiene procesador de outbox
+ *   4. Cierra workers de BullMQ
+ *   5. Cierra conexión a MongoDB
+ *   6. Cierra conexión a Redis
+ *   7. Proceso exit(0)
+ */
 import './sentry';
 import 'dotenv/config';
 import mongoose from 'mongoose'; // Necesario para el graceful shutdown

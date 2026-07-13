@@ -1,3 +1,20 @@
+/**
+ * worker — Punto de entrada para el worker standalone
+ *
+ * PROPÓSITO:
+ *   Arranca los workers de BullMQ (disaster-sync, ia-processor,
+ *   person-matching) en un proceso independiente del servidor web.
+ *   Gestiona la conexión a MongoDB, Redis y el graceful shutdown.
+ *
+ * CARACTERÍSTICAS:
+ *   - Inicializa conexiones MongoDB y Redis
+ *   - Arranca workers: disasterSyncWorker, iaProcessorWorker, personMatchingWorker
+ *   - Graceful shutdown con SIGTERM/SIGINT
+ *   - Timeout de 15s para cierre forzado
+ *
+ * @module worker
+ */
+
 import './sentry';
 import 'dotenv/config';
 import mongoose from 'mongoose';
