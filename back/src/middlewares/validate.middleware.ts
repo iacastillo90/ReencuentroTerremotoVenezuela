@@ -1,3 +1,20 @@
+/**
+ * middlewares/validate.middleware — Middleware de validación Zod
+ *
+ * PROPÓSITO:
+ *   Provee middleware reutilizables para validar parámetros de ruta,
+ *   cuerpo (body) y query string contra esquemas Zod, devolviendo
+ *   errores en formato uniforme.
+ *
+ * CARACTERÍSTICAS:
+ *   - validateParams: valida req.params
+ *   - validateBody: valida req.body
+ *   - validateQuery: valida req.query
+ *   - Formato de error estandarizado con field y message
+ *
+ * @module validate.middleware
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema } from 'zod';
 

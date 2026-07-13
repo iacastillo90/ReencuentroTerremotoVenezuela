@@ -1,3 +1,45 @@
+/**
+ * middlewares/auth.middleware.ts — Autenticación y autorización
+ *
+ * PROPÓSITO:
+ *   Maneja toda la lógica de autenticación: validación de JWT,
+ *   API keys (admin, webhook, partner), y verificación de roles.
+ *   Provee decoradores de ruta (requireUser, requireAdminApiKey, etc).
+ *
+ * CARACTERÍSTICAS:
+ *   - requireUser: Valida JWT desde Bearer token o cookie
+ *   - requireAdminApiKey: API key para endpoints admin
+ *   - requireWebhookApiKey: API key para webhooks entrantes
+ *   - requirePartnerApiKey: API key para partners
+ *   - requireProfileComplete: Bloquea usuarios con perfil incompleto
+ *   - tokenVersion check: Invalida JWTs si se incrementó versión
+ *
+ * FLUJO DE DATOS:
+ *   1. Extrae token de Authorization header o cookie
+ *   2. Verifica firma JWT con JWT_SECRET
+ *   3. Valida payload con Zod schema
+ *   4. Busca usuario en BD para verificar tokenVersion
+ *   5. Si tokenVersion != JWT, rechaza (sesión revocada)
+ *   6. Para API keys: hash y busca en BD, verifica active=true
+ *
+ * SEGURIDAD:
+ *   - JWT con RS256/HS256, expiración 7d
+ *   - tokenVersion para invalidación sin logout explícito
+ *   - API keys hasheadas con SHA-256 antes de persistir
+ *   - Legacy key detection: log warning si usa key sin hashear
+ *   - Audit log en todos los eventos auth
+ *
+ * DECISIONES TÉCNICAS:
+ *   - requireUser busca usuario completo (no solo tokenVersion) para
+ *     asegurar que el usuario aún existe y está activo
+ *   - API keys soportan legacy mode (sin hash) con warning log
+ *   - Token puede venir de Bearer o cookie (flexibilidad cliente)
+ *
+ * CÓMO USAR:
+ *   router.get('/protected', requireUser, handler);
+ *   router.post('/admin', requireAdminApiKey, handler);
+ *   router.post('/webhook', requireWebhookApiKey, handler);
+ */
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
