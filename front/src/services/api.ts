@@ -131,6 +131,10 @@ export async function refreshCsrfToken(): Promise<string | null> {
  * sin que cada componente tenga que acordarse de hacerlo.
  */
 api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   if (config.method && MUTATING.includes(config.method.toLowerCase())) {
     const token = csrfToken ?? readCsrfCookie();
     if (token && config.headers) {
@@ -154,7 +158,26 @@ api.interceptors.request.use((config) => {
  * para evitar reintentos infinitos.
  */
 api.interceptors.response.use(
-  (res) => res, // Respuestas exitosas pasan sin cambios
+  (res) => {
+    // Interceptor global para transformar URLs de imágenes viejas
+    const transformUrls = (obj: unknown) => {
+      if (!obj) return;
+      if (Array.isArray(obj)) {
+        obj.forEach(transformUrls);
+      } else if (typeof obj === 'object') {
+        const record = obj as Record<string, unknown>;
+        for (const key in record) {
+          if (key === 'photoUrl' && typeof record[key] === 'string') {
+            (record as Record<string, string>)[key] = (record[key] as string).replace(/http:\/\/minio:9000\/[^/]+\//, '/api/media/').split('?')[0];
+          } else {
+            transformUrls(record[key]);
+          }
+        }
+      }
+    };
+    if (res.data) transformUrls(res.data);
+    return res;
+  },
   async (error) => {
     const cfg = error.config;
     const status = error.response?.status;

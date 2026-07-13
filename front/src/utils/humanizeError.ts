@@ -40,7 +40,7 @@ export function humanizeError(err: unknown, fallback = 'Algo salió mal. Intenta
   const raw = ax?.response?.data?.error;
 
   if (!ax?.response) {
-    const netMsg = String((ax as any)?.message ?? '');
+    const netMsg = String((err as Error)?.message ?? '');
     const hit = TECH_MAP.find((m) => m.match.test(netMsg));
     if (hit) return hit.message;
   }
