@@ -1,3 +1,33 @@
+/**
+ * workers/disaster-sync.worker.ts — Worker de sincronización de desastres
+ *
+ * PROPÓSITO:
+ *   Worker BullMQ que ejecuta un ciclo completo de sincronización de
+ *   desastres. Obtiene datos de hasta 10 fuentes externas (USGS,
+ *   FIRMS, GDACS, FUNVISIS, INAMEH, CORPOELEC, etc.) en secuencia,
+ *   con un delay de 2s entre cada una para no saturar las APIs.
+ *
+ * CARACTERÍSTICAS:
+ *   - 10 sync jobs en secuencia (con delay de 2s entre cada uno)
+ *   - connectDB al inicio (modo Worker)
+ *   - Concurrencia configurable via DISASTER_SYNC_CONCURRENCY (default 3)
+ *   - Reporte de éxito/fallo por job
+ *   - Graceful: Fallos individuales no detienen el ciclo
+ *
+ * FLUJO:
+ *   1. BullMQ envía job 'disaster-sync'
+ *   2. Worker ejecuta cada syncJob.handler() en secuencia
+ *   3. 2s de delay entre jobs para rate limiting
+ *   4. Log de resumen con successCount / failCount
+ *   5. Fallos se loggean individualmente como error
+ *
+ * FUENTES SINCRONIZADAS:
+ *   USGS Earthquakes, FIRMS Fires, GDACS, Reencuentro Persons,
+ *   Venezuela Reporta, FUNVISIS, INAMEH, CORPOELEC, Protección Civil,
+ *   Cruz Roja
+ *
+ * @module disaster-sync.worker
+ */
 import 'dotenv/config';
 import { Worker, Job } from 'bullmq';
 import { connectDB } from '../database/connection';

@@ -1,3 +1,19 @@
+/**
+ * queues/disaster-sync.queue — Cola de sincronización de desastres
+ *
+ * PROPÓSITO:
+ *   Define la cola BullMQ para la sincronización programada de eventos
+ *   de desastre desde múltiples fuentes (USGS, FIRMS, GDACS, FUNVISIS,
+ *   INAMEH, CORPOELEC, Protección Civil, Cruz Roja).
+ *
+ * CARACTERÍSTICAS:
+ *   - Configuración con backoff exponencial (5 reintentos)
+ *   - Jobs repetitivos (cron) registrados en setupDisasterSyncJobs
+ *   - Limpieza automática de jobs completados y fallidos
+ *
+ * @module disaster-sync.queue
+ */
+
 import { Queue } from 'bullmq';
 import { connection } from '../config/redis.config';
 import { logger } from '../utils/logger.util';

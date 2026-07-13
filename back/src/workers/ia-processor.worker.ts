@@ -1,3 +1,45 @@
+/**
+ * workers/ia-processor.worker.ts — Worker de procesamiento con IA
+ *
+ * PROPÓSITO:
+ *   Procesa reportes de personas con inteligencia artificial: extrae
+ *   datos estructurados de texto libre, analiza imágenes (face encoding),
+ *   genera embeddings vectoriales para Pinecone, y enriquece perfiles
+ *   con metadatos de IA (edad estimada, ubicación probable, urgencia).
+ *
+ * CARACTERÍSTICAS:
+ *   - aiOutputSchema: Valida output de la IA (name, estado, age, urgencyScore, safeDescription)
+ *   - processAndReconcilePerson: Pipeline de reconciliación con datos existentes
+ *   - extractFaceEncoding: Llama al microservicio Python (vision) para encoding facial
+ *   - upsertVectorToPinecone: Indexa embedding textual en Pinecone para búsqueda vectorial
+ *   - emitToUser: Notifica al usuario vía Socket.IO cuando el procesamiento termina
+ *
+ * FLUJO DE PROCESAMIENTO:
+ *   1. BullMQ entrega job con datos crudos del reporte
+ *   2. Extrae face encoding del microservicio vision (si hay foto)
+ *   3. IA analiza descripción textual y extrae datos estructurados
+ *   4. Valida output con aiOutputSchema
+ *   5. Reconciliation: cruza con perfiles existentes (name + state)
+ *   6. Si aplicable, upsert a Pinecone para matching vectorial
+ *   7. Emite evento Socket.IO al usuario para notificar completado
+ *
+ * SEGURIDAD:
+ *   - aiOutputSchema: Zod valida output de la IA (previene datos corruptos)
+ *   - AbortSignal.timeout(35000): Timeout para llamadas HTTP externas
+ *   - Vision service URL configurable via env var
+ *   - Face encoding opcional: No bloquea si falla (graceful degradation)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Worker separado de API: No bloquea responses del usuario
+ *   - Vision service timeout 35s: Balance entre calidad y latencia
+ *   - Graceful degradation: Si face encoding falla, continúa sin él
+ *   - Zod validation del output IA: Previene que IA corrupta entre a BD
+ *
+ * CÓMO USAR:
+ *   // Encolar desde controller:
+ *   await addJobToIAQueue({ personId, rawDescription, imageUrl });
+ *   // Worker procesa automáticamente en background
+ */
 import 'dotenv/config';
 import { z } from 'zod';
 import { Worker, Job } from 'bullmq';

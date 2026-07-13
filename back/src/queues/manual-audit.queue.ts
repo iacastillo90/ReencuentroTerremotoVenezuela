@@ -1,3 +1,17 @@
+/**
+ * queues/manual-audit.queue — Cola de auditoría manual
+ *
+ * PROPÓSITO:
+ *   Define la cola BullMQ para trabajos de auditoría manual que requieren
+ *   revisión humana, como posibles duplicados detectados por fuzzy matching.
+ *
+ * CARACTERÍSTICAS:
+ *   - Backoff exponencial (5 reintentos)
+ *   - Función helper addJobToManualAudit para encolar trabajos
+ *
+ * @module manual-audit.queue
+ */
+
 import { Queue } from 'bullmq';
 import { connection } from '../config/redis.config';
 

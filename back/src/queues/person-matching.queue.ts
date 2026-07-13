@@ -1,3 +1,19 @@
+/**
+ * queues/person-matching.queue — Cola de matching de personas
+ *
+ * PROPÓSITO:
+ *   Define la cola y clase para el matching asíncrono de personas,
+ *   comparando nuevos reportes contra la base de datos existente
+ *   para encontrar coincidencias potenciales.
+ *
+ * CARACTERÍSTICAS:
+ *   - Clase PersonMatchingQueue con interfaz enqueue/close
+ *   - Instancia singleton personMatchingQueue exportada
+ *   - Backoff exponencial (5 reintentos)
+ *
+ * @module person-matching.queue
+ */
+
 import { Queue } from 'bullmq';
 import { connection } from '../config/redis.config';
 
