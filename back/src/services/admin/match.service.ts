@@ -1,3 +1,18 @@
+/**
+ * services/admin/match.service — Gestión de coincidencias (admin)
+ *
+ * PROPÓSITO:
+ *   Provee operaciones administrativas para consultar y actualizar
+ *   el estado de coincidencias entre personas.
+ *
+ * CARACTERÍSTICAS:
+ *   - getAdminMatches: lista coincidencias con lookup de personas y search requests
+ *   - updateMatchStatus: actualiza estado de una coincidencia
+ *   - Audit logging de todas las acciones
+ *
+ * @module match.service
+ */
+
 import { MatchModel } from '../../models/match.model';
 import { auditLog } from '../../middlewares/audit.middleware';
 import type { Request } from 'express';

@@ -1,3 +1,22 @@
+/**
+ * services/admin/person.service — Gestión administrativa de personas
+ *
+ * PROPÓSITO:
+ *   Provee operaciones CRUD administrativas sobre personas: fusión de
+ *   perfiles, consulta, actualización de estado, moderación y contactos.
+ *
+ * CARACTERÍSTICAS:
+ *   - mergeProfiles: fusiona dos perfiles usando transacciones MongoDB
+ *   - getAdminPersons: consulta paginada con filtros
+ *   - putPerson: actualización parcial de campos
+ *   - updatePersonStatus: cambia estado (missing/found/deceased)
+ *   - moderatePerson: aprueba o rechaza (elimina) un reporte
+ *   - getPersonContacts: consulta mensajes de contacto
+ *   - Audit logging con snapshot de cambios en merges
+ *
+ * @module person.service
+ */
+
 import mongoose from 'mongoose';
 import { PersonModel } from '../../models/unified-person.model';
 import { MatchModel } from '../../models/match.model';

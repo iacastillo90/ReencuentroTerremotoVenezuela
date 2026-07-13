@@ -1,3 +1,19 @@
+/**
+ * services/admin/user.service — Gestión administrativa de usuarios
+ *
+ * PROPÓSITO:
+ *   Provee operaciones administrativas sobre usuarios: consulta paginada,
+ *   actualización de roles y estados.
+ *
+ * CARACTERÍSTICAS:
+ *   - getAdminUsers: lista usuarios (-passwordHash) paginada
+ *   - updateUserRole: cambia rol (user/verifier/admin)
+ *   - updateUserStatus: cambia estado (pending/approved/rejected)
+ *   - Audit logging de todas las acciones
+ *
+ * @module user.service
+ */
+
 import { UserModel } from '../../models/user.model';
 import { auditLog } from '../../middlewares/audit.middleware';
 import type { Request } from 'express';

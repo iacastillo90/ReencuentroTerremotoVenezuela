@@ -1,3 +1,19 @@
+/**
+ * services/admin/audit.service — Auditoría manual de personas
+ *
+ * PROPÓSITO:
+ *   Gestiona los trabajos de auditoría manual: consulta de cola,
+ *   fusión de duplicados (merge) y descarte (dismiss) de candidatos.
+ *
+ * CARACTERÍSTICAS:
+ *   - getAuditJobs: lista trabajos pendientes en la cola manual-audit
+ *   - mergeAuditJob: fusiona reporte entrante con persona existente
+ *   - dismissAuditJob: inserta como nuevo registro independiente
+ *   - Audit logging de todas las acciones de administrador
+ *
+ * @module audit.service
+ */
+
 import { manualAuditQueue } from '../../queues/manual-audit.queue';
 import { PersonModel } from '../../models/unified-person.model';
 import { upsertPerson } from '../person.service';
