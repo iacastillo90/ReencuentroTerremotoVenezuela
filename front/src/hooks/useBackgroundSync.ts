@@ -1,104 +1,99 @@
-/**
- * hooks/useBackgroundSync.js — Sincronización offline → servidor
- *
- * PROPÓSITO:
- *   Cuando el usuario crea un reporte sin conexión (offline),
- *   este hook detecta cuando vuelve la conectividad y envía
- *   los reportes pendientes al backend automáticamente.
- *
- * ¿CÓMO FUNCIONA?
- *   1. Escucha los eventos 'online' y 'offline' del navegador.
- *   2. Al iniciar, si hay conexión, ejecuta syncOfflineReports().
- *   3. syncOfflineReports() lee de IndexedDB (db.offlineReports)
- *      todos los reportes con status 'draft_offline'.
- *   4. Por cada reporte:
- *      a) Marca status → 'syncing' (para evitar doble envío).
- *      b) Si hay foto, la sube a /media via FormData.
- *      c) Envía los datos a POST /persons.
- *      d) Si ok → elimina el reporte de IndexedDB.
- *      e) Si falla → regresa a 'draft_offline' (reintento futuro).
- *
- * DEPENDENCIAS:
- *   - db (offlineDb.ts): Dexie database con tabla offlineReports.
- *   - api (services/api.ts): instancia Axios con CSRF.
- *
- * RETORNA:
- *   { isOnline }: boolean que indica el estado de conectividad.
- */
-import { useEffect, useState } from 'react';
-import { db } from '../db/offlineDb';
+import { useEffect, useCallback, useRef } from 'react';
+import { db, getPendingCount } from '../db/offlineDb';
 import { api } from '../services/api';
+import { registerBackgroundSync, sendMessageToSW } from '../utils/sync-utils';
+import { refreshCsrfToken } from '../services/api';
+
+const MAX_RETRIES = 3;
 
 export function useBackgroundSync() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const syncingRef = useRef(false);
 
-  useEffect(() => {
-    // Cuando volvemos a estar online, sincroniza.
-    const handleOnline = async () => {
-      setIsOnline(true);
-      await syncOfflineReports();
-    };
+  const syncOfflineReports = useCallback(async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
 
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Sincronización inicial si ya estamos online.
-    if (navigator.onLine) {
-      syncOfflineReports();
-    }
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  const syncOfflineReports = async () => {
     try {
       const pendingReports = await db.offlineReports
         .where('status')
-        .equals('draft_offline')
+        .equals('pending')
         .toArray();
 
-      if (pendingReports.length === 0) return;
+      if (pendingReports.length === 0) {
+        syncingRef.current = false;
+        return;
+      }
 
+      await refreshCsrfToken();
 
       for (const report of pendingReports) {
         try {
-          // Marca como syncing para evitar doble envío.
           await db.offlineReports.update(report.id!, { status: 'syncing' });
 
           const payload = { ...report.reportData };
 
-          // Sube la foto si existe.
           if (report.photoFile) {
             const formData = new FormData();
             formData.append('file', report.photoFile);
-            const uploadRes = await api.post('/media', formData, { 
-              headers: { 'Content-Type': 'multipart/form-data' } 
+            const uploadRes = await api.post('/media', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
             });
             payload.photoUrl = uploadRes.data.url;
           }
 
-          // Envía los datos al backend.
           await api.post('/persons', payload);
-
-          // Éxito: elimina de IndexedDB.
           await db.offlineReports.delete(report.id!);
         } catch (err) {
-          console.debug(`[Background Sync] Failed to sync report ID: ${report.id}`, err);
-          // Reintentará en el próximo ciclo online.
-          await db.offlineReports.update(report.id!, { status: 'draft_offline' });
+          const nextRetry = (report.retryCount ?? 0) + 1;
+          if (nextRetry >= MAX_RETRIES) {
+            await db.offlineReports.update(report.id!, {
+              status: 'failed',
+              retryCount: nextRetry,
+            });
+          } else {
+            await db.offlineReports.update(report.id!, {
+              status: 'pending',
+              retryCount: nextRetry,
+            });
+          }
         }
       }
-    } catch (err) {
-      console.debug('[Background Sync] Error during sync process:', err);
+    } catch {
+    } finally {
+      syncingRef.current = false;
+      const count = await getPendingCount();
+      sendMessageToSW({ type: 'pending-count', count });
     }
-  };
+  }, []);
 
-  return { isOnline };
+  useEffect(() => {
+    const handleOnline = async () => {
+      const hasSync = await registerBackgroundSync();
+      if (!hasSync) {
+        await syncOfflineReports();
+      }
+    };
+
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'trigger-sync') {
+        syncOfflineReports();
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage);
+
+    if (navigator.onLine) {
+      getPendingCount().then((count) => {
+        if (count > 0) syncOfflineReports();
+      });
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
+    };
+  }, [syncOfflineReports]);
+
+  return { syncNow: syncOfflineReports };
 }
