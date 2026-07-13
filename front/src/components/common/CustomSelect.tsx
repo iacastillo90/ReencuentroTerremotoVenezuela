@@ -64,6 +64,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       <div className="figma-select-trigger"
         onClick={() => setOpen(!open)}
         tabIndex={0}
+        role="combobox"
+        aria-expanded={open}
         onKeyDown={e => e.key === 'Enter' && setOpen(!open)}>
         {selected ? (
           <>

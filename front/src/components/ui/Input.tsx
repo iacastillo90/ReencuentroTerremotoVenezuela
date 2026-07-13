@@ -30,7 +30,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className={`${styles['input-group']} ${className}`}>
       {label && <label className={styles['input-label']}>{label}</label>}
-      <input className={`${styles['input-field']} ${error ? styles['input-error'] : ''}`} {...props} />
+      <input className={`${styles['input-field']} ${error ? styles['input-error'] : ''}`} {...props} aria-label={label} />
       {error && <span className={styles['input-error-msg']}>{error}</span>}
     </div>
   );

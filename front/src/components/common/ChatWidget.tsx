@@ -37,6 +37,7 @@
  */
 import React, { useRef, useEffect } from 'react';
 import { X, Send, Loader2 } from 'lucide-react';
+import { sanitize } from '../../lib/sanitize';
 
 interface ChatMessage {
   _id: string;
@@ -127,7 +128,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 <div key={msg._id}
                   className={`chat-bubble-container ${isSender ? 'sender' : 'receiver'}`}>
                   <div className="chat-bubble">
-                    {msg.message}
+                    {sanitize(msg.message)}
                     {/* Timestamp: hora local sin segundos */}
                     <time className="chat-time"
                       dateTime={msg.createdAt}

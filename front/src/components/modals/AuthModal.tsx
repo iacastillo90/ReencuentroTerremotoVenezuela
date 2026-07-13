@@ -74,7 +74,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         onSuccess();
       }
     } catch (err: any) {
-      console.error(err);
+      console.debug(err);
       setError('Error al iniciar sesión con Google.');
     } finally {
       setIsSubmitting(false);
@@ -82,26 +82,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   };
 
   // ─── Bypass para desarrollo local ───
-  // Solo disponible cuando VITE_GOOGLE_CLIENT_ID es 'dummy-client-id'.
-  // Genera un payload simulado que el backend acepta en modo DEV.
-  const handleBypassLogin = async () => {
-    if (!import.meta.env.DEV) return;
-
-    try {
-      const inputEmail = window.prompt(
-        "Ingresa un correo para la sesión de prueba (reutiliza el mismo para mantener tu perfil):",
-        "dev@ayudave.com"
-      );
-      if (!inputEmail) return;
-
-      const safeEmail = inputEmail.trim().toLowerCase();
-      const mockId = btoa(safeEmail).replace(/=/g, '');
-
-      setIsSubmitting(true);
-      setError('');
-
-      const mockPayload = {
-        sub: `dev-${mockId}`,
+  // REMOVED: Auth bypass was a security risk. Use real Google OAuth in development.
+  // const handleBypassLogin = async () => { ... }
         email: safeEmail,
         name: `Usuario ${safeEmail.split('@')[0]}`,
         picture: `https://api.dicebear.com/7.x/avataaars/svg?seed=${mockId}`
@@ -117,7 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         onSuccess();
       }
     } catch (err: any) {
-      console.error(err);
+      console.debug(err);
       setError('Error al iniciar sesión en modo desarrollador.');
     } finally {
       setIsSubmitting(false);
@@ -142,7 +124,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         onSuccess();
       }
     } catch (err) {
-      console.error(err);
+      console.debug(err);
       setError('Error al guardar el perfil.');
     } finally {
       setIsSubmitting(false);

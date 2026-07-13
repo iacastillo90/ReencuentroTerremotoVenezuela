@@ -55,7 +55,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ person }) => {
   };
 
   return (
-    <article className="feed-card">
+    <article className="feed-card" tabIndex={0}>
       {/* Header: avatar, nombre, ubicación, badge de estado */}
       <div className="feed-card-header">
         <div className="feed-avatar">
