@@ -38,6 +38,7 @@ import { SectionBusquedas } from './sections/SectionBusquedas';
 import { SectionModeracion } from './sections/SectionModeracion';
 import { SectionMatches } from './sections/SectionMatches';
 import { SectionUsuarios } from './sections/SectionUsuarios';
+import { SectionAuditoria } from './sections/SectionAuditoria';
 import './AdminDashboard.css';
 import '../Profile/Profile.css';
 
@@ -63,6 +64,7 @@ const NAV_ITEMS: { key: AdminSection; label: string; Icon: React.ComponentType<{
   { key: 'registros',  label: 'Control Registros',  Icon: ShieldCheck },
   { key: 'busquedas',  label: 'Solicitudes (Familias)', Icon: Search },
   { key: 'usuarios',   label: 'Usuarios (Roles)',   Icon: Users },
+  { key: 'auditoria',  label: 'Auditoría Sistema',  Icon: ShieldAlert },
   { key: 'colas',      label: 'Colas (BullMQ)',     Icon: Activity },
 ];
 
@@ -110,6 +112,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     registros: 'Control de Registros',
     busquedas: 'Búsquedas Activas de Familiares',
     usuarios: 'Gestión de Usuarios y Roles',
+    auditoria: 'Registro de Auditoría y Sistema',
     colas: 'Monitoreo de Procesos en Segundo Plano'
   }[activeSection];
 
@@ -173,6 +176,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
               />
             )}
             {activeSection === 'usuarios' && <SectionUsuarios />}
+            {activeSection === 'auditoria' && <SectionAuditoria />}
             {activeSection === 'colas' && (
               <div className="admin-queue-frame">
                 <iframe
