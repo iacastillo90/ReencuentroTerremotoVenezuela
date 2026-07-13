@@ -1,3 +1,21 @@
+/**
+ * models/state-history.model.ts — Historial de cambios de estado
+ *
+ * PROPÓSITO:
+ *   Almacena el historial de cambios de estado de una persona (missing →
+ *   found, etc.). Proporciona trazabilidad completa para auditoría.
+ *   Solo tiene createdAt (no updatedAt, ya que el historial es inmutable).
+ *
+ * CARACTERÍSTICAS:
+ *   - reportId: idHash de la persona (indexado)
+ *   - changedBy: Usuario que realizó el cambio
+ *   - previousState: Estado anterior
+ *   - newState: Estado nuevo
+ *   - notes: Notas opcionales sobre el cambio
+ *   - createdAt: Timestamp automático (inmutable)
+ *
+ * @module state-history.model
+ */
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IStateHistory extends Document {

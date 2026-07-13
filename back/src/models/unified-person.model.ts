@@ -1,3 +1,43 @@
+/**
+ * models/unified-person.model.ts — Modelo principal de personas
+ *
+ * PROPÓSITO:
+ *   Define el schema unificado para todas las personas reportadas,
+ *   independientemente de la fuente (web, WhatsApp, Telegram, scraping).
+ *   Centraliza deduplicación vía idHash y soporta múltiples fuentes.
+ *
+ * CARACTERÍSTICAS:
+ *   - externalIds: Múltiples IDs de fuentes externas para un misma persona
+ *   - idHash: Hash determinístico (nombre + estado + edad) para dedup
+ *   - lastSeen: GeoJSON coordinates para búsquedas geoespaciales
+ *   - metadata: Auditoría completa (sync, source, confidence, auditStatus)
+ *   - embedding/faceEncoding: Vectores para matching IA (select: false)
+ *   - data: Schema.Types.Mixed para datos flexibles (validar con Zod antes)
+ *
+ * ÍNDICES (performance crítico):
+ *   - { normalizedName: 1, lastSeen.state: 1 } — queries por nombre+estado
+ *   - { status: 1, metadata.urgencyScore: -1 } — listados por urgencia
+ *   - { lastSeen.coordinates: '2dsphere' } — búsquedas geoespaciales
+ *   - { externalIds.source: 1, externalIds.id: 1 } — lookup por fuente
+ *   - { name: 'text', ... } — full-text search
+ *   - { metadata.reportedBy: 1 } — reports por usuario
+ *   - { metadata.auditStatus: 1, status: 1, type: 1 } — moderación
+ *
+ * SEGURIDAD:
+ *   - embedding/faceEncoding: { select: false } — nunca expuesto por defecto
+ *   - data: Mixed type — debe validarse con personPayloadSchema antes de persistir
+ *   - PII en metadata (IP, location) — excluir en proyecciones públicas
+ *
+ * DECISIONES TÉCNICAS:
+ *   - idHash en lugar de _id: permite dedup antes de persistir
+ *   - externalIds como array: soporta N fuentes para un mismo registro
+ *   - metadata separado de data: metadata es estructurado, data es flexible
+ *   - auditStatus para moderación: clean, pending_review, merged, dismissed
+ *
+ * CÓMO USAR:
+ *   const person = await PersonModel.findOne({ idHash: 'abc123' });
+ *   const persons = await PersonModel.find({ status: 'missing' }).select('-embedding -faceEncoding');
+ */
 import { Schema, model, Document, Types } from 'mongoose';
 
 export interface UnifiedPerson extends Document {
