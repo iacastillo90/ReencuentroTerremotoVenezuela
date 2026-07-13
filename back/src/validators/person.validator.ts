@@ -32,7 +32,7 @@ export const personPayloadSchema = z.object({
   name: sanitizedString.pipe(z.string().min(2)),
   estado: sanitizedString.pipe(z.string().min(2)),
   text: sanitizedStringOptional,
-  photoUrl: z.string().url().optional(),
+  photoUrl: z.string().optional(),
   date: z.string().datetime().optional(), // ISO string
   confidence_score: z.number().optional(),
   confidence_label: sanitizedStringOptional,

@@ -92,6 +92,7 @@ export interface UnifiedPerson extends Document {
     reportedBy?: Types.ObjectId | string;
     reporterIp?: string;
     reporterLocation?: { lat: number; lng: number };
+    biometricHash?: string;
   };
   embedding?: number[];
   faceEncoding?: number[];
@@ -143,7 +144,8 @@ const UnifiedPersonSchema = new Schema<UnifiedPerson>({
     reporterLocation: {
       lat: Number,
       lng: Number
-    }
+    },
+    biometricHash: String
   },
   embedding: { type: [Number], select: false }, // Vector embedding textual (IA)
   faceEncoding: { type: [Number], select: false }, // Vector facial 128-d (face_recognition)

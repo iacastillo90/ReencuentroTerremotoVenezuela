@@ -76,8 +76,11 @@ export async function validateMagicBytes(buffer: Buffer, mimeType: string): Prom
     if (type && type.mime === mimeType) return true;
     if (type && !type.mime.startsWith('image/')) return false;
     if (type) return type.mime.startsWith('image/') === mimeType.startsWith('image/');
-  } catch {
-    // fallback to custom signatures
+  } catch (err) {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'test') {
+      const logger = await import('./logger.util').then(m => m.logger).catch(() => null);
+      logger?.warn?.({ err }, '[FileValidate] file-type library failed, falling back to magic bytes');
+    }
   }
 
   const signatures = MAGIC_BYTE_SIGNATURES[mimeType];
