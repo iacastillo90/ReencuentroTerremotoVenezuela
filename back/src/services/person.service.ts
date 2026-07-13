@@ -163,8 +163,9 @@ interface GetPersonsParams {
   viewerRole?: string;
 }
 
-export async function getPersons(params: GetPersonsParams) {
-  const { q, status, category, state, municipality, limit, offset, viewerRole } = params;
+export async function getPersons(params: GetPersonsParams, viewerRole?: string) {
+  const { q, status, category, state, municipality, limit, offset } = params;
+  const effectiveViewerRole = viewerRole || params.viewerRole;
   const filter: any = { 'metadata.auditStatus': { $ne: 'pending_moderation' } };
 
   if (status) {
@@ -220,7 +221,7 @@ export async function getPersons(params: GetPersonsParams) {
     PersonModel.countDocuments(filter)
   ]);
 
-  const persons = rawPersons.map((p: any) => toPublicPerson(p, viewerRole));
+  const persons = rawPersons.map((p: any) => toPublicPerson(p, effectiveViewerRole));
 
   const responsePayload = { total, limit, offset, persons };
 
@@ -231,7 +232,7 @@ export async function getPersons(params: GetPersonsParams) {
   return responsePayload;
 }
 
-export async function createPerson(payload: any, userId?: string, ip?: string) {
+export async function createPerson(payload: { source: string; externalId: string; date?: string; isAnonymous?: boolean; reportedBy?: string; reporterIp?: string }, userId?: string, ip?: string) {
   if (!payload.isAnonymous && userId) {
     payload.reportedBy = userId;
   }

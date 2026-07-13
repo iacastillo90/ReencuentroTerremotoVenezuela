@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { personPayloadSchema } from '../validators/person.validator';
+import { personPayloadSchema, personSearchQuerySchema } from '../validators/person.validator';
 import * as personService from '../services/person.service';
 import { ValidationError } from '../middlewares/error.middleware';
 
@@ -33,20 +33,13 @@ export async function getMyReports(req: Request, res: Response, next: NextFuncti
 
 export async function getPersons(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query as Record<string, any>;
-    const { limit = 50, offset = 0 } = query;
+    const parsed = personSearchQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Parámetros inválidos', details: parsed.error.issues });
+    }
     const viewerRole = req.user?.role;
 
-    const result = await personService.getPersons({
-      q: query.q,
-      status: query.status,
-      category: query.category,
-      state: query.state,
-      municipality: query.municipality,
-      limit,
-      offset,
-      viewerRole,
-    });
+    const result = await personService.getPersons(parsed.data, viewerRole);
 
     return res.status(200).json(result);
   } catch (error) {

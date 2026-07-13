@@ -12,7 +12,7 @@ import { logger } from '../utils/logger.util';
 const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-function issueSession(res: Response, user: any): string {
+function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): string {
   const authToken = jwt.sign(
     { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
       role: user.role, status: user.status, tokenVersion: user.tokenVersion },
@@ -55,14 +55,14 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
     }
 
     const { token } = validation.data;
-    let payload: any;
+    let payload: { sub: string; email?: string; name?: string; picture?: string } | undefined;
 
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
         audience: GOOGLE_CLIENT_ID,
       });
-      payload = ticket.getPayload();
+      payload = ticket.getPayload() as { sub: string; email?: string; name?: string; picture?: string } | undefined;
     } catch (e) {
       logger.error({ err: e }, '[AuthRoute] Google token verification failed');
       return res.status(401).json({ error: 'Token de Google inválido' });
@@ -74,7 +74,7 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
 
     let user = await UserModel.findOne({ googleId });
     if (!user) {
-      const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+      const isAdmin = process.env.ADMIN_EMAIL && email?.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
       user = await UserModel.create({
         googleId,
         email,
@@ -87,7 +87,7 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
     }
 
     const authToken = jwt.sign(
-      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
+      { userId: user._id.toString(), email: user.email, isProfileComplete: user.isProfileComplete,
         role: user.role, status: user.status, tokenVersion: user.tokenVersion },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -144,7 +144,14 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       status: isAdmin ? 'approved' : 'pending'
     });
 
-    const authToken = issueSession(res, user);
+    const authToken = issueSession(res, {
+      _id: user._id.toString(),
+      email: user.email,
+      isProfileComplete: user.isProfileComplete,
+      role: user.role,
+      status: user.status,
+      tokenVersion: user.tokenVersion
+    });
     auditLog({
       eventType: 'auth_login_success',
       severity: 'info',
@@ -180,7 +187,14 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
-    const authToken = issueSession(res, user);
+    const authToken = issueSession(res, {
+      _id: user._id.toString(),
+      email: user.email,
+      isProfileComplete: user.isProfileComplete,
+      role: user.role,
+      status: user.status,
+      tokenVersion: user.tokenVersion
+    });
     auditLog({
       eventType: 'auth_login_success',
       severity: 'info',
