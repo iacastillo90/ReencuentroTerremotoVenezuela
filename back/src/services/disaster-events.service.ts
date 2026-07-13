@@ -1,3 +1,18 @@
+/**
+ * services/disaster-events.service — Consulta de eventos de desastre
+ *
+ * PROPÓSITO:
+ *   Provee funciones para consultar eventos de desastre con filtros
+ *   por tipo, rango de fechas, y proximidad geoespacial.
+ *
+ * CARACTERÍSTICAS:
+ *   - queryDisasters: filtros combinados (tipo, fechas, coordenadas + radio)
+ *   - getActiveDisasters: eventos activos (validUntil vigente o últimos 7 días)
+ *   - disasterQuerySchema: esquema Zod para validación de parámetros
+ *
+ * @module disaster-events.service
+ */
+
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { z } from 'zod';
 

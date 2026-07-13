@@ -1,3 +1,54 @@
+/**
+ * services/outbox.service.ts — Patrón Outbox para eventos asíncronos
+ *
+ * PROPÓSITO:
+ *   Implementa el patrón Transactional Outbox para garantizar entrega
+ *   de eventos después de operaciones críticas (crear persona, actualizar
+ *   ubicación). Los eventos se persisten en la misma transacción que la
+ *   operación principal, luego se procesan asíncronamente.
+ *
+ * CARACTERÍSTICAS:
+ *   - addToOutbox: Persiste evento en MongoDB (atômico con operación principal)
+ *   - processOutbox: Procesa eventos pending en batches de 50
+ *   - Manejo de reintentos: max 5 attempts por evento
+ *   - Tipos de eventos: person-matching, manual-audit, ia-processing, geo-enrich
+ *
+ * FLUJO DE DATOS:
+ *   1. upsertPerson crea persona + addToOutbox('person-matching') en misma transacción
+ *   2. processOutbox (background) lee eventos pending cada 5s
+ *   3. Encola en BullMQ según tipo:
+ *      - person-matching → personMatchingQueue (busca coincidencias)
+ *      - geo-enrich → geoEnrich (busca desastres cercanos, actualiza urgencyScore)
+ *      - ia-processing → iaProcessQueue (IA para descripción/etiquetas)
+ *      - manual-audit → manualAuditQueue (revisión humana)
+ *   4. Marca evento como processed o failed (con retry count)
+ *
+ * GEO-ENRICHMENT (detalle):
+ *   - Busca desastres en radio de 30km (2dsphere query)
+ *   - Calcula urgency bonus según severidad/cercanía
+ *   - Actualiza metadata.urgencyScore (cap en 100)
+ *   - Vincula persona a desastres (possiblyRelatedDisasters array)
+ *
+ * SEGURIDAD:
+ *   - Eventos persistidos antes de procesar: garantiza entrega incluso si crash
+ *   - Retry con backoff implícito (5 intentos max)
+ *   - Logging de cada evento procesado (audit trail)
+ *   - Batch processing: previene memory leaks con colas grandes
+ *
+ * DECISIONES TÉCNICAS:
+ *   - BATCH_SIZE=50: balance entre throughput y memory
+ *   - POLL_INTERVAL_MS=5000: no sobre-cargar BD con queries constantes
+ *   - Eventos en MongoDB (no Redis): persistencia + queries complejas
+ *   - geo-enrich síncrono dentro de processOutbox (no es cola separada)
+ *
+ * PATRÓN RELACIONADO:
+ *   - Saga pattern: outbox es el "event publisher" de la saga
+ *   - CQRS: outbox separa write (command) de read (query) sides
+ *
+ * CÓMO USAR:
+ *   await addToOutbox('person-matching', { idHash: 'abc123' });
+ *   // processOutbox() se ejecuta en background cada 5s
+ */
 import { OutboxModel } from '../models/outbox.model';
 import { personMatchingQueue } from '../queues/person-matching.queue';
 import { addJobToIAQueue } from '../queues/ia-process.queue';
