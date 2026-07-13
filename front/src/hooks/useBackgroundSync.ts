@@ -90,13 +90,13 @@ export function useBackgroundSync() {
           // Éxito: elimina de IndexedDB.
           await db.offlineReports.delete(report.id!);
         } catch (err) {
-          console.error(`[Background Sync] Failed to sync report ID: ${report.id}`, err);
+          console.debug(`[Background Sync] Failed to sync report ID: ${report.id}`, err);
           // Reintentará en el próximo ciclo online.
           await db.offlineReports.update(report.id!, { status: 'draft_offline' });
         }
       }
     } catch (err) {
-      console.error('[Background Sync] Error during sync process:', err);
+      console.debug('[Background Sync] Error during sync process:', err);
     }
   };
 

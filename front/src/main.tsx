@@ -45,30 +45,42 @@ Sentry.init({
 });
 
 const FALLBACK_UI = (
-  <div style={{
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: '100vh', padding: '2rem',
-    background: 'var(--clr-bg)', color: 'var(--clr-text)',
-    fontFamily: "'Inter', system-ui, sans-serif", textAlign: 'center',
-    gap: '1rem',
-  }}>
-    <div style={{ fontSize: '3rem' }}>{'⚠️'}</div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Algo salió mal</h1>
-    <p style={{ color: 'var(--clr-text-muted)', maxWidth: 400, lineHeight: 1.5, margin: 0 }}>
-      Ocurrió un error inesperado. El equipo ya fue notificado. Intenta recargar la página.
-    </p>
-    <button
-      onClick={() => window.location.reload()}
-      style={{
-        marginTop: '0.5rem', padding: '0.75rem 2rem', borderRadius: 8,
-        border: 'none', background: 'var(--clr-primary)', color: '#fff',
-        fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-        fontFamily: 'inherit',
-      }}
-    >
-      Recargar página
-    </button>
-  </div>
+  <>
+    <style>{`
+      .fallback-ui {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; min-height: 100vh; padding: 2rem;
+        background: var(--clr-bg); color: var(--clr-text);
+        font-family: 'Inter', system-ui, sans-serif; text-align: center;
+        gap: 1rem;
+      }
+      .fallback-ui__icon { font-size: 3rem; }
+      .fallback-ui__title { font-size: 1.5rem; font-weight: 700; margin: 0; }
+      .fallback-ui__text {
+        color: var(--clr-text-muted); max-width: 400px;
+        line-height: 1.5; margin: 0;
+      }
+      .fallback-ui__btn {
+        margin-top: 0.5rem; padding: 0.75rem 2rem; border-radius: 8px;
+        border: none; background: var(--clr-primary); color: #fff;
+        font-weight: 700; font-size: 0.95rem; cursor: pointer;
+        font-family: inherit;
+      }
+    `}</style>
+    <div className="fallback-ui">
+      <div className="fallback-ui__icon">{'⚠️'}</div>
+      <h1 className="fallback-ui__title">Algo salió mal</h1>
+      <p className="fallback-ui__text">
+        Ocurrió un error inesperado. El equipo ya fue notificado. Intenta recargar la página.
+      </p>
+      <button
+        onClick={() => window.location.reload()}
+        className="fallback-ui__btn"
+      >
+        Recargar página
+      </button>
+    </div>
+  </>
 );
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';

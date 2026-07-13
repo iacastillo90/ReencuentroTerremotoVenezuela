@@ -110,7 +110,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                   onClick={() => { setNotifOpen(prev => !prev); setUserMenuOpen(false); }}
                   aria-haspopup="true" aria-expanded={notifOpen} title="Notificaciones">
                   <Bell size={20} />
-                  {unreadCount > 0 && <span className="notifications-badge">{unreadCount}</span>}
+                  {unreadCount > 0 && <span className="notifications-badge" aria-live="polite">{unreadCount}</span>}
                 </button>
                 {notifOpen && (
                   <div className="notifications-dropdown">

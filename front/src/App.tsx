@@ -31,6 +31,7 @@ import { useAuth } from './store/AuthContext';
 import { useBackgroundSync } from './hooks/useBackgroundSync';
 import { usePersons } from './hooks/usePersons';
 import { LoadingScreen } from './components/common/LoadingScreen';
+import { AUTH_VIEWS } from './constants/routes';
 import type { Person } from './types';
 
 const MapPage = lazy(() => import('./pages/Map/MapPage').then(m => ({ default: m.MapPage })));
@@ -63,10 +64,8 @@ function App() {
     searchQuery, setSearchQuery, loadMore,
   } = usePersons();
 
-  const AUTH_VIEWS: View[] = ['search', 'feed', 'map', 'profile'];
-
   const navigate = (v: View) => {
-    if (AUTH_VIEWS.includes(v) && !user) {
+    if ((AUTH_VIEWS as readonly string[]).includes(v) && !user) {
       setActiveView('login');
       return;
     }

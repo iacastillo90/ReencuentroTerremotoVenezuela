@@ -120,7 +120,7 @@ export function usePersons(): UsePersonsReturn {
         setPersons(!query && newOffset === 0 ? shuffle(combined) : combined);
       }
     } catch (e) {
-      console.error('Error fetching data:', e);
+      console.debug('Error fetching data:', e);
     }
   };
 
@@ -143,7 +143,7 @@ export function usePersons(): UsePersonsReturn {
       await fetchPersons(searchQuery, newOffset, true);
       setOffset(newOffset);
     } catch (e) {
-      console.error('Error loading more:', e);
+      console.debug('Error loading more:', e);
     } finally {
       setLoadingMore(false);
       isFetchingRef.current = false;
