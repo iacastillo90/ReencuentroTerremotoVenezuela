@@ -1,3 +1,19 @@
+/**
+ * jobs/reencuentro.job — Sincronización con API de Reencuentro
+ *
+ * PROPÓSITO:
+ *   Consulta la API pública de Reencuentro/ApoyaVe para obtener
+ *   reportes de personas y los sincroniza con la base de datos
+ *   mediante el adaptador y el servicio syncFromSource.
+ *
+ * CARACTERÍSTICAS:
+ *   - Paginación de la API externa
+ *   - Fallback a datos mock para desarrollo (ALLOW_MOCK_DATA)
+ *   - Usa syncFromSource para deduplicación por idHash
+ *
+ * @module reencuentro.job
+ */
+
 import { PersonModel } from '../models/unified-person.model';
 import crypto from 'crypto';
 import { ReencuentroAdapter } from '../adapters/reencuentro.adapter';

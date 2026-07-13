@@ -1,3 +1,17 @@
+/**
+ * jobs/proteccion-civil.job — Sincronización de alertas de Protección Civil
+ *
+ * PROPÓSITO:
+ *   Extrae información de vías cerradas y refugios habilitados desde
+ *   la API de Protección Civil y los registra como eventos de desastre.
+ *
+ * CARACTERÍSTICAS:
+ *   - Mapea vías cerradas como "landslide" y refugios como "social"
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module proteccion-civil.job
+ */
+
 import axios from 'axios';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess } from '../services/sync-state.service';

@@ -1,3 +1,20 @@
+/**
+ * jobs/gdacs.job — Sincronización de alertas globales GDACS
+ *
+ * PROPÓSITO:
+ *   Consulta el feed RSS de GDACS (Global Disaster Alert and Coordination
+ *   System) para detectar desastres naturales activos en el área de
+ *   Venezuela y los inserta como eventos de desastre.
+ *
+ * CARACTERÍSTICAS:
+ *   - Parseo de RSS con campos personalizados GDACS
+ *   - Filtro geoespacial por bounding box de Venezuela
+ *   - Mapeo de tipos: earthquake, flood, hurricane, fire
+ *   - Clasificación de severidad: Green → medium, Orange → high, Red → critical
+ *
+ * @module gdacs.job
+ */
+
 import Parser from 'rss-parser';
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';

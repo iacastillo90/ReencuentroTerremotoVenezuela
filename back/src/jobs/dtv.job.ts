@@ -1,3 +1,20 @@
+/**
+ * jobs/dtv.job — Scraper del sitio Desaparecidos Terremoto Venezuela
+ *
+ * PROPÓSITO:
+ *   Realiza scraping del sitio web desaparecidosterremotovenezuela.com
+ *   para extraer reportes de personas desaparecidas usando Puppeteer.
+ *
+ * CARACTERÍSTICAS:
+ *   - Navegación headless con Puppeteer por páginas
+ *   - Extracción de nombre, foto, estado y ubicación desde tarjetas HTML
+ *   - Fallback a datos mock para desarrollo (ALLOW_MOCK_DATA)
+ *   - Inserción masiva con bulkWrite y deduplicación por idHash
+ *   - Redacción de números de teléfono en datos raw
+ *
+ * @module dtv.job
+ */
+
 import { PersonModel } from '../models/unified-person.model';
 import puppeteer from 'puppeteer';
 import crypto from 'crypto';

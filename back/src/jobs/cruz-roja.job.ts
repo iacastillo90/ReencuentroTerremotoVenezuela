@@ -1,3 +1,17 @@
+/**
+ * jobs/cruz-roja.job — Sincronización de alertas de la Cruz Roja Venezolana
+ *
+ * PROPÓSITO:
+ *   Simula la extracción de requerimientos médicos y donaciones desde la
+ *   API de la Cruz Roja Venezolana y los registra como eventos sociales.
+ *
+ * CARACTERÍSTICAS:
+ *   - Genera alertas de donación de sangre e insumos quirúrgicos
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module cruz-roja.job
+ */
+
 import axios from 'axios';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess } from '../services/sync-state.service';

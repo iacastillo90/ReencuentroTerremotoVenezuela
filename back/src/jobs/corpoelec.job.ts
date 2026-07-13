@@ -1,3 +1,18 @@
+/**
+ * jobs/corpoelec.job — Sincronización de alertas de CORPOELEC
+ *
+ * PROPÓSITO:
+ *   Extrae alertas y comunicados oficiales del sitio web de CORPOELEC
+ *   mediante scraping y los inserta como eventos de desastre tipo "social".
+ *
+ * CARACTERÍSTICAS:
+ *   - Scraping del sitio web de CORPOELEC en busca de comunicados oficiales
+ *   - Fallback a datos de contingencia si el sitio está caído
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module corpoelec.job
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { DisasterEventModel } from '../models/disaster-event.model';

@@ -1,3 +1,23 @@
+/**
+ * jobs/firms.job — Sincronización de incendios satelitales (NASA FIRMS)
+ *
+ * PROPÓSITO:
+ *   Consulta la API de FIRMS (Fire Information for Resource Management System)
+ *   de la NASA para detectar focos de calor/incendios en el área objetivo
+ *   y los inserta como eventos de desastre tipo "fire".
+ *
+ * CARACTERÍSTICAS:
+ *   - Usa datos del sensor VIIRS_SNPP_NRT en tiempo real
+ *   - Filtra por bounding box de Venezuela
+ *   - Clasifica severidad según Fire Radiative Power (FRP)
+ *   - Inserción masiva con bulkWrite
+ *
+ * SEGURIDAD:
+ *   - Requiere FIRMS_API_KEY en variable de entorno
+ *
+ * @module firms.job
+ */
+
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';

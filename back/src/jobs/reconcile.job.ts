@@ -1,3 +1,20 @@
+/**
+ * jobs/reconcile.job — Reconciliación geoespacial y fuzzy matching
+ *
+ * PROPÓSITO:
+ *   Ejecuta dos procesos de reconciliación: cruce geoespacial entre
+ *   personas y desastres para ajustar urgencia, y fuzzy matching de
+ *   nombres para detectar posibles duplicados.
+ *
+ * CARACTERÍSTICAS:
+ *   - runGeospatialCrossover: asocia personas con desastres cercanos (50km)
+ *   - runFuzzyMatching: compara nombres con Levenshtein para flaggear duplicados
+ *   - Procesamiento concurrente con límite configurable
+ *   - Flaggea duplicados como pending_review para auditoría manual
+ *
+ * @module reconcile.job
+ */
+
 import { PersonModel } from '../models/unified-person.model';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { distance } from 'fastest-levenshtein';

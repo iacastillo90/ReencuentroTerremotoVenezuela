@@ -1,3 +1,19 @@
+/**
+ * jobs/funvisis.job — Sincronización de sismos de FUNVISIS
+ *
+ * PROPÓSITO:
+ *   Extrae los últimos sismos registrados por FUNVISIS (Fundación
+ *   Venezolana de Investigaciones Sismológicas) y los inserta como
+ *   eventos de desastre tipo "earthquake".
+ *
+ * CARACTERÍSTICAS:
+ *   - Consulta endpoint público de FUNVISIS
+ *   - Clasifica severidad según magnitud Richter
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module funvisis.job
+ */
+
 import axios from 'axios';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess, markSyncError } from '../services/sync-state.service';

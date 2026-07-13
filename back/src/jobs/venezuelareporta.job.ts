@@ -1,3 +1,18 @@
+/**
+ * jobs/venezuelareporta.job — Sincronización con VenezuelaReporta
+ *
+ * PROPÓSITO:
+ *   Consulta la API de VenezuelaReporta para obtener reportes de
+ *   personas y los sincroniza con la base de datos mediante paginación.
+ *
+ * CARACTERÍSTICAS:
+ *   - Paginación automática (offset) hasta agotar resultados
+ *   - Delay de 500ms entre páginas para evitar rate limiting
+ *   - Usa syncFromSource para deduplicación por idHash
+ *
+ * @module venezuelareporta.job
+ */
+
 import { VenezuelaReportaAdapter } from '../adapters/venezuelareporta.adapter';
 import { syncFromSource } from '../services/sync-source.service';
 import { logger } from '../utils/logger.util';

@@ -1,3 +1,19 @@
+/**
+ * jobs/usgs.job — Sincronización de sismos USGS
+ *
+ * PROPÓSITO:
+ *   Consulta la API de USGS (United States Geological Survey) para
+ *   obtener sismos recientes (magnitud ≥ 2.5) en el área de Venezuela
+ *   y los inserta como eventos de desastre tipo "earthquake".
+ *
+ * CARACTERÍSTICAS:
+ *   - Filtro por bounding box de Venezuela
+ *   - Clasifica severidad según magnitud
+ *   - Inserción masiva con bulkWrite
+ *
+ * @module usgs.job
+ */
+
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox } from '../utils/geo.util';

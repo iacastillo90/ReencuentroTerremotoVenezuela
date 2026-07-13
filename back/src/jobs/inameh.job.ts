@@ -1,3 +1,19 @@
+/**
+ * jobs/inameh.job — Sincronización de alertas meteorológicas de INAMEH
+ *
+ * PROPÓSITO:
+ *   Extrae alertas climáticas del sitio web del INAMEH (Instituto Nacional
+ *   de Meteorología e Hidrología) mediante scraping y las inserta como
+ *   eventos de desastre tipo "flood" o "hurricane".
+ *
+ * CARACTERÍSTICAS:
+ *   - Scraping de alertas meteorológicas del portal oficial
+ *   - Fallback si la estructura del sitio cambia
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module inameh.job
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { DisasterEventModel } from '../models/disaster-event.model';
