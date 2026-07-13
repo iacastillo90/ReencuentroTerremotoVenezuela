@@ -149,7 +149,19 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
     
     // 2. Extraer encoding facial si hay foto (solo adultos, por protección LOPNNA)
     if (!isMinor && rawData.photoUrl) {
-      faceEncoding = (await extractFaceEncoding(rawData.photoUrl)) || undefined;
+      let imageUrl = rawData.photoUrl;
+      if (imageUrl.startsWith('/api/media/')) {
+        const apiBaseUrl = process.env.API_BASE_URL || 'http://api:4000';
+        imageUrl = `${apiBaseUrl}${imageUrl}`;
+      }
+      faceEncoding = (await extractFaceEncoding(imageUrl)) || undefined;
+    }
+
+    let biometricHash = undefined;
+    if (faceEncoding && faceEncoding.length > 0) {
+      // Create a unique SHA-256 hash of the float array
+      const buffer = Buffer.from(new Float32Array(faceEncoding).buffer);
+      biometricHash = require('crypto').createHash('sha256').update(buffer).digest('hex').substring(0, 16);
     }
 
     // 3. Reconciliación e Inserción Idempotente
@@ -179,7 +191,8 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         source: rawData.source || 'manual',
         reportedBy: rawData.reportedBy,
         reporterIp: rawData.reporterIp,
-        reporterLocation: rawData.reporterLocation
+        reporterLocation: rawData.reporterLocation,
+        biometricHash: biometricHash
       }
     };
 
