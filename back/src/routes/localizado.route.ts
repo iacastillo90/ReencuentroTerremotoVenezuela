@@ -1,3 +1,19 @@
+/**
+ * routes/localizado.route.ts — Rutas de personas localizadas
+ *
+ * PROPÓSITO:
+ *   Rutas para consulta pública e ingesta de personas localizadas
+ *   en refugios/hospitales. El GET tiene rate limit de 30 req/min
+ *   y validación de query params. El POST requiere partner API key
+ *   con rate limit de 5 req/min.
+ *
+ * SEGURIDAD:
+ *   - GET: rate limit 30/min + validateQuery (sanitizedQueryParam)
+ *   - POST: requirePartnerApiKey + rate limit 5/min
+ *   - Zod validation: q/location sanitizados, limit max 500
+ *
+ * @module localizado.route
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';

@@ -1,3 +1,16 @@
+/**
+ * routes/partner.route.ts — Rutas de partners (integración)
+ *
+ * PROPÓSITO:
+ *   Rutas para integración con organizaciones aliadas. Ambos endpoints
+ *   requieren partner API key y tienen rate limit de 60 req/min.
+ *
+ * ENDPOINTS:
+ *   GET  /api/partner/cases — Consultar casos (paginado)
+ *   POST /api/partner/cases — Ingresar casos
+ *
+ * @module partner.route
+ */
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';

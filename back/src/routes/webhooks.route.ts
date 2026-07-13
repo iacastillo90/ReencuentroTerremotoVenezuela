@@ -1,3 +1,22 @@
+/**
+ * routes/webhooks.route.ts — Rutas de webhooks (n8n)
+ *
+ * PROPÓSITO:
+ *   Rutas para recibir webhooks de n8n (WhatsApp y Telegram). El
+ *   middleware requireWebhookApiKey protege TODA la ruta /n8n, y el
+ *   rate limit es de 30 req/min para evitar sobrecarga.
+ *
+ * SEGURIDAD:
+ *   - requireWebhookApiKey en toda la subruta /n8n
+ *   - Rate limit 30/min global en /n8n
+ *   - CSRF exento (autenticado via API key)
+ *
+ * ENDPOINTS:
+ *   POST /api/webhooks/n8n/whatsapp — Webhook WhatsApp
+ *   POST /api/webhooks/n8n/telegram — Webhook Telegram
+ *
+ * @module webhooks.route
+ */
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { requireWebhookApiKey } from '../middlewares/auth.middleware';

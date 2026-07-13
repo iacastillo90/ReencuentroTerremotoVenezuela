@@ -1,3 +1,17 @@
+/**
+ * routes/search-request.route.ts — Rutas de solicitudes de búsqueda
+ *
+ * PROPÓSITO:
+ *   Rutas CRUD para solicitudes de búsqueda de usuarios.
+ *   Todos los endpoints requieren autenticación.
+ *
+ * ENDPOINTS:
+ *   POST  /api/search-requests — Crear solicitud
+ *   GET   /api/search-requests/mine — Mis solicitudes
+ *   PATCH /api/search-requests/:id/status — Cambiar estado
+ *
+ * @module search-request.route
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireUser } from '../middlewares/auth.middleware';

@@ -1,3 +1,25 @@
+/**
+ * routes/media.route.ts — Rutas de subida de archivos multimedia
+ *
+ * PROPÓSITO:
+ *   Rutas para subir archivos multimedia (imágenes, audio, video)
+ *   con validación de tipo MIME, límite de tamaño, y rate limiting.
+ *   Usa multer con memoryStorage y validación por tipo.
+ *
+ * SEGURIDAD:
+ *   - requireUser: Solo usuarios autenticados
+ *   - Rate limit: 10 req / 15 min (previene abuso de almacenamiento)
+ *   - Multer fileFilter: Valida MIME type antes de procesar
+ *   - Tamaños limitados: 5MB imágenes, 20MB video/audio
+ *   - Tipos restringidos: Solo image/*, video/mp4, audio/*
+ *
+ * ENDPOINTS:
+ *   POST /api/media — Subir archivo general (foto/video)
+ *   POST /api/media/analyze-image — Analizar imagen con IA
+ *   POST /api/media/audio-transcribe — Transcribir audio
+ *
+ * @module media.route
+ */
 import { Router } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
