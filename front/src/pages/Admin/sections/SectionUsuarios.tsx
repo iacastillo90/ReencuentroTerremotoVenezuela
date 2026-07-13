@@ -65,7 +65,7 @@ export function SectionUsuarios() {
       setUsers(usersRes.data);
       setVerifications(verifRes.data);
     } catch (e) {
-      console.error(e);
+      console.debug(e);
       addToast('Error cargando datos (¿Eres admin?)', 'error');
     } finally {
       setLoading(false);

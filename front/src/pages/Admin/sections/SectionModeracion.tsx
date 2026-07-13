@@ -108,7 +108,7 @@ export function SectionModeracion() {
           const res = await api.get(`/admin/persons/${chattingPerson.idHash}/contacts`);
           setChatMessages(res.data);
         } catch (e) {
-          console.error(e);
+          console.debug(e);
         } finally {
           setChatLoading(false);
         }

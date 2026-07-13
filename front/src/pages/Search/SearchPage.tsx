@@ -28,6 +28,7 @@
  *   - No se exponen fotos ni datos reales de menores.
  */
 import React, { useReducer } from 'react';
+import * as Sentry from '@sentry/react';
 import { Search, ArrowLeft, ShieldCheck, Info } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { CategorySelector, SEARCH_CATEGORIES } from '../../components/common';
@@ -221,3 +222,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
     </div>
   );
 };
+
+export default Sentry.withErrorBoundary(SearchPage, {
+  fallback: <div className="error-boundary-fallback">Ocurrió un error al cargar la búsqueda.</div>
+});
