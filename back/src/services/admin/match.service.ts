@@ -27,18 +27,18 @@ export async function getAdminMatches(limit: number, offset: number) {
     { $limit: limit },
     {
       $lookup: {
-        from: 'unifiedpersons',
-        localField: 'person',
-        foreignField: '_id',
+        from: 'unifiedpeople',
+        localField: 'reportId',
+        foreignField: 'idHash',
         as: 'person'
       }
     },
     { $unwind: { path: '$person', preserveNullAndEmptyArrays: true } },
     {
       $lookup: {
-        from: 'unifiedpersons',
-        localField: 'matchedPerson',
-        foreignField: '_id',
+        from: 'unifiedpeople',
+        localField: 'matchedPersonId',
+        foreignField: 'idHash',
         as: 'matchedPerson'
       }
     },
