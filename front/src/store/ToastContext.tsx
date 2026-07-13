@@ -13,12 +13,6 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const COLORS = {
-  success: { bg: '#16a34a', border: '#15803d' },
-  error: { bg: '#dc2626', border: '#b91c1c' },
-  info: { bg: '#2563eb', border: '#1d4ed8' },
-};
-
 let toastId = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -37,56 +31,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <div style={{
-        position: 'fixed',
-        top: 16,
-        right: 16,
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-        pointerEvents: 'none',
-      }}>
-        {toasts.map(t => {
-          const c = COLORS[t.type];
-          return (
-            <div key={t.id} style={{
-              background: c.bg,
-              color: '#fff',
-              padding: '12px 16px',
-              borderRadius: 8,
-              border: `1px solid ${c.border}`,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              minWidth: 260,
-              maxWidth: 400,
-              pointerEvents: 'auto',
-              animation: 'none',
-            }}>
-              <span style={{ flex: 1 }}>{t.message}</span>
-              <button
-                onClick={() => removeToast(t.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '1.1rem',
-                  lineHeight: 1,
-                  padding: 0,
-                  opacity: 0.8,
-                }}
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-            </div>
-          );
-        })}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast-item ${t.type}`}>
+            <span>{t.message}</span>
+            <button
+              onClick={() => removeToast(t.id)}
+              className="toast-close"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );

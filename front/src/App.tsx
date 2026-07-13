@@ -168,7 +168,7 @@ function App() {
           )}
 
           {activeView === 'map' && (
-            <Sentry.ErrorBoundary fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-text-muted)' }}>El mapa no está disponible en este momento. Intenta de nuevo.</div>}>
+            <Sentry.ErrorBoundary fallback={<div className="sentry-fallback">El mapa no está disponible en este momento. Intenta de nuevo.</div>}>
               <Suspense fallback={<LoadingScreen text="Cargando mapa…" />}>
                 <MapPage persons={persons} disasters={disasters}
                   onSelectPerson={setSelectedPerson}

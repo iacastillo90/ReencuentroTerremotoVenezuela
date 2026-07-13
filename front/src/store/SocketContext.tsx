@@ -26,7 +26,7 @@ interface NotificationContextType {
 const SocketConnectionContext = createContext<SocketConnectionContextType | undefined>(undefined);
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || '';
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -47,7 +47,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const socketInstance = io(SOCKET_URL, {
       withCredentials: true,
       autoConnect: true,
-      transports: ['websocket', 'polling'],
     });
 
     socketInstance.on('connect', () => {
