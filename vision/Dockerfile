@@ -1,16 +1,11 @@
 # ======================================================
 # REENCUENTROS VISION — Microservicio de Reconocimiento Facial
 # ======================================================
-# FastAPI + face_recognition (dlib) para extraer embeddings faciales.
-# Construir:   docker build -t reencuentros-vision ./vision
-# Ejecutar:    docker run -p 8000:8000 reencuentros-vision
-# ======================================================
 
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-# Instalar dependencias del sistema necesarias para compilar dlib
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -21,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar e instalar dependencias Python primero (cache layer)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements.txt
@@ -33,25 +27,34 @@ FROM python:3.11-slim AS runner
 
 WORKDIR /app
 
-# Solo runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenblas0 \
     liblapack3 \
     libx11-6 \
+    libpng16-16 \
+    libjpeg62-turbo \
+    libwebp7 \
+    libsm6 \
+    libxext6 \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar paquetes instalados desde builder
-COPY --from=builder /root/.local /root/.local
+# Crear el usuario primero
+RUN groupadd -g 1001 reencuentro && \
+    useradd -r -u 1001 -g reencuentro -d /home/reencuentro reencuentro && \
+    mkdir -p /home/reencuentro && \
+    chown -R reencuentro:reencuentro /app /home/reencuentro
 
-ENV PATH=/root/.local/bin:$PATH \
+# Mover .local al home del usuario correcto para evitar error de permisos en /root
+COPY --from=builder /root/.local /home/reencuentro/.local
+RUN chown -R reencuentro:reencuentro /home/reencuentro/.local
+
+ENV PATH="/home/reencuentro/.local/bin:$PATH" \
+    PYTHONPATH="/home/reencuentro/.local/lib/python3.11/site-packages:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
     PORT=8000
 
 COPY main.py .
-
-RUN groupadd -g 1001 reencuentro && \
-    useradd -r -u 1001 -g reencuentro reencuentro && \
-    chown -R reencuentro:reencuentro /app
 
 USER reencuentro
 
