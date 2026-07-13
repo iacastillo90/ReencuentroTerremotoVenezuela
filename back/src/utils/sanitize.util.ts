@@ -1,3 +1,48 @@
+/**
+ * utils/sanitize.util.ts — Sanitización de entrada (XSS Prevention)
+ *
+ * PROPÓSITO:
+ *   Provee funciones y schemas Zod para sanitizar inputs de usuario
+ *   y prevenir ataques XSS y NoSQL injection. Toda entrada de texto
+ *   del usuario debe pasar por sanitize() o sanitizedString antes
+ *   de llegar a BD o ser renderizada.
+ *
+ * CARACTERÍSTICAS:
+ *   - sanitize(): Stripea todas las etiquetas HTML (sanitize-html)
+ *   - sanitizeWithOptions(): Versión configurable con opciones custom
+ *   - sanitizedString: Zod schema que trim + sanitize + valida longitud
+ *   - sanitizedStringOptional: Versión opcional para campos no requeridos
+ *   - sanitizedQueryParam: Para query params (con max 200 chars)
+ *   - safeIdString: Para IDs/hashes (solo trim + maxLength, sin HTML sanitize)
+ *   - redactPhoneNumbers: Reemplaza números telefónicos en strings
+ *
+ * FLUJO DE SANITIZACIÓN:
+ *   1. Zod schema recibe input del usuario
+ *   2. .trim() elimina espacios leading/trailing
+ *   3. .transform(sanitize) pasa por sanitize-html (elimina <script>, etc)
+ *   4. .pipe(z.string().max(N)) valida longitud final
+ *   5. Controller recibe string limpio y seguro
+ *
+ * SEGURIDAD:
+ *   - sanitizeHtml con allowedTags=[]: Elimina TODO el HTML (no solo scripts)
+ *   - Truncamiento a 10000 chars: Previene ReDoS con inputs gigantes
+ *   - safeIdString no sanitiza HTML: Para hashes/IDs que pueden contener +
+ *   - redactPhoneNumbers: Para logging (nunca exponer números en logs)
+ *   - No trust user input: Sanitización en capas (Zod + transform)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - 10000 char limit: Balance entre seguridad y utilidad
+ *   - sanitize-html sobre regex: Maneja HTML malformado, no solo <script>
+ *   - Zod pipe vs transform directo: Composable, reutilizable
+ *   - safeIdString separado: No dañar hashes/IDs con sanitize-html
+ *   - Re-export desde regex-escape.util: Evita duplicación (un punto de entrada)
+ *
+ * CÓMO USAR:
+ *   const safeName = sanitize(req.body.name);
+ *   const schema = z.object({ name: sanitizedString });
+ *   const safeQuery = z.object({ q: sanitizedQueryParam });
+ *   log.info({ phone: redactPhoneNumbers(user.phone) }, 'User registered');
+ */
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 

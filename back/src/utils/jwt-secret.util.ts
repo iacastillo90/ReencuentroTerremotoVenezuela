@@ -1,3 +1,19 @@
+/**
+ * utils/jwt-secret.util.ts — Resolución del secreto JWT
+ *
+ * PROPÓSITO:
+ *   Resuelve JWT_SECRET de forma segura: usa variable de entorno
+ *   JWT_SECRET en producción, con fallback a desarrollo (con warning).
+ *   En producción, si no hay JWT_SECRET, lanza error (no permite fallback).
+ *
+ * CARACTERÍSTICAS:
+ *   - JWT_SECRET desde process.env.JWT_SECRET
+ *   - Producción: Lanza error si no está definido
+ *   - Desarrollo: Fallback a randomBytes(64) o JWT_SECRET_DEV_FALLBACK
+ *   - Resolución singleton: Se ejecuta una vez al importar
+ *
+ * @module jwt-secret.util
+ */
 import crypto from 'crypto';
 import { logger } from './logger.util';
 

@@ -1,3 +1,21 @@
+/**
+ * utils/password.util.ts — Hashing de contraseñas con scrypt
+ *
+ * PROPÓSITO:
+ *   Provee hash y verificación de contraseñas usando scrypt (incluido
+ *   en Node, sin dependencias nativas). Usa comparación en tiempo
+ *   constante (timingSafeEqual) para prevenir timing attacks.
+ *
+ * CARACTERÍSTICAS:
+ *   - hashPassword: Salt 16 bytes + scrypt 64 bytes → formato "salt:hash"
+ *   - verifyPassword: Comparación en tiempo constante
+ *   - Sin dependencias nativas: Usa crypto de Node
+ *
+ * FORMATO ALMACENADO:
+ *   "<salt-hex>:<hash-hex>" (salt de 16 bytes + hash de 64 bytes)
+ *
+ * @module password.util
+ */
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 
