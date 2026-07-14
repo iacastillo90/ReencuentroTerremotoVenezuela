@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Activity, ShieldAlert, ArrowRight, Loader2, Database } from 'lucide-react';
+import { Activity, ShieldAlert, ArrowRight, Database } from 'lucide-react';
 import { api } from '../../../services/api';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { LoadingScreen } from '../../../components/common/LoadingScreen';

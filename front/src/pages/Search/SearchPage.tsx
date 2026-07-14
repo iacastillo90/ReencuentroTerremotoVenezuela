@@ -34,7 +34,7 @@ import { Button } from '../../components/ui/Button';
 import { CategorySelector, SEARCH_CATEGORIES } from '../../components/common';
 import { NormalSearchForm } from './components/NormalSearchForm';
 import { AiSearchForm } from './components/AiSearchForm';
-import { MOCK_RESULTS, ESTADOS_VE } from '../../services/mockSearchData';
+import { ESTADOS_VE } from '../../services/mockSearchData';
 import type { AgeCat, SearchFilters } from '../../services/mockSearchData';
 import './Search.css';
 import { FeedCard } from '../Feed/components/FeedCard';
