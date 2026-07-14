@@ -62,23 +62,25 @@ export async function vectorSearch(req: Request, res: Response, next: NextFuncti
 
     const { query } = parseResult.data;
 
+    let matches: any[] = [];
     const aiProvider = getAIProvider();
-    if (!aiProvider.generateEmbedding) {
-      return res.status(501).json({ error: 'Generación de embeddings no soportada' });
-    }
 
-    const queryEmbedding = await aiProvider.generateEmbedding(query);
-    if (!queryEmbedding) {
-      return res.status(500).json({ error: 'Error generando embedding para la consulta' });
+    try {
+      if (aiProvider.generateEmbedding) {
+        const queryEmbedding = await aiProvider.generateEmbedding(query);
+        if (queryEmbedding) {
+          matches = await queryPinecone(queryEmbedding, 15);
+        }
+      }
+    } catch (err) {
+      logger.warn({ err }, '[SearchRoute] Error generating embeddings or querying Pinecone, falling back to text search');
     }
-
-    const matches = await queryPinecone(queryEmbedding, 15);
 
     let sortedPersons: any[] = [];
     let isFallback = false;
 
     if (!matches || matches.length === 0) {
-      logger.info('[SearchRoute] Pinecone empty, using $text fallback');
+      logger.info('[SearchRoute] Using $text fallback');
       isFallback = true;
       sortedPersons = await PersonModel.find(
         { $text: { $search: query } },
