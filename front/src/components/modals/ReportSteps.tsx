@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, Info, Loader2, MapPin, Plus, ShieldAlert, Sparkles, Video, WifiOff } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
@@ -10,17 +10,40 @@ import { useReport } from './ReportContext';
 
 export const StepCategory: React.FC = () => {
   const { categoria, setCategoria, setStep } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+
   return (
     <div className="report-step-content">
-      <CategorySelector categories={DEFAULT_CATEGORIES} selected={categoria} onSelect={setCategoria} />
-      <button type="button" onClick={() => setStep(2)} className="btn-ai-assist">
-        <Sparkles size={20} /> Reportar con Asistente IA
-      </button>
-      <div className="sticky-bottom-action">
-        <div className="report-footer-privacy">
-          <Info size={14} />
-          <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+      <div className="figma-toggle">
+        <button type="button" onClick={() => setModo('manual')}
+          className={`figma-toggle-btn ${modo === 'manual' ? 'active' : ''}`}>
+          Manual
+        </button>
+        <button type="button" onClick={() => { setModo('ia'); setStep(2); }}
+          className={`figma-toggle-btn ${modo === 'ia' ? 'active' : ''}`}>
+          <Sparkles size={16} /> Con IA
+        </button>
+      </div>
+
+      <div className="step-paso-heading">
+        <span className="step-paso-num">Paso 1</span>
+        <span className="step-paso-desc">¿Qué categoría quieres reportar?</span>
+      </div>
+
+      <div className="figma-alert-card">
+        <Sparkles size={20} className="figma-alert-icon" />
+        <div className="figma-alert-body">
+          <strong>Reportar con Asistente IA</strong>
+          <p>Usa el asistente de voz. Trata de mencionar detalles como si es niño/adulto, cómo está vestido y características físicas.</p>
         </div>
+        <button type="button" onClick={() => setStep(2)} className="figma-alert-btn">
+          <Sparkles size={16} /> Usar
+        </button>
+      </div>
+
+      <CategorySelector categories={DEFAULT_CATEGORIES} selected={categoria} onSelect={setCategoria} />
+
+      <div className="sticky-bottom-action">
         <div className="step-submit-row">
           <Button fullWidth size="lg" onClick={() => setStep(3)} disabled={!categoria}>SIGUIENTE</Button>
         </div>

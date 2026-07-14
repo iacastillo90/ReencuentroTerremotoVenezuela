@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ShieldAlert, X, WifiOff } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, X } from 'lucide-react';
 import { BrandMark } from '../BrandMark';
 import { Button } from '../ui/Button';
 import {
@@ -72,17 +72,10 @@ const ReportModalInner: React.FC = () => {
                 <div key={d} className={`step-dot ${stepInfo && d <= stepInfo.dot ? 'active' : ''}`} />
               ))}
             </div>
-            <div className="step-header">
-              <div className="step-paso">{stepInfo?.paso}</div>
-              <div className="step-title">{stepInfo?.title}</div>
-            </div>
-            {step === 1 && (
-              <div className="report-notification">
-                <WifiOff className="notif-icon" size={20} />
-                <div className="notif-content">
-                  <div className="notif-title">Información importante</div>
-                  <div className="notif-text">El reporte lo puedes hacer incluso si no tienes señal.</div>
-                </div>
+            {step > 1 && (
+              <div className="step-header">
+                <div className="step-paso">{stepInfo?.paso}</div>
+                <div className="step-title">{stepInfo?.title}</div>
               </div>
             )}
           </>

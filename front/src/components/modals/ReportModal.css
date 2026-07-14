@@ -249,22 +249,141 @@
   flex-shrink: 0;
 }
 
+/* ═══ Paso 1: Heading (Título dentro del contenido) ═══ */
+.step-paso-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.step-paso-num {
+  font-size: 20px;
+  font-weight: 600;
+  color: #F6F7F8;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.step-paso-desc {
+  font-size: 16px;
+  font-weight: 600;
+  color: #CDCFD1;
+  letter-spacing: -0.01em;
+}
+
+/* ═══ Paso 1: Toggle Manual / Con IA ═══ */
+.figma-toggle {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 8px 4px 4px;
+  gap: 10px;
+  width: 196px;
+  height: 52px;
+  background: #202932;
+  border-radius: 50px;
+  margin-bottom: 20px;
+  align-self: center;
+}
+.figma-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: 50px;
+  padding: 12px;
+  height: 44px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.figma-toggle-btn:first-child {
+  width: 74px;
+}
+.figma-toggle-btn:last-child {
+  width: 100px;
+}
+.figma-toggle-btn.active {
+  background: #3E8DEB;
+  color: #FFFFFF;
+}
+
+/* ═══ Paso 1: Alert card (Asistente IA) ═══ */
+.figma-alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #191919;
+  border: 1px solid #444444;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.figma-alert-icon {
+  flex-shrink: 0;
+  color: #4497D6;
+  margin-top: 2px;
+}
+.figma-alert-body {
+  flex: 1;
+  min-width: 0;
+}
+.figma-alert-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+.figma-alert-body p {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8E8E93;
+  line-height: 1.4;
+  margin: 0;
+}
+.figma-alert-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 50px;
+  background: transparent;
+  color: #3E8DEB;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.figma-alert-btn:hover {
+  background: rgba(62, 141, 235, 0.12);
+}
+
 /* Step Progress Bar */
 .step-progress {
   display: flex;
-  gap: 20px;
-  padding: 0 16px;
+  gap: 4px;
+  padding: 12px 16px 0;
   background: #07101C;
 }
 .step-progress .step-dot {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: #49454F;
+  background: #9CA0A4;
   transition: background 0.4s ease;
 }
 .step-progress .step-dot.active {
-  background: #4497D6;
+  background: #3E8DEB;
 }
 
 /* Step Header */
@@ -289,39 +408,6 @@
   letter-spacing: -0.01em;
 }
 
-/* Notification Banner */
-.report-notification {
-  margin: 4px 16px 16px;
-  padding: 16px;
-  border-radius: 8px;
-  background: #4B4B4B;
-  border: 1px solid var(--clr-text-dim);
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.report-notification .notif-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  color: var(--clr-text-dim);
-  margin-top: 1px;
-}
-.report-notification .notif-content {
-  flex: 1;
-}
-.report-notification .notif-title {
-  font-size: var(--text-md);
-  font-weight: var(--weight-semibold);
-  color: var(--clr-text-dim);
-  margin-bottom: 4px;
-}
-.report-notification .notif-text {
-  font-size: var(--text-sm);
-  color: var(--clr-text-muted);
-  line-height: 1.4;
-}
-
 .report-modal-title {
   display: flex;
   align-items: center;
@@ -333,7 +419,9 @@
 }
 
 .report-modal-body {
-  padding: 1.5rem;
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .ai-notice {
@@ -872,30 +960,7 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Figma-aligned AI Assist Button */
-.btn-ai-assist {
-  width: 100%;
-  padding: 1rem;
-  margin: 0.5rem 0 1.5rem;
-  border-radius: 50px;
-  background: #4497D6;
-  border: none;
-  color: #fff;
-  font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-ai-assist:hover {
-  background: #3a86c0;
-}
-.btn-ai-assist:active {
-  background: #3075a9;
-}
+
 
 /* Figma-aligned Notification Card */
 .ai-notification-card {
@@ -954,10 +1019,10 @@ textarea::placeholder {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  aspect-ratio: 171/135;
+  aspect-ratio: 171/112;
   border-radius: 8px;
-  border: 1px solid #737373;
-  background: #07101C;
+  border: 1px solid #5B5B5B;
+  background: #2D2D2D;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
@@ -965,11 +1030,13 @@ textarea::placeholder {
   font-family: inherit;
 }
 .category-microcard:hover {
-  background: rgba(255,255,255,0.04);
+  background: #333333;
+  border-color: #6B6B6B;
 }
 .category-microcard.selected {
-  border-color: #4497D6;
-  background: rgba(68, 151, 214, 0.08);
+  border-color: #3E8DEB;
+  border-width: 3px;
+  background: #202932;
 }
 .category-microcard .card-icon {
   width: 32px;
@@ -977,20 +1044,20 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--clr-text-dim);
+  color: #AAAAAA;
 }
 .category-microcard.selected .card-icon {
-  color: #4497D6;
+  color: #3E8DEB;
 }
 .category-microcard .card-label {
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  color: var(--clr-text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  color: #D9D9D9;
   line-height: 1.3;
   white-space: pre-line;
 }
 .category-microcard.selected .card-label {
-  color: #4497D6;
+  color: #FFFFFF;
 }
 
 /* Figma-aligned Step Indicator */

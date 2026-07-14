@@ -111,6 +111,13 @@
   --clr-primary:    #2E6BEC;
   --clr-primary-glow: rgba(46, 107, 236, 0.28);
 
+  /* ═══ Figma accent tokens ═══
+     Colores extraídos del diseño Figma para Paso 1 de Reportar.
+     --figma-accent:    azul de botones y acentos (#3E8DEB).
+     --figma-blue-step: azul de progreso y selección (#4497D6). */
+  --figma-accent:     #3E8DEB;
+  --figma-blue-step:  #4497D6;
+
   /* ═══ Paletas secundarias (estados, sobre fondo oscuro) ═══ */
   --clr-danger:     #E52520;        /* texto de error/eliminar */
   --clr-danger-bg:  rgba(229, 37, 32, 0.12);   /* bg de badges de error */
