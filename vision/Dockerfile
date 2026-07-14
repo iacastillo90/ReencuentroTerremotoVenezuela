@@ -14,11 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-dev \
     libgtk-3-dev \
     python3-dev \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements.txt
+
+# Los modelos se copian directamente en la etapa 2.
 
 # ======================================================
 # ETAPA 2: Runner
@@ -37,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsm6 \
     libxext6 \
     libgl1 \
+    libgthread-2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear el usuario primero
@@ -47,7 +51,8 @@ RUN groupadd -g 1001 reencuentro && \
 
 # Mover .local al home del usuario correcto para evitar error de permisos en /root
 COPY --from=builder /root/.local /home/reencuentro/.local
-RUN chown -R reencuentro:reencuentro /home/reencuentro/.local
+COPY models /app/models
+RUN chown -R reencuentro:reencuentro /home/reencuentro/.local /app/models
 
 ENV PATH="/home/reencuentro/.local/bin:$PATH" \
     PYTHONPATH="/home/reencuentro/.local/lib/python3.11/site-packages:$PYTHONPATH" \
