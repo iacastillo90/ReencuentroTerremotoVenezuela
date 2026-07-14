@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Info, Loader2, MapPin, Plus, ShieldAlert, Sparkles, Video, WifiOff } from 'lucide-react';
+import { CheckCircle, Info, Loader2, MapPin, Plus, ShieldAlert, Sparkles, Video, WifiOff, ArrowLeft } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
 import { CustomSelect, CategorySelector, DEFAULT_CATEGORIES } from '../common';
@@ -25,20 +25,27 @@ export const StepCategory: React.FC = () => {
         </button>
       </div>
 
-      <div className="step-paso-heading">
+      <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
         <span className="step-paso-num">Paso 1</span>
-        <span className="step-paso-desc">¿Qué categoría quieres reportar?</span>
+        <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>¿Qué categoría quieres reportar?</span>
       </div>
 
-      <div className="figma-alert-card">
-        <Sparkles size={20} className="figma-alert-icon" />
-        <div className="figma-alert-body">
-          <strong>Reportar con Asistente IA</strong>
-          <p>Usa el asistente de voz. Trata de mencionar detalles como si es niño/adulto, cómo está vestido y características físicas.</p>
-        </div>
-        <button type="button" onClick={() => setStep(2)} className="figma-alert-btn">
-          <Sparkles size={16} /> Usar
-        </button>
+      <div style={{
+        width: '100%',
+        minHeight: '80px',
+        borderRadius: '8px',
+        border: '1px solid #444444',
+        backgroundColor: '#191919',
+        padding: '16px',
+        gap: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        marginBottom: '20px'
+      }}>
+        <WifiOff size={24} color="#94A3B8" style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: '14px', color: '#E2E8F0', lineHeight: '1.4', fontWeight: 500, paddingRight: '16px', maxWidth: '260px' }}>
+          El reporte lo puedes hacer incluso si no tienes señal.
+        </span>
       </div>
 
       <CategorySelector categories={DEFAULT_CATEGORIES} selected={categoria} onSelect={setCategoria} />
@@ -99,9 +106,41 @@ export const StepVoice: React.FC = () => {
 /* ─── PASO 3: CARACTERÍSTICAS FÍSICAS ─── */
 
 export const StepCharacteristics: React.FC = () => {
-  const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, setStep } = useReport();
+  const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, setStep, audioText } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+  
   return (
     <div className="report-step-content">
+      <div className="figma-toggle" style={{ margin: '0 auto 24px auto' }}>
+        <button type="button" onClick={() => setModo('manual')}
+          className={`figma-toggle-btn ${modo === 'manual' ? 'active' : ''}`}>
+          Manual
+        </button>
+        <button type="button" onClick={() => { setModo('ia'); setStep(2); }}
+          className={`figma-toggle-btn ${modo === 'ia' ? 'active' : ''}`}>
+          <Sparkles size={16} /> Con IA
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px', gap: 'min(50px, 10vw)' }}>
+        <button type="button" onClick={() => setStep(audioText ? 2 : 1)} style={{ 
+          background: 'none', 
+          border: '1px solid #CDCFD1', 
+          borderRadius: '50%',
+          width: '36px',
+          height: '36px',
+          padding: '0', 
+          cursor: 'pointer', 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <ArrowLeft size={18} color="#CDCFD1" />
+        </button>
+        <div className="step-paso-heading" style={{ margin: 0 }}>
+          <span className="step-paso-num">Paso 2 Características</span>
+        </div>
+      </div>
       <div className="figma-section">
         <label className="figma-section-label">Género</label>
         <div className="figma-card-group">

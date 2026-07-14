@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ShieldAlert, X } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, X, User } from 'lucide-react';
 import { BrandMark } from '../BrandMark';
 import { Button } from '../ui/Button';
 import {
@@ -11,6 +11,7 @@ import './ReportModal.css';
 
 interface ReportModalProps {
   onClose: () => void;
+  onNavigate?: (view: string) => void;
 }
 
 const stepInfoMap: Record<number, { dot: number; paso: string; title: string } | null> = {
@@ -22,7 +23,7 @@ const stepInfoMap: Record<number, { dot: number; paso: string; title: string } |
   6: { dot: 5, paso: 'Paso 5', title: 'Ubicación y envío' },
 };
 
-const ReportModalInner: React.FC = () => {
+const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ onNavigate }) => {
   const { step, setStep, error, setError, audioText, onClose } = useReport();
 
   const stepInfo = step < 7 ? stepInfoMap[step] : null;
@@ -45,7 +46,7 @@ const ReportModalInner: React.FC = () => {
       <div className="report-modal-content">
         <header className="report-modal-header">
           <div className="header-left-group">
-            {step > 1 && step < 7 && (
+            {step > 1 && step !== 3 && step < 7 && (
               <button onClick={() => {
                 if (step === 2) setStep(1);
                 else if (step === 3) setStep(audioText ? 2 : 1);
@@ -62,7 +63,17 @@ const ReportModalInner: React.FC = () => {
               </span>
             </div>
           </div>
-          <button className="header-close-btn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="nav-profile" onClick={() => {
+              onClose();
+              if (onNavigate) onNavigate('profile');
+            }} aria-label="Perfil">
+              <div className="profile-circle">
+                <User size={20} />
+              </div>
+            </button>
+            <button className="header-close-btn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button>
+          </div>
         </header>
 
         {step < 7 && (
@@ -72,7 +83,7 @@ const ReportModalInner: React.FC = () => {
                 <div key={d} className={`step-dot ${stepInfo && d <= stepInfo.dot ? 'active' : ''}`} />
               ))}
             </div>
-            {step > 1 && (
+            {step > 1 && step !== 3 && (
               <div className="step-header">
                 <div className="step-paso">{stepInfo?.paso}</div>
                 <div className="step-title">{stepInfo?.title}</div>
@@ -100,8 +111,8 @@ const ReportModalInner: React.FC = () => {
   );
 };
 
-export const ReportModal: React.FC<ReportModalProps> = ({ onClose }) => (
+export const ReportModal: React.FC<ReportModalProps> = ({ onClose, onNavigate }) => (
   <ReportProvider onClose={onClose}>
-    <ReportModalInner />
+    <ReportModalInner onNavigate={onNavigate} />
   </ReportProvider>
 );

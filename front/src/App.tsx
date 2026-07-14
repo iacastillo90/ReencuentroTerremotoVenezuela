@@ -223,6 +223,10 @@ function App() {
       {isReporting && (
         <ReportModal
           onClose={() => setIsReporting(false)}
+          onNavigate={(view) => {
+            setIsReporting(false);
+            navigate(view as View);
+          }}
         />
       )}
     </>
