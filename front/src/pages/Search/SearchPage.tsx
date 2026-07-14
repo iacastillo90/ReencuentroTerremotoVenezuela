@@ -107,9 +107,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
         const res = await api.post('/search/vector', { query: iaQuery });
         dispatch({ type: 'SEARCH_SUCCESS', results: res.data.matches || [], fallback: res.data.fallback ?? false });
       } else {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        const data = ageCategory ? (MOCK_RESULTS[ageCategory as AgeCat] || []) : [];
-        dispatch({ type: 'SEARCH_SUCCESS', results: data, fallback: false });
+        const params: Record<string, string> = {};
+        if (filters.name) params.q = filters.name;
+        if (ageCategory) params.category = ageCategory;
+        if (filters.estado) params.state = filters.estado;
+        if (filters.municipio) params.municipality = filters.municipio;
+        
+        const res = await api.get('/persons', { params });
+        dispatch({ type: 'SEARCH_SUCCESS', results: res.data.persons || [], fallback: false });
       }
     } catch (err) {
       console.error(err);
