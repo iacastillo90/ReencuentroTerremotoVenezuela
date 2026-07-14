@@ -64,7 +64,14 @@ connectDB('Worker');
 
 const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
 
-async function extractFaceEncoding(imageUrl: string): Promise<number[] | null> {
+interface FaceExtractResult {
+  encoding: number[] | null;
+  containsMinor: boolean;
+  containsMinorAges: Array<{ age_range: string; age_approx: number }>;
+}
+
+async function extractFaceEncoding(imageUrl: string): Promise<FaceExtractResult> {
+  const defaultResult: FaceExtractResult = { encoding: null, containsMinor: false, containsMinorAges: [] };
   try {
     const response = await fetch(`${VISION_SERVICE_URL}/extract-face`, {
       method: 'POST',
@@ -75,25 +82,40 @@ async function extractFaceEncoding(imageUrl: string): Promise<number[] | null> {
 
     if (!response.ok) {
       logger.warn({ status: response.status }, '[ia-processor] Vision service returned error');
-      return null;
+      return defaultResult;
     }
 
     const result = await response.json();
 
-    if (!result.face_detected || !result.face_encoding) {
-      logger.info('[ia-processor] No face detected in image');
-      return null;
+    const containsMinorAges: Array<{ age_range: string; age_approx: number }> = [];
+    let containsMinor = false;
+
+    if (result.faces && Array.isArray(result.faces)) {
+      for (const face of result.faces) {
+        if (face.age_approx && face.age_approx <= 20) {
+          containsMinor = true;
+          containsMinorAges.push({ age_range: face.age_range, age_approx: face.age_approx });
+        }
+      }
     }
 
-    logger.info({ dims: result.face_encoding.length }, '[ia-processor] Face encoding extracted');
-    return result.face_encoding;
+    if (!result.face_detected || !result.face_encoding) {
+      logger.info({ containsMinor }, '[ia-processor] No face encoding but age data may exist');
+      return { encoding: null, containsMinor, containsMinorAges };
+    }
+
+    logger.info(
+      { dims: result.face_encoding.length, containsMinor, minorAges: containsMinorAges },
+      '[ia-processor] Face encoding extracted'
+    );
+    return { encoding: result.face_encoding, containsMinor, containsMinorAges };
   } catch (error: any) {
     if (error.name === 'TimeoutError' || error.name === 'AbortError') {
       logger.warn('[ia-processor] Vision service timeout (35s)');
     } else {
       logger.warn({ err: error }, '[ia-processor] Vision service error');
     }
-    return null;
+    return defaultResult;
   }
 }
 
@@ -147,21 +169,34 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       }
     }
     
-    // 2. Extraer encoding facial si hay foto (solo adultos, por protección LOPNNA)
-    if (!isMinor && rawData.photoUrl) {
+    // 2. Extraer encoding facial + detección de edad (protección LOPNNA)
+    let containsMinor = false;
+    let containsMinorAges: Array<{ age_range: string; age_approx: number }> = [];
+
+    if (rawData.photoUrl) {
       let imageUrl = rawData.photoUrl;
       if (imageUrl.startsWith('/api/media/')) {
         const apiBaseUrl = process.env.API_BASE_URL || 'http://api:4000';
         imageUrl = `${apiBaseUrl}${imageUrl}`;
       }
-      faceEncoding = (await extractFaceEncoding(imageUrl)) || undefined;
+      const faceResult = await extractFaceEncoding(imageUrl);
+      faceEncoding = faceResult.encoding || undefined;
+      containsMinor = faceResult.containsMinor;
+      containsMinorAges = faceResult.containsMinorAges;
     }
 
     let biometricHash = undefined;
     if (faceEncoding && faceEncoding.length > 0) {
-      // Create a unique SHA-256 hash of the float array
       const buffer = Buffer.from(new Float32Array(faceEncoding).buffer);
       biometricHash = require('crypto').createHash('sha256').update(buffer).digest('hex').substring(0, 16);
+    }
+
+    // 3. Determinar auditStatus: si contiene menor, va a moderación LOPNNA
+    let auditStatus: UnifiedPerson['metadata']['auditStatus'] = 'clean';
+    if (containsMinor) {
+      auditStatus = 'flagged_moderation';
+    } else if (!rawData.source || rawData.source === 'manual') {
+      auditStatus = 'pending_moderation';
     }
 
     // 3. Reconciliación e Inserción Idempotente
@@ -184,7 +219,9 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         confidenceLabel: rawData.confidence_label,
         aiProcessed: !isMinor,
         isMinor: isMinor,
-        auditStatus: ((!rawData.source || rawData.source === 'manual') ? 'pending_moderation' : 'clean') as UnifiedPerson['metadata']['auditStatus'],
+        containsMinor: containsMinor,
+        containsMinorAges: containsMinorAges,
+        auditStatus: auditStatus,
         createdAt: new Date(),
         updatedAt: new Date(),
         lastSync: new Date(),
@@ -215,6 +252,8 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         confidenceLabel: z.string().optional(),
         aiProcessed: z.boolean(),
         isMinor: z.boolean(),
+        containsMinor: z.boolean().optional(),
+        containsMinorAges: z.array(z.object({ age_range: z.string(), age_approx: z.number() })).optional(),
         auditStatus: z.string(),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -223,6 +262,7 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
         reportedBy: z.any().optional(),
         reporterIp: z.string().optional(),
         reporterLocation: z.any().optional(),
+        biometricHash: z.string().optional(),
       }),
     });
 

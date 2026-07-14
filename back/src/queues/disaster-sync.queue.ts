@@ -96,5 +96,10 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '0 */12 * * *' }
   });
 
+  // BARRIDO LOPNNA cada 12 horas (Sanitización Histórica)
+  await disasterSyncQueue.add('sync-lopnna-sweep', {}, {
+    repeat: { pattern: '0 */12 * * *' }
+  });
+
   logger.info('[DisasterSync] Cron jobs registered.');
 }

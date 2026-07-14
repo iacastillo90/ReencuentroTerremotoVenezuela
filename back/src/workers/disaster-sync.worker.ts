@@ -43,6 +43,7 @@ import { runCorpoelecJob } from '../jobs/corpoelec.job';
 import { runProteccionCivilJob } from '../jobs/proteccion-civil.job';
 import { runCruzRojaJob } from '../jobs/cruz-roja.job';
 import { runBiometricSweepJob } from '../jobs/biometric-sweep.job';
+import { runLopnnaSweepJob } from '../jobs/lopnna-sweep.job';
 import { logger } from '../utils/logger.util';
 
 connectDB('Worker');
@@ -60,43 +61,35 @@ function getConcurrency(): number {
   return parsed;
 }
 
-const syncJobs: SyncJob[] = [
-  { name: 'USGS Earthquakes', handler: fetchUSGSEarthquakes },
-  { name: 'FIRMS Fires', handler: fetchFIRMSFires },
-  { name: 'GDACS', handler: fetchGDACS },
-  { name: 'Reencuentro Persons', handler: fetchReencuentroPersons },
-  { name: 'Venezuela Reporta', handler: fetchVenezuelaReporta },
-  { name: 'FUNVISIS', handler: runFunvisisJob },
-  { name: 'INAMEH', handler: runInamehJob },
-  { name: 'CORPOELEC', handler: runCorpoelecJob },
-  { name: 'Proteccion Civil', handler: runProteccionCivilJob },
-  { name: 'Cruz Roja', handler: runCruzRojaJob },
-  { name: 'Biometric Sweep', handler: runBiometricSweepJob },
-];
-
-const SYNC_DELAY_MS = 2000;
+const jobHandlers: Record<string, () => Promise<any>> = {
+  'sync-usgs': fetchUSGSEarthquakes,
+  'sync-firms': fetchFIRMSFires,
+  'sync-gdacs': fetchGDACS,
+  'sync-reencuentro': fetchReencuentroPersons,
+  'sync-venezuelareporta': fetchVenezuelaReporta,
+  'sync-funvisis': runFunvisisJob,
+  'sync-inameh': runInamehJob,
+  'sync-corpoelec': runCorpoelecJob,
+  'sync-proteccion-civil': runProteccionCivilJob,
+  'sync-cruz-roja': runCruzRojaJob,
+  'sync-biometric-sweep': runBiometricSweepJob,
+  'sync-lopnna-sweep': runLopnnaSweepJob,
+};
 
 export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) => {
-  const results: Array<{ name: string; status: 'fulfilled' | 'rejected'; error?: any }> = [];
-
-  for (const syncJob of syncJobs) {
-    try {
-      await syncJob.handler();
-      results.push({ name: syncJob.name, status: 'fulfilled' });
-    } catch (error) {
-      results.push({ name: syncJob.name, status: 'rejected', error });
-    }
-    await new Promise(r => setTimeout(r, SYNC_DELAY_MS));
+  const handler = jobHandlers[job.name];
+  
+  if (!handler) {
+    logger.warn({ jobName: job.name }, '[disaster-sync] Unknown job name');
+    return;
   }
 
-  const successCount = results.filter(r => r.status === 'fulfilled').length;
-  const failCount = results.filter(r => r.status === 'rejected').length;
-  logger.info({ jobId: job.id, successCount, total: syncJobs.length }, '[disaster-sync] Sync cycle completed');
-
-  if (failCount > 0) {
-    results
-      .filter(r => r.status === 'rejected')
-      .forEach(r => logger.error({ job: r.name, err: r.error }, '[disaster-sync] Sync failed'));
+  try {
+    await handler();
+    logger.info({ jobName: job.name, jobId: job.id }, '[disaster-sync] Sync completed successfully');
+  } catch (error) {
+    logger.error({ jobName: job.name, jobId: job.id, err: error }, '[disaster-sync] Sync failed');
+    throw error;
   }
 }, {
   connection: connection as any,
