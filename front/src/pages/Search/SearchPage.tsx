@@ -104,7 +104,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack }) => {
     dispatch({ type: 'SEARCH_START' });
     try {
       if (searchMode === 'ai') {
-        const res = await api.post('/api/search/vector', { query: iaQuery });
+        const res = await api.post('/search/vector', { query: iaQuery });
         dispatch({ type: 'SEARCH_SUCCESS', results: res.data.matches || [], fallback: res.data.fallback ?? false });
       } else {
         await new Promise(resolve => setTimeout(resolve, 600));
