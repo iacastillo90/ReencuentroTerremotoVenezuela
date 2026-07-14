@@ -53,6 +53,7 @@ import { getAdminMatches, updateMatchStatus } from '../services/admin/match.serv
 import { getAdminUsers, updateUserRole, updateUserStatus, getVerifications } from '../services/admin/user.service';
 import { getAdminSearches } from '../services/admin/search.service';
 import { createApiKey, listApiKeys, revokeApiKey } from '../services/api-key.service';
+import { listFlaggedPersons, blurPersonFaces, deletePersonPhoto, resolveFalsePositive } from '../services/admin/lopnna.service';
 
 const adminPutPersonSchema = z.object({
   name: sanitizedString.optional(),
@@ -295,6 +296,46 @@ export async function deleteApiKeyHandler(req: Request, res: Response, next: Nex
       return res.status(404).json({ error: 'Clave API no encontrada' });
     }
     return res.status(200).json({ message: 'Clave API revocada' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── LOPNNA — Protección de Menores ─────────────────────────────────
+
+export async function getLopnnaFlaggedHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const result = await listFlaggedPersons(limit, offset);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function lopnnaBlurHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await blurPersonFaces(asString(req.params.idHash), req.user?.userId || 'admin', req);
+    return res.status(result.status).json(result.error ? { error: result.error } : result.data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function lopnnaDeletePhotoHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await deletePersonPhoto(asString(req.params.idHash), req.user?.userId || 'admin', req);
+    return res.status(result.status).json(result.error ? { error: result.error } : result.data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function lopnnaFalsePositiveHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await resolveFalsePositive(asString(req.params.idHash), req.user?.userId || 'admin', req);
+    return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);
   }

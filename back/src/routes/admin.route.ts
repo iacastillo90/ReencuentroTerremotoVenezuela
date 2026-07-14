@@ -70,6 +70,7 @@ import {
   getVerificationsHandler, getAdminSearchesHandler,
   postApiKeyHandler, getApiKeysHandler, deleteApiKeyHandler,
   getAuditLogsHandler,
+  getLopnnaFlaggedHandler, lopnnaBlurHandler, lopnnaDeletePhotoHandler, lopnnaFalsePositiveHandler,
 } from '../controllers/admin.controller';
 import rateLimit from 'express-rate-limit';
 
@@ -104,5 +105,11 @@ router.get('/searches', getAdminSearchesHandler);
 router.post('/api-keys', postApiKeyHandler);
 router.get('/api-keys', getApiKeysHandler);
 router.delete('/api-keys/:id', deleteApiKeyHandler);
+
+// ─── LOPNNA — Protección de Menores ─────────────────────────────────
+router.get('/lopnna/flagged', getLopnnaFlaggedHandler);
+router.post('/lopnna/:idHash/blur', lopnnaBlurHandler);
+router.post('/lopnna/:idHash/delete-photo', lopnnaDeletePhotoHandler);
+router.post('/lopnna/:idHash/false-positive', lopnnaFalsePositiveHandler);
 
 export const adminRouter = router;

@@ -1358,3 +1358,228 @@
   height: 100%;
   border: none;
 }
+
+/* ═══════════════════════════════════════════════════════
+   LOPNNA — Auditoría de Protección de Menores
+   ═══════════════════════════════════════════════════════ */
+
+.lopnna-section {
+  padding: 1.5rem;
+}
+
+.lopnna-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.lopnna-stats {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lopnna-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.lopnna-badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+/* Grid de cards */
+.lopnna-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.lopnna-card {
+  background: var(--clr-surface, #1e1e2e);
+  border: 1px solid var(--clr-border, #2a2a3e);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.lopnna-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Foto */
+.lopnna-card-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--clr-surface-alt, #16162a);
+  overflow: hidden;
+}
+
+.lopnna-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lopnna-card-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--clr-text-muted, #6b7280);
+}
+
+.lopnna-card-photo-placeholder.hidden,
+.hidden {
+  display: none;
+}
+
+.lopnna-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+}
+
+.lopnna-age-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Body */
+.lopnna-card-body {
+  padding: 0.875rem 1rem;
+}
+
+.lopnna-card-body h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text, #f1f5f9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lopnna-card-meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted, #6b7280);
+}
+
+.lopnna-card-ages {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+  color: #f59e0b;
+}
+
+/* Actions */
+.lopnna-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--clr-border, #2a2a3e);
+}
+
+.lopnna-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  flex: 1;
+  justify-content: center;
+}
+
+.lopnna-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lopnna-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.lopnna-btn-sm {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.lopnna-btn-primary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.lopnna-btn-primary:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.lopnna-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.lopnna-btn-danger:not(:disabled):hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.lopnna-btn-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.lopnna-btn-success:not(:disabled):hover {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.lopnna-btn-secondary {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+/* Confirmación */
+.lopnna-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.25rem 0;
+}
+
+.lopnna-confirm span {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted, #6b7280);
+  text-align: center;
+}
+
+.lopnna-confirm-btns {
+  display: flex;
+  gap: 0.5rem;
+}

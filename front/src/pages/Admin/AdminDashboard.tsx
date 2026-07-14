@@ -28,7 +28,7 @@ import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import {
   LayoutDashboard, Users, ShieldCheck,
-  Search, ShieldAlert, ArrowLeft, Activity
+  Search, ShieldAlert, ArrowLeft, Activity, Baby
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { PersonRow, AdminCounts, AdminSection } from './types';
@@ -39,6 +39,7 @@ import { SectionModeracion } from './sections/SectionModeracion';
 import { SectionMatches } from './sections/SectionMatches';
 import { SectionUsuarios } from './sections/SectionUsuarios';
 import { SectionAuditoria } from './sections/SectionAuditoria';
+import { SectionLopnna } from './sections/SectionLopnna';
 import './AdminDashboard.css';
 import '../Profile/Profile.css';
 
@@ -58,14 +59,15 @@ interface AdminDashboardProps {
  * su propia key implícita en el map).
  */
 const NAV_ITEMS: { key: AdminSection; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
-  { key: 'resumen',    label: 'Resumen General',    Icon: LayoutDashboard },
-  { key: 'moderacion', label: 'Moderación (Nuevos)', Icon: ShieldAlert },
-  { key: 'matches',    label: 'Auditoría de Matches', Icon: Search },
-  { key: 'registros',  label: 'Control Registros',  Icon: ShieldCheck },
+  { key: 'resumen',    label: 'Resumen General',       Icon: LayoutDashboard },
+  { key: 'lopnna',     label: 'Auditoría LOPNNA',      Icon: Baby },
+  { key: 'moderacion', label: 'Moderación (Nuevos)',    Icon: ShieldAlert },
+  { key: 'matches',    label: 'Auditoría de Matches',   Icon: Search },
+  { key: 'registros',  label: 'Control Registros',      Icon: ShieldCheck },
   { key: 'busquedas',  label: 'Solicitudes (Familias)', Icon: Search },
-  { key: 'usuarios',   label: 'Usuarios (Roles)',   Icon: Users },
-  { key: 'auditoria',  label: 'Auditoría Sistema',  Icon: ShieldAlert },
-  { key: 'colas',      label: 'Colas (BullMQ)',     Icon: Activity },
+  { key: 'usuarios',   label: 'Usuarios (Roles)',       Icon: Users },
+  { key: 'auditoria',  label: 'Auditoría Sistema',      Icon: ShieldAlert },
+  { key: 'colas',      label: 'Colas (BullMQ)',          Icon: Activity },
 ];
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
@@ -107,6 +109,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
   // Título dinámico de la sección activa (se muestra en la topbar).
   const sectionTitle = {
     resumen: 'Resumen General',
+    lopnna: 'Auditoría LOPNNA — Protección de Menores',
     moderacion: 'Moderación de Reportes',
     matches: 'Revisión y Fusión de Perfiles',
     registros: 'Control de Registros',
@@ -164,6 +167,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
         {/* Contenido dinámico según sección activa */}
         <div className="admin-content">
           <Sentry.ErrorBoundary fallback={<div className="admin-section-fallback">Error al cargar la sección.</div>}>
+            {activeSection === 'lopnna' && <SectionLopnna />}
             {activeSection === 'resumen' && <SectionResumen counts={counts} />}
             {activeSection === 'moderacion' && <SectionModeracion />}
             {activeSection === 'matches' && <SectionMatches />}

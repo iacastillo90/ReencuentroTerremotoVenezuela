@@ -45,7 +45,7 @@ export const adminUpdateUserStatusSchema = z.object({
 });
 
 export const adminAuditStatusQuerySchema = z.object({
-  auditStatus: z.enum(['pending_moderation', 'pending_review', 'approved', 'rejected', 'dismissed']).optional(),
+  auditStatus: z.enum(['pending_moderation', 'pending_review', 'approved', 'rejected', 'dismissed', 'flagged_moderation']).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(200),
   offset: z.coerce.number().int().min(0).default(0),
 });
