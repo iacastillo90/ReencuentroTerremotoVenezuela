@@ -113,6 +113,12 @@ export async function vectorSearch(req: Request, res: Response, next: NextFuncti
         delete cleanPerson.data.cedula_hash;
         delete cleanPerson.data.contactPerson;
       }
+      
+      // LOPNNA Protection: Censurar foto si la IA detectó un menor pero el admin aún no lo revisa
+      if (cleanPerson.metadata && cleanPerson.metadata.auditStatus === 'flagged_moderation') {
+        delete cleanPerson.photoUrl;
+      }
+      
       return cleanPerson;
     });
 
