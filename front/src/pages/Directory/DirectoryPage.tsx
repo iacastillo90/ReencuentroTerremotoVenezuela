@@ -1,4 +1,32 @@
+/**
+ * pages/Directory/DirectoryPage.tsx — Directorio de organizaciones verificadas
+ *
+ * PROPÓSITO:
+ *   Lista de organizaciones autorizadas que participan en la respuesta
+ *   al terremoto. Cada organización tiene un ID único, especialidad,
+ *   canal de coordinación y rol.
+ *
+ * USO:
+ *   - Público: muestra qué organizaciones están coordinando.
+ *   - Click en una card → navega a LibraryPage (más recursos).
+ *
+ * ORGANIZACIONES (hardcoded por ahora):
+ *   - Protección Civil Nacional (PC-VEN-001)
+ *   - Bomberos Distrito Capital (BOM-DTC-002)
+ *   - Cruz Roja Venezolana (CR-VEN-003)
+ *   - Noticiero Emergencia VE (NEV-VEN-004)
+ *   - Brigada Rescate K-SAR (KSAR-VEN-005)
+ *   - Bienestar Animal VE (FUN-ANI-006)
+ *
+ * CADA CARD MUESTRA:
+ *   - ID de la organización (código único).
+ *   - Badge "Certificado".
+ *   - Nombre.
+ *   - Especialidad (qué hacen).
+ *   - Canal de coordinación + rol.
+ */
 import { BadgeCheck, Radio, Building2 } from 'lucide-react';
+import type { View } from '../../types';
 import './Directory.css';
 
 interface Org {
@@ -19,7 +47,7 @@ const ORGS: Org[] = [
 ];
 
 interface DirectoryPageProps {
-  onNavigate?: (view: any) => void;
+  onNavigate?: (view: View) => void;
 }
 
 export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
@@ -36,11 +64,10 @@ export function DirectoryPage({ onNavigate }: DirectoryPageProps) {
 
       <div className="directory-grid">
         {ORGS.map(org => (
-          <article 
-            key={org.id} 
-            className="org-card surface-card" 
+          <article
+            key={org.id}
+            className="org-card surface-card"
             onClick={() => onNavigate?.('library')}
-            style={{ cursor: 'pointer' }}
           >
             <div className="org-card-top">
               <span className="org-id">{org.id}</span>

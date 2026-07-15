@@ -1,9 +1,44 @@
+/**
+ * app — Configuración de la aplicación Express
+ *
+ * PROPÓSITO:
+ *   Inicializa y configura la aplicación Express con todos los middleware
+ *   globales: seguridad (Helmet, CORS, CSP, rate limiting), parseo de
+ *   cuerpo, protección CSRF, logging, compresión y registro de rutas.
+ *
+ * CARACTERÍSTICAS:
+ *   - Helmet con CSP en modo reportOnly para desarrollo
+ *   - CORS restringido a orígenes permitidos (CORS_ORIGINS)
+ *   - Rate limiting global configurable (500 req / 15 min por defecto)
+ *   - CSRF double-submit cookie pattern
+ *   - Correlation ID para trazabilidad de peticiones
+ *   - Endpoint /health con estado de MongoDB y Redis
+ *   - Sentry error handler integrado
+ *
+ * SEGURIDAD:
+ *   - Helmet HSTS con preload y maxAge 1 año
+ *   - Referrer Policy estricta
+ *   - Prevención de parameter pollution (hpp)
+ *   - Límite de cuerpo JSON a 1MB
+ *
+ * ENDPOINTS:
+ *   GET  /health                         — Health check (MongoDB + Redis)
+ *   GET  /debug-sentry                   — Sentry verification (intentional error)
+ *   GET  /api/admin/queues               — Bull Board UI (admin)
+ *   POST /api/csp-report                 — CSP violation report endpoint
+ *
+ * @module app
+ */
+
+import * as Sentry from '@sentry/node';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import { personRouter } from './routes/person.route';
 import { webhooksRouter } from './routes/webhooks.route';
@@ -15,34 +50,50 @@ import { partnerRouter } from './routes/partner.route';
 import { localizadoRouter } from './routes/localizado.route';
 import { contactRouter } from './routes/contact.route';
 import { cneRouter } from './routes/cne.route';
+import { searchRouter } from './routes/search.route';
+import { matchesRouter } from './routes/matches.route';
 import { requireAdminApiKey } from './middlewares/auth.middleware';
-import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
 import { csrfProtection } from './middlewares/csrf.middleware';
+import { auditLog } from './middlewares/audit.middleware';
+import { errorHandler } from './middlewares/error.middleware';
+import { correlationMiddleware } from './middlewares/correlation.middleware';
+import { buildAllowedOrigins, isOriginAllowed } from './utils/cors.util';
+import { logger } from './utils/logger.util';
+import { bullBoardRouter } from './services/bull-board.service';
+import { connection as redis } from './config/redis.config';
 
 const app = express();
 
 // Trust reverse proxy (necesario en Render para rate limiting y cookies 'secure')
 app.set('trust proxy', 1);
 
-// --- 1. Seguridad HTTP con Helmet + CSP ---
+// --- 1a. Correlation ID (antes que cualquier logging) ---
+app.use(correlationMiddleware);
+
+// --- 1b. Seguridad HTTP con Helmet + CSP ---
+const isDev = process.env.NODE_ENV !== 'production';
+const frameAncestors = ["'self'"];
+if (isDev) frameAncestors.push('http://localhost:5173');
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
-    reportOnly: process.env.CSP_ENFORCE !== 'true',
+    reportOnly: !isDev,
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
+      styleSrc: isDev ? ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'] : ["'self'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https://*.googleapis.com'],
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       objectSrc: ["'none'"],
-      frameSrc: ["'none'"],
+      frameAncestors,
       baseUri: ["'self'"],
       formAction: ["'self'"],
       reportUri: '/api/csp-report',
     },
   },
+  crossOriginEmbedderPolicy: isDev ? false : true,
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
@@ -65,12 +116,12 @@ app.use(cors({
       return callback(null, true);
     }
 
-    console.error(`[CORS RECHAZADO] Origin del cliente: '${origin}'. Valores permitidos en Render:`, [...corsOrigins]);
+    logger.error({ origin }, '[CORS] Origin rejected');
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-partner-api-key', 'x-csrf-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-partner-api-key', 'x-csrf-token', 'sentry-trace', 'baggage'],
 }));
 
 // --- 3. Logging de peticiones HTTP (Morgan) ---
@@ -87,7 +138,10 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// --- 5. Cookie parser (needed for CSRF) ---
+// --- 5. Compression (gzip/brotli) ---
+app.use(compression());
+
+// --- 6. Cookie parser (needed for CSRF) ---
 app.use(cookieParser());
 
 // --- 6. CSRF Protection ---
@@ -100,6 +154,12 @@ app.use(hpp());
 // --- 8. Rutas de la Aplicación ---
 app.use('/api/persons', personRouter);
 app.use('/api/webhooks', webhooksRouter);
+// Panel de monitoreo de colas BullMQ (debe ir ANTES del adminRouter genérico)
+// Nota: middleware que elimina X-Frame-Options solo para esta ruta (necesario para iframe desde frontend)
+app.use('/api/admin/queues', (_req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  next();
+}, requireAdminApiKey, bullBoardRouter);
 // Ruta administrativa protegida
 app.use('/api/admin', requireAdminApiKey, adminRouter);
 app.use('/api/disasters', disastersRouter);
@@ -109,10 +169,29 @@ app.use('/api/partners', partnerRouter);
 app.use('/api/localizados', localizadoRouter);
 app.use('/api/contacts', contactRouter);
 app.use('/api/cne', cneRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/matches', matchesRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get('/health', async (req, res) => {
+  const checks: Record<string, string> = {};
+
+  checks.mongodb = mongoose.connection.readyState === 1 ? 'ok' : 'disconnected';
+  checks.redis = redis.status === 'ready' ? 'ok' : redis.status;
+
+  const allOk = Object.values(checks).every(v => v === 'ok');
+
+  res.status(allOk ? 200 : 503).json({ status: allOk ? 'ok' : 'degraded', checks });
 });
+
+// Sentry verification endpoint (intentional error)
+app.get('/debug-sentry', (req, res) => {
+  throw new Error('My first Sentry error!');
+});
+
+// --- 9. Sentry Error Handler (debe ir antes del nuestro) ---
+Sentry.setupExpressErrorHandler(app);
+
+// --- 10. Error handling middleware (must be last) ---
+app.use(errorHandler);
 
 export default app;

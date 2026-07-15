@@ -1,7 +1,43 @@
+/**
+ * services/reconciliation.service.ts — Motor de reconciliación / dedup
+ *
+ * PROPÓSITO:
+ *   Implementa el algoritmo de reconciliación para detectar si una
+ *   persona nueva es duplicado de una existente. Usa similitud de
+ *   nombres (fuzzy matching) + coincidencia de ubicación para decidir
+ *   entre: auto-merge (>95%), pending audit (85-95%), o insert (nuevo).
+ *
+ * CARACTERÍSTICAS:
+ *   - findSimilarPersons: Busca candidatos similares por nombre + estado
+ *   - processAndReconcilePerson: Pipeline completo de reconciliación
+ *   - 3 niveles: auto-merge (≥95%), pending audit (≥85%), insert (nuevo)
+ *   - Usa calculateSimilarity (fuzzy-match) + Transactional Outbox
+ *
+ * FLUJO DE RECONCILIACIÓN:
+ *   1. Persona nueva llega con normalizedName + lastSeen.state
+ *   2. findSimilarPersons: Busca candidatos en mismo estado
+ *   3. Regex parcial con primeras 3 palabras del nombre
+ *   4. calculateSimilarity compara con cada candidato
+ *   5. Si score ≥ 0.95: upsertPerson manteniendo nombre/edad original (mismo idHash)
+ *   6. Si score ≥ 0.85: addToOutbox('manual-audit') para revisión humana
+ *   7. Si score < 0.85: insert como nuevo registro
+ *
+ * INTERFACES:
+ *   SimilarityResult { person: UnifiedPerson; score: number }
+ *
+ * SEGURIDAD:
+ *   - Regex escapado (escapeRegExp): Previene ReDoS desde nombres maliciosos
+ *   - Límite 500 candidatos: Previene DoS por matching masivo
+ *   - threshold configurable: 0.85 default (balance recall/precisión)
+ *   - auto-merge solo >95%: Previene fusiones incorrectas
+ *
+ * @module reconciliation.service
+ */
 import { PersonModel, UnifiedPerson } from '../models/unified-person.model';
 import { calculateSimilarity } from '../utils/fuzzy-match.util';
-import { addJobToManualAudit } from '../queues/manual-audit.queue';
+import { addToOutbox } from './outbox.service';
 import { upsertPerson } from './person.service';
+import { AuditLogModel } from '../models/audit-log.model';
 
 export interface SimilarityResult {
   person: UnifiedPerson;
@@ -9,9 +45,17 @@ export interface SimilarityResult {
 }
 
 export async function findSimilarPersons(normalizedName: string, state: string, threshold: number = 0.85): Promise<SimilarityResult[]> {
-  // To avoid scanning the entire database, we filter by the state where the person was last seen.
-  // In a highly optimized setup, we could use n-grams or text indexes.
-  const candidates = await PersonModel.find({ 'lastSeen.state': state }).lean();
+  const nameParts = normalizedName.split(' ').filter(Boolean);
+  const escapeRegExp = (text: string) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+  const safeParts = nameParts.slice(0, 3).map(escapeRegExp);
+  const nameFilter = safeParts.length > 0
+    ? { normalizedName: { $regex: safeParts.join('|'), $options: 'i' } }
+    : {};
+
+  const candidates = await PersonModel.find({
+    'lastSeen.state': state,
+    ...nameFilter,
+  }).limit(500).lean();
   
   const matches: SimilarityResult[] = [];
   
@@ -22,7 +66,6 @@ export async function findSimilarPersons(normalizedName: string, state: string, 
     }
   }
   
-  // Sort from highest similarity to lowest
   return matches.sort((a, b) => b.score - a.score);
 }
 
@@ -36,6 +79,53 @@ export async function processAndReconcilePerson(
     throw new Error('Missing required fields: normalizedName or lastSeen.state');
   }
 
+  // Helper to log auto-merges
+  const logAutoMerge = async (masterId: string, incomingName: string, matchedName: string, reason: string, score: number) => {
+    await AuditLogModel.create({
+      eventType: 'system_action',
+      severity: 'warning',
+      actor: 'system',
+      action: 'auto_merge',
+      resource: masterId,
+      detail: { incomingName, matchedName, reason, score },
+      ip: personData.metadata?.reporterIp || 'unknown',
+      timestamp: new Date()
+    });
+    
+    // Si el nombre es diferente, lo agregamos como alias usando update
+    if (incomingName && incomingName.toLowerCase() !== matchedName.toLowerCase()) {
+      await PersonModel.updateOne(
+        { idHash: masterId },
+        { $addToSet: { aliases: incomingName } }
+      );
+    }
+  };
+
+  // 1. Exact Biometric Match (Same photo)
+  if (personData.metadata?.biometricHash) {
+    const existingBiometricMatch = await PersonModel.findOne({ 'metadata.biometricHash': personData.metadata.biometricHash }).lean();
+    if (existingBiometricMatch) {
+      // Enviar a auditoría manual en lugar de auto-fusionar
+      await addToOutbox('manual-audit', {
+        incoming: { source, externalId, personData },
+        candidates: [{ idHash: existingBiometricMatch.idHash, name: existingBiometricMatch.name, score: 1.0 }]
+      } as Record<string, unknown>);
+      
+      // Ya no hace auto-merge, sino que avisa al log (como info)
+      await AuditLogModel.create({
+        eventType: 'system_action',
+        severity: 'info',
+        actor: 'system',
+        action: 'sent_to_audit',
+        resource: existingBiometricMatch.idHash,
+        detail: { incomingName: personData.name, matchedName: existingBiometricMatch.name, reason: 'Biometric Hash', score: 1.0 },
+        ip: personData.metadata?.reporterIp || 'unknown',
+        timestamp: new Date()
+      });
+      return { status: 'pending_audit', message: 'Sent to manual audit due to exact biometric hash match.' };
+    }
+  }
+
   const similarCandidates = await findSimilarPersons(personData.normalizedName, personData.lastSeen.state);
 
   if (similarCandidates.length > 0) {
@@ -47,20 +137,22 @@ export async function processAndReconcilePerson(
       const mergedPerson = await upsertPerson(source, externalId, {
         ...personData,
         normalizedName: topCandidate.person.normalizedName,
-        name: topCandidate.person.name, // Keep existing name string
-        age: topCandidate.person.age, // Keep existing age to ensure idHash stays identical
+        name: topCandidate.person.name,
+        age: topCandidate.person.age,
         metadata: {
           ...personData.metadata,
-          auditStatus: 'merged'
+          auditStatus: 'merged',
         } as any
       });
+      
+      await logAutoMerge(mergedPerson.idHash, personData.name || 'Desconocido', topCandidate.person.name, 'High Similarity Name', topCandidate.score);
       return { status: 'auto-merged', idHash: mergedPerson.idHash, message: 'Merged with existing record due to high similarity (>95%).' };
     } else {
-      // Send to manual audit queue if similarity is between 85% and 94.9%
-      await addJobToManualAudit({
+      // Send to manual audit queue via Transactional Outbox
+      await addToOutbox('manual-audit', {
         incoming: { source, externalId, personData },
         candidates: similarCandidates.map(c => ({ idHash: c.person.idHash, name: c.person.name, score: c.score }))
-      });
+      } as Record<string, unknown>);
       return { status: 'pending_audit', message: 'Sent to manual audit due to possible duplicate.' };
     }
   }
@@ -69,3 +161,4 @@ export async function processAndReconcilePerson(
   const newPerson = await upsertPerson(source, externalId, personData);
   return { status: 'inserted', idHash: newPerson.idHash, message: 'Inserted as new record.' };
 }
+

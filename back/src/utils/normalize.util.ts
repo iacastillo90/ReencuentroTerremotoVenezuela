@@ -1,3 +1,25 @@
+/**
+ * utils/normalize.util.ts — Normalización + Censura PII
+ *
+ * PROPÓSITO:
+ *   Convierte registros raw de cualquier adaptador al formato normalizado
+ *   unificado. Actúa como Censor PII: elimina datos sensibles (cédula,
+ *   teléfono, dirección) antes de persistir, reemplazándolos con hashes.
+ *
+ * CARACTERÍSTICAS:
+ *   - normalize: Transforma RawRecord → NormalizedRecord
+ *   - Censura cédula: hashSensitiveData (SHA-256)
+ *   - Censura teléfono: normalizePhoneVE + hashSensitiveData
+ *   - Purga campos sensibles: diagnóstico, historia_clínica, dirección exacta
+ *   - Checksum MD5: Para idempotencia por origen (sync state)
+ *
+ * CAMPOS PURGADOS:
+ *   cedula → cedula_hash (hash)
+ *   telefono_privado → contact_hash (E.164 + hash)
+ *   diagnostico, historia_clinica, telefono, direccion_exacta → eliminados
+ *
+ * @module normalize.util
+ */
 import crypto from 'crypto';
 import { normalizeCedula, normalizePhoneVE, hashSensitiveData } from '../validators/venezuela.validator';
 

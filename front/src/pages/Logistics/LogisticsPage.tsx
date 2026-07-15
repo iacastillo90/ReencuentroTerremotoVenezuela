@@ -1,3 +1,29 @@
+/**
+ * pages/Logistics/LogisticsPage.tsx — Vista de logística y ayuda
+ *
+ * PROPÓSITO:
+ *   Lista de alertas logísticas: centros de acopio, vías bloqueadas,
+ *   refugios, etc. Filtra los disasters[] que vienen de fuentes
+ *   de Protección Civil y Cruz Roja.
+ *
+ * OPTIMIZACIÓN PARA OFFLINE:
+ *   La vista está diseñada para bajo consumo de datos y batería.
+ *   No muestra mapas ni imágenes — solo texto plano con iconos.
+ *   Ideal para zonas con conexión intermitente.
+ *
+ * FILTRO:
+ *   Solo muestra disasters de:
+ *   - proteccion-civil-gov
+ *   - cruz-roja-ve
+ *   - metadata.subType === 'refugio'
+ *   - metadata.subType === 'via_cerrada'
+ *
+ * ICONOS POR FUENTE:
+ *   - Protección Civil: ShieldAlert
+ *   - Cruz Roja: MapPin
+ *   - Deslizamiento: AlertTriangle
+ *   - Otros: Truck
+ */
 import React from 'react';
 import { ShieldAlert, MapPin, AlertTriangle, Truck } from 'lucide-react';
 import type { Disaster } from '../../types';
@@ -8,11 +34,10 @@ interface LogisticsPageProps {
 }
 
 export const LogisticsPage: React.FC<LogisticsPageProps> = ({ disasters }) => {
-  // Filtramos solo los de Protección Civil y Cruz Roja (o tipos específicos)
-  const logistics = disasters.filter(d => 
-    d.source === 'proteccion-civil-gov' || 
+  const logistics = disasters.filter(d =>
+    d.source === 'proteccion-civil-gov' ||
     d.source === 'cruz-roja-ve' ||
-    d.metadata?.subType === 'refugio' || 
+    d.metadata?.subType === 'refugio' ||
     d.metadata?.subType === 'via_cerrada'
   );
 

@@ -1,3 +1,19 @@
+/**
+ * services/ai/ai.interface — Interfaces y tipos para proveedores de IA
+ *
+ * PROPÓSITO:
+ *   Define el contrato común (IAIProvider) que todos los proveedores de
+ *   IA deben implementar, así como los tipos de datos compartidos:
+ *   AIProcessResult, ImageDraftAnalysis y SYSTEM_PROMPT.
+ *
+ * CARACTERÍSTICAS:
+ *   - IAIProvider: interfaz con processRecord, transcribeAudio, analyzeImageDraft, generateEmbedding
+ *   - SYSTEM_PROMPT: instrucción de sistema para extracción de datos de reportes
+ *   - Tipos estrictos para results de procesamiento
+ *
+ * @module ai.interface
+ */
+
 export interface AIProcessResult {
   name: string;
   estado: string;

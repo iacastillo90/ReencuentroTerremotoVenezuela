@@ -1,14 +1,34 @@
 /**
- * Fuente de verdad de SERIALIZACIÓN segura de personas.
- * Decide qué campos se envían al cliente según el rol del solicitante.
+ * utils/person-view.util.ts — Serialización segura de personas (DTOs)
  *
- * Reglas (acordadas):
- *  - PÚBLICO (anónimo o user básico): datos para reconocer/ayudar, SIN PII peligroso.
- *  - AMPLIADO (verifier/admin): incluye coordenadas exactas, datos de menores, contacto, ficha, reportante.
- *  - MENORES (age<18): enmascarados en vista pública (LOPNNA); completos solo en ampliada.
- *  - La cédula (cruda o hash) NUNCA se envía al cliente desde personas.
+ * PROPÓSITO:
+ *   Fuente de verdad de SERIALIZACIÓN segura de personas. Decide qué
+ *   campos se envían al cliente según el rol del solicitante. Reglas
+ *   acordadas con el equipo de producto:
+ *
+ *   - PÚBLICO: datos para reconocer/ayudar, SIN PII peligroso
+ *   - AMPLIADO (verifier/admin): coordenadas exactas, contacto, reportante
+ *   - MENORES (age<18): enmascarados en vista pública (LOPNNA)
+ *   - Cédula NUNCA se envía al cliente desde personas
+ *
+ * CARACTERÍSTICAS:
+ *   - isExpandedRole: admin/verifier → ven datos ampliados
+ *   - isMinor: Detecta menores de 18 para protección LOPNNA
+ *   - approxLocation: Redondea coordenadas a ~1km (mapa público)
+ *   - toPublicPerson: DTO principal para UnifiedPerson
+ *   - toPublicLocalizado: DTO para localizados (hospital/refugio)
+ *   - ageBand: menor | adulto | null
+ *
+ * REGLAS DE VISIBILIDAD:
+ *   Público: idHash, status, name, age, gender, description, photoUrl,
+ *            lastSeen (state, municipality, description, date),
+ *            approxLocation (redondeado), metadata.urgencyScore
+ *   Ampliado: + lastSeen.coordinates (exacto), data.ficha_url,
+ *             metadata.reportedBy
+ *   Menor público: name='Caso protegido', protected:true
+ *
+ * @module person-view.util
  */
-
 export function isExpandedRole(role?: string): boolean {
   return role === 'admin' || role === 'verifier';
 }

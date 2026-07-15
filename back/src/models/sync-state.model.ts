@@ -1,3 +1,21 @@
+/**
+ * models/sync-state.model.ts — Estado de sincronización de fuentes
+ *
+ * PROPÓSITO:
+ *   Trackea el estado de sincronización de cada fuente externa para
+ *   evitar procesamiento duplicado. Cada registro representa un ítem
+ *   de una fuente (externalId + source) con su checksum MD5, timestamp
+ *   de último procesamiento, conteo de procesos, y último error.
+ *
+ * CARACTERÍSTICAS:
+ *   - externalId + source: Unique compound index (clave de dedup)
+ *   - checksum: MD5 del payload (detección de cambios)
+ *   - lastProcessed: Última vez que se procesó exitosamente
+ *   - processCount: Número de veces procesado
+ *   - lastError: Mensaje del último error (si falló)
+ *
+ * @module sync-state.model
+ */
 import { Schema, model, Document } from 'mongoose';
 
 export interface SyncState extends Document {

@@ -1,3 +1,24 @@
+/**
+ * models/search-request.model.ts — Solicitudes de búsqueda de usuarios
+ *
+ * PROPÓSITO:
+ *   Almacena las solicitudes de búsqueda creadas por usuarios. Cada
+ *   solicitud activa (status='activa') alimenta el motor de matching
+ *   que busca coincidencias en la BD de personas. El campo embedding
+ *   permite búsqueda vectorial (select: false por defecto).
+ *
+ * CARACTERÍSTICAS:
+ *   - user: Referencia al usuario que creó la solicitud
+ *   - assignedTo: Opcional, admin/moderador asignado
+ *   - searchName: Nombre de la persona buscada
+ *   - description: Contexto adicional
+ *   - category: menor | adulto | adulto_mayor | mascota
+ *   - status: activa | resuelta | cancelada
+ *   - isMinor: Flag de menor de edad
+ *   - embedding: Vector para búsqueda semántica (select: false)
+ *
+ * @module search-request.model
+ */
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISearchRequest extends Document {

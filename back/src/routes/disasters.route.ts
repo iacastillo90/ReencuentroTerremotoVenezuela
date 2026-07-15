@@ -1,96 +1,34 @@
-import { Router, Request, Response } from 'express';
-import { z } from 'zod';
-import { DisasterEventModel } from '../models/disaster-event.model';
+/**
+ * routes/disasters.route.ts — Rutas de desastres
+ *
+ * PROPÓSITO:
+ *   Rutas públicas para consultar eventos de desastre activos.
+ *   Sin autenticación requerida (uso público), con rate limiting.
+ *
+ * ENDPOINTS:
+ *   GET /api/disasters — Lista todos los desastres
+ *   GET /api/disasters/active — Desastres activos actualmente
+ *
+ * RATE LIMITING:
+ *   - 20 req/min para ambos endpoints (uso público intensivo)
+ *
+ * @module disasters.route
+ */
+import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { getDisasters, getActiveDisastersHandler } from '../controllers/disasters.controller';
+
+const disastersLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente en 1 minuto.' }
+});
 
 const router = Router();
 
-const disasterQuerySchema = z.object({
-  type: z.enum(['earthquake', 'flood', 'fire', 'hurricane', 'landslide', 'social']).optional(),
-  from: z.string().datetime({ offset: true }).optional(),
-  to: z.string().datetime({ offset: true }).optional(),
-  lat: z.string().regex(/^-?\d+(\.\d+)?$/).optional(),
-  lng: z.string().regex(/^-?\d+(\.\d+)?$/).optional(),
-  radius: z.string().regex(/^\d+(\.\d+)?$/).optional(),
-});
-
-// GET /api/disasters
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const queryValidation = disasterQuerySchema.safeParse(req.query);
-    if (!queryValidation.success) {
-      return res.status(400).json({ error: 'Invalid query parameters', details: queryValidation.error.issues });
-    }
-
-    const { lat, lng, radius, type, from, to } = queryValidation.data;
-    
-    const filter: any = {};
-    
-    // Filtrar por tipo (earthquake, flood, etc.)
-    if (type) {
-      filter.type = type;
-    }
-    
-    // Filtrar por fechas
-    if (from || to) {
-      filter.occurredAt = {};
-      if (from) filter.occurredAt.$gte = new Date(from as string);
-      if (to) filter.occurredAt.$lte = new Date(to as string);
-    }
-
-    // Filtro geoespacial ($near)
-    if (lat && lng && radius) {
-      const latitude = parseFloat(lat as string);
-      const longitude = parseFloat(lng as string);
-      const radiusMeters = parseFloat(radius as string) * 1000; // Convert km to meters
-      
-      filter.coordinates = {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [longitude, latitude] // MongoDB espera [lng, lat]
-          },
-          $maxDistance: radiusMeters
-        }
-      };
-    }
-
-    const disasters = await DisasterEventModel.find(filter)
-      .limit(100)
-      .sort(lat && lng ? undefined : { occurredAt: -1 }) // $near automatically sorts by distance
-      .lean();
-
-    return res.status(200).json(disasters);
-  } catch (error) {
-    console.error('[DisastersRoute] GET / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// GET /api/disasters/active
-router.get('/active', async (req: Request, res: Response) => {
-  try {
-    const now = new Date();
-    // Considerar como activo si validUntil está en el futuro,
-    // o si no tiene validUntil y ocurrió hace menos de 7 días
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const activeFilter = {
-      $or: [
-        { validUntil: { $gte: now } },
-        { validUntil: { $exists: false }, occurredAt: { $gte: sevenDaysAgo } }
-      ]
-    };
-
-    const disasters = await DisasterEventModel.find(activeFilter)
-      .limit(100)
-      .sort({ occurredAt: -1 })
-      .lean();
-
-    return res.status(200).json(disasters);
-  } catch (error) {
-    console.error('[DisastersRoute] GET /active Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+router.get('/', disastersLimiter, getDisasters);
+router.get('/active', disastersLimiter, getActiveDisastersHandler);
 
 export const disastersRouter = router;

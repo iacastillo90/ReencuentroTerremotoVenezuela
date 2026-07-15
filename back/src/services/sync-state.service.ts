@@ -1,9 +1,47 @@
+/**
+ * services/sync-state.service.ts — Estado de sincronización (dedup + checksum)
+ *
+ * PROPÓSITO:
+ *   Previene procesamiento duplicado de datos de fuentes externas
+ *   mediante checksum MD5 y tracking de estado. Es el "middleware de
+ *   deduplicación" que evita re-procesar datos ya sincronizados.
+ *
+ * CARACTERÍSTICAS:
+ *   - generateChecksum: MD5 determinístico de cualquier payload
+ *   - checkSyncState: Verifica si el payload es nuevo o cambió
+ *   - markSyncSuccess: Registra estado exitoso (checksum + timestamp)
+ *   - markSyncError: Registra error sin sobrescribir checksum previo
+ *   - stableStringify: JSON.stringify determinístico (keys ordenadas)
+ *
+ * FLUJO DE DEDUPLICACIÓN:
+ *   1. Payload entrante → generateChecksum → checksum MD5
+ *   2. Busca SyncStateModel.findOne({ source, externalId })
+ *   3. Si existe y mismo checksum y fecha no más nueva → skip (no_changes)
+ *   4. Si no existe o cambió → process (continuar con ingesta)
+ *   5. Después de procesar → markSyncSuccess con nuevo checksum
+ *   6. Si falla → markSyncError con mensaje de error
+ *
+ * FLUJO DE SALTOS:
+ *   1. Misma fuente + mismo externalId + mismo checksum → 100% skip
+ *   2. Misma fuente + mismo externalId + checksum diferente → re-procesar
+ *   3. Misma fuente + mismo externalId + payloadUpdatedAt más reciente → re-procesar
+ *
+ * @module sync-state.service
+ */
 import { SyncStateModel } from '../models/sync-state.model';
 import { createHash } from 'crypto';
 
+function stableStringify(obj: any): string {
+  if (obj === null || obj === undefined) return 'null';
+  if (typeof obj === 'string') return JSON.stringify(obj);
+  if (typeof obj === 'number' || typeof obj === 'boolean') return String(obj);
+  if (Array.isArray(obj)) return '[' + obj.map(stableStringify).join(',') + ']';
+  const keys = Object.keys(obj).sort();
+  return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(obj[k])).join(',') + '}';
+}
+
 export function generateChecksum(payload: any): string {
-  // Sort keys to ensure consistent hash for same object structure
-  const dataString = JSON.stringify(payload, Object.keys(payload).sort());
+  const dataString = stableStringify(payload);
   return createHash('md5').update(dataString).digest('hex');
 }
 

@@ -1,244 +1,199 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from './services/api';
+/**
+ * ═══════════════════════════════════════════════════════════
+ * App.tsx — Componente raíz (orquestador de vistas)
+ * 
+ * PROPÓSITO:
+ *   Orquesta qué vista se renderiza según activeView. El ruteo
+ *   es por estado (no por URL), intencional para esta SPA tipo
+ *   "tool" donde las rutas no aportan valor.
+ * 
+ * RESPONSABILIDADES:
+ *   - Mantener activeView y los modales (selectedPerson, isReporting…)
+ *   - Pasar datos y callbacks a cada página
+ *   - Control de acceso (AUTH_VIEWS requiere sesión)
+ * 
+ * LO QUE YA NO ESTÁ AQUÍ:
+ *   - fetchPersons, loading, offset, searchQuery → hook usePersons
+ *   - Mapa → lazy loading con React.lazy (code-splitting de Leaflet)
+ * ═══════════════════════════════════════════════════════════
+ */
+import { useState, lazy, Suspense } from 'react';
+import * as Sentry from '@sentry/react';
 import { AppLayout } from './layouts/AppLayout';
-import { FeedPage, FeedSidebar } from './pages/Feed/Feed';
-import { MapPage } from './pages/Map/MapPage';
-import { PersonDetailModal } from './components/modals/PersonDetailModal';
+import { FeedSidebar } from './pages/Feed/Feed';
 import { ReportModal } from './components/modals/ReportModal';
-import { AuthModal } from './components/modals/AuthModal';
-import { AdminDashboard } from './pages/Admin/AdminDashboard';
-import { useAuth } from './store/AuthContext';
-import type { Person, Disaster } from './types';
-
-import { LibraryPage } from './pages/Library/LibraryPage';
-import { ProfilePage } from './pages/Profile/ProfilePage';
 import { LogisticsPage } from './pages/Logistics/LogisticsPage';
 import { HomePage } from './pages/Home/HomePage';
 import { HomeGateway } from './pages/Home/HomeGateway';
-import { LoginPage } from './pages/Auth/LoginPage';
-import { RegisterPage } from './pages/Auth/RegisterPage';
-import { SearchPage } from './pages/Search/SearchPage';
-import { ManualPage } from './pages/Manual/ManualPage';
-import { DirectoryPage } from './pages/Directory/DirectoryPage';
+import { PersonDetailModal } from './components/modals/PersonDetailModal';
+import { AuthModal } from './components/modals/AuthModal';
+import { useAuth } from './store/AuthContext';
+import { useBackgroundSync } from './hooks/useBackgroundSync';
+import { usePersons } from './hooks/usePersons';
+import { LoadingScreen } from './components/common/LoadingScreen';
+import { AUTH_VIEWS } from './constants/routes';
+import type { Person } from './types';
 
-type View = 'home' | 'feed' | 'search' | 'map' | 'report' | 'admin' | 'library' | 'profile' | 'logistics' | 'login' | 'register' | 'manual' | 'directorio';
+const MapPage = lazy(() => import('./pages/Map/MapPage').then(m => ({ default: m.MapPage })));
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const FeedPage = lazy(() => import('./pages/Feed/Feed').then(m => ({ default: m.FeedPage })));
+const SearchPage = lazy(() => import('./pages/Search/SearchPage').then(m => ({ default: m.SearchPage })));
+const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const LibraryPage = lazy(() => import('./pages/Library/LibraryPage').then(m => ({ default: m.LibraryPage })));
+const ManualPage = lazy(() => import('./pages/Manual/ManualPage').then(m => ({ default: m.ManualPage })));
+const DirectoryPage = lazy(() => import('./pages/Directory/DirectoryPage').then(m => ({ default: m.DirectoryPage })));
+const LoginPage = lazy(() => import('./pages/Auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/Auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 
-interface Counts { missing: number; found: number; total: number; animals?: number; }
-
-const PAGE_SIZE = 50;
+type View = 'home' | 'feed' | 'search' | 'map' | 'report'
+  | 'admin' | 'library' | 'profile' | 'logistics'
+  | 'login' | 'register' | 'manual' | 'directorio';
 
 function App() {
-  const [persons, setPersons]         = useState<Person[]>([]);
-  const [disasters, setDisasters]     = useState<Disaster[]>([]);
-  const [counts, setCounts]           = useState<Counts>({ missing: 0, found: 0, total: 0, animals: 0 });
-  const [total, setTotal]             = useState(0);
-  const [offset, setOffset]           = useState(0);
-  const [loading, setLoading]         = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore]         = useState(true);
-  const [activeView, setActiveView]   = useState<View>('home');
+  const [activeView, setActiveView] = useState<View>('home');
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [isReporting, setIsReporting] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const isFetchingRef = useRef(false);
+
   const { user } = useAuth();
+  useBackgroundSync();
 
-  // Función base para obtener datos
-  const fetchPersons = async (query: string, newOffset: number, append: boolean = false) => {
-    try {
-      const endpoint = `/persons?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`;
-      const [pRes, dRes, cRes, locRes] = await Promise.all([
-        api.get<{ total: number; persons: Person[] }>(endpoint),
-        // Only fetch these if it's initial load to save requests, but doing it parallel is fine
-        api.get<Disaster[]>('/disasters/active').catch(() => ({ data: [] })),
-        api.get<Counts>('/persons/counts').catch(() => ({ data: { missing: 0, found: 0, total: 0, animals: 0 } })),
-        api.get<{ data: any[], total: number }>(`/localizados?limit=${PAGE_SIZE}&offset=${newOffset}${query ? `&q=${query}` : ''}`).catch(() => ({ data: { data: [], total: 0 } }))
-      ]);
-      const { total: t, persons: p } = pRes.data;
-      
-      // Map localizados to Person interface
-      const localizadosAsPersons: Person[] = (locRes.data?.data || []).map((loc: any) => ({
-        idHash: `loc-${loc._id}`,
-        name: loc.name,
-        status: 'found',
-        lastSeen: {
-          state: loc.origin || 'Desconocido',
-          description: `Visto en: ${loc.location}`
-        },
-        metadata: {
-          urgencyScore: 1,
-          createdAt: loc.createdAt
-        },
-        data: {
-          cedula: loc.cedula,
-          origen: 'Reporte Hospital/Refugio',
-          ficha_url: loc.sourceUrl,
-          verificado_por: loc.isVerified ? 'Personal de Salud' : undefined
-        }
-      }));
+  const {
+    persons, disasters, counts, total,
+    loading, loadingMore, hasMore,
+    searchQuery, setSearchQuery, loadMore,
+  } = usePersons();
 
-      // Combine both sources
-      const combined = [...p, ...localizadosAsPersons];
-      
-      setTotal(t + (locRes.data?.total || 0));
-      setHasMore(newOffset + p.length < t || newOffset + localizadosAsPersons.length < (locRes.data?.total || 0));
-      setDisasters(dRes.data);
-      setCounts({
-        missing: cRes.data.missing,
-        found: cRes.data.found + (locRes.data?.total || 0),
-        total: cRes.data.total + (locRes.data?.total || 0),
-        animals: cRes.data.animals || 0
-      });
-
-      if (append) {
-        setPersons(prev => [...prev, ...combined]);
-      } else {
-        // If no query and it's offset 0, shuffle a bit
-        const data = (!query && newOffset === 0) ? combined.sort(() => Math.random() - 0.5) : combined;
-        setPersons(data);
-      }
-    } catch (e) {
-      console.error('Error fetching data:', e);
+  const navigate = (v: View) => {
+    if ((AUTH_VIEWS as readonly string[]).includes(v) && !user) {
+      setActiveView('login');
+      return;
     }
+    setActiveView(v);
+    setIsReporting(false);
   };
 
-  // Carga inicial o cuando cambia la búsqueda
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      setLoading(true);
-      setOffset(0);
-      await fetchPersons(searchQuery, 0, false);
-      setLoading(false);
-    }, searchQuery ? 500 : 0); // 500ms debounce
-    
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  // Cargar más (scroll infinito)
-  const loadMore = useCallback(async () => {
-    if (isFetchingRef.current || !hasMore || loadingMore) return;
-    isFetchingRef.current = true;
-    setLoadingMore(true);
-    try {
-      const newOffset = offset + (searchQuery ? PAGE_SIZE : PAGE_SIZE); // Keep it simple
-      await fetchPersons(searchQuery, newOffset, true);
-      setOffset(newOffset);
-    } catch (e) {
-      console.error('Error cargando más:', e);
-    } finally {
-      setLoadingMore(false);
-      isFetchingRef.current = false;
-    }
-  }, [offset, hasMore, loadingMore]);
-
-  // Reporte (con verificación de sesión/perfil) — usado por el nav, el Home y el landing
   const handleReport = () => {
     if (!user) { setActiveView('login'); return; }
     if (!user.isProfileComplete) { setIsAuthenticating(true); return; }
     setIsReporting(true);
   };
 
-  // Control de acceso: Buscar/Feed/Mapa/Perfil requieren sesión.
-  // Home, Directorio y Manual son públicos. Reportar se gestiona en handleReport.
-  const AUTH_VIEWS: View[] = ['search', 'feed', 'map', 'profile'];
-  const navigate = (v: View) => {
-    if (AUTH_VIEWS.includes(v) && !user) { setActiveView('login'); return; }
-    setActiveView(v);
-    setIsReporting(false);
-  };
-
-  // Admin view — full screen takeover
   if (activeView === 'admin') {
-    return <AdminDashboard onBack={() => setActiveView('home')} />;
+    return (
+      <Suspense fallback={<LoadingScreen text="Cargando panel de administración..." />}>
+        <AdminDashboard onBack={() => setActiveView('home')} />
+      </Suspense>
+    );
   }
 
   return (
     <>
       {activeView === 'login' ? (
-        <LoginPage
-          onSuccess={() => setActiveView('home')}
-          onGoRegister={() => setActiveView('register')}
-          onGoogle={() => setIsAuthenticating(true)}
-          onBack={() => setActiveView('home')}
-        />
-      ) : activeView === 'register' ? (
-        <RegisterPage
-          onSuccess={() => setActiveView('home')}
-          onGoLogin={() => setActiveView('login')}
-          onBack={() => setActiveView('login')}
-        />
-      ) : (
-      <AppLayout
-        activeView={activeView}
-        onViewChange={navigate}
-        onReport={handleReport}
-        onAdmin={() => setActiveView('admin')}
-        sidebar={
-          activeView === 'feed'
-            ? <FeedSidebar persons={persons} disasters={disasters} total={counts.total} counts={counts} />
-            : undefined
-        }
-      >
-        {activeView === 'home' && (
-          user ? (
-            <HomePage
-              counts={counts}
-              persons={persons}
-              onBuscar={() => navigate('search')}
-              onReportar={handleReport}
-              onSelectPerson={setSelectedPerson}
-              onNavigate={navigate}
-            />
-          ) : (
-            <HomeGateway
-              counts={counts}
-              onBuscar={() => navigate('search')}
-              onReportar={handleReport}
-              onDirectorio={() => setActiveView('directorio')}
-              onManual={() => setActiveView('manual')}
-            />
-          )
-        )}
-        {activeView === 'search' && (
-          <SearchPage
+        <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+          <LoginPage
+            onSuccess={() => setActiveView('home')}
+            onGoRegister={() => setActiveView('register')}
+            onGoogle={() => setIsAuthenticating(true)}
             onBack={() => setActiveView('home')}
           />
-        )}
-        {activeView === 'profile' && <ProfilePage onSelectPerson={setSelectedPerson} />}
-        {activeView === 'library' && <LibraryPage />}
-        {activeView === 'feed' && (
-          <FeedPage
-            persons={persons}
-            disasters={disasters}
-            loading={loading}
-            loadingMore={loadingMore}
-            hasMore={hasMore}
-            total={total}
-            counts={counts}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onLoadMore={loadMore}
+        </Suspense>
+      ) : activeView === 'register' ? (
+        <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+          <RegisterPage
+            onSuccess={() => setActiveView('home')}
+            onGoLogin={() => setActiveView('login')}
+            onBack={() => setActiveView('login')}
           />
-        )}
+        </Suspense>
+      ) : (<>
+        <AppLayout
+          activeView={activeView}
+          onViewChange={navigate}
+          onReport={handleReport}
+          onAdmin={() => setActiveView('admin')}
+          sidebar={
+            activeView === 'feed'
+              ? <FeedSidebar persons={persons} disasters={disasters}
+                  total={counts.total} counts={counts} />
+              : undefined
+          }
+        >
+          {activeView === 'home' && (
+            user ? (
+              <HomePage counts={counts} persons={persons}
+                onBuscar={() => navigate('search')}
+                onReportar={handleReport}
+                onSelectPerson={setSelectedPerson}
+                onNavigate={navigate}
+              />
+            ) : (
+              <HomeGateway counts={counts}
+                onBuscar={() => navigate('search')}
+                onReportar={handleReport}
+                onDirectorio={() => setActiveView('directorio')}
+                onManual={() => setActiveView('manual')}
+              />
+            )
+          )}
 
-        {activeView === 'map' && (
-          <MapPage
-            persons={persons}
-            disasters={disasters}
-            onSelectPerson={setSelectedPerson}
-          />
-        )}
-        
-        {activeView === 'logistics' && (
-          <LogisticsPage disasters={disasters} />
-        )}
+          {activeView === 'search' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <SearchPage onBack={() => setActiveView('home')} onNavigate={(v) => navigate(v as View)} />
+            </Suspense>
+          )}
 
-        {activeView === 'manual' && <ManualPage />}
+          {activeView === 'profile' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <ProfilePage onSelectPerson={setSelectedPerson} />
+            </Suspense>
+          )}
 
-        {activeView === 'directorio' && <DirectoryPage onNavigate={navigate} />}
-      </AppLayout>
-      )}
+          {activeView === 'library' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <LibraryPage />
+            </Suspense>
+          )}
+
+          {activeView === 'feed' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <FeedPage persons={persons} disasters={disasters}
+                loading={loading} loadingMore={loadingMore}
+                hasMore={hasMore} total={total} counts={counts}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onLoadMore={loadMore}
+              />
+            </Suspense>
+          )}
+
+          {activeView === 'map' && (
+            <Sentry.ErrorBoundary fallback={<div className="sentry-fallback">El mapa no está disponible en este momento. Intenta de nuevo.</div>}>
+              <Suspense fallback={<LoadingScreen text="Cargando mapa…" />}>
+                <MapPage persons={persons} disasters={disasters}
+                  onSelectPerson={setSelectedPerson}
+                />
+              </Suspense>
+            </Sentry.ErrorBoundary>
+          )}
+
+          {activeView === 'logistics' && (
+            <LogisticsPage disasters={disasters} />
+          )}
+
+          {activeView === 'manual' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <ManualPage />
+            </Suspense>
+          )}
+
+          {activeView === 'directorio' && (
+            <Suspense fallback={<LoadingScreen text="Cargando..." />}>
+              <DirectoryPage onNavigate={navigate} />
+            </Suspense>
+          )}
+        </AppLayout>
+      </>)}
 
       {selectedPerson && (
         <PersonDetailModal
@@ -268,10 +223,9 @@ function App() {
       {isReporting && (
         <ReportModal
           onClose={() => setIsReporting(false)}
-          onNavigate={navigate}
-          onGoDirectory={() => {
+          onNavigate={(view) => {
             setIsReporting(false);
-            setActiveView('directorio');
+            navigate(view as View);
           }}
         />
       )}
@@ -280,4 +234,3 @@ function App() {
 }
 
 export default App;
-// Forzar rebuild en Vercel

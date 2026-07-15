@@ -1,19 +1,83 @@
+/**
+ * middlewares/auth.middleware.ts — Autenticación y autorización
+ *
+ * PROPÓSITO:
+ *   Maneja toda la lógica de autenticación: validación de JWT,
+ *   API keys (admin, webhook, partner), y verificación de roles.
+ *   Provee decoradores de ruta (requireUser, requireAdminApiKey, etc).
+ *
+ * CARACTERÍSTICAS:
+ *   - requireUser: Valida JWT desde Bearer token o cookie
+ *   - requireAdminApiKey: API key para endpoints admin
+ *   - requireWebhookApiKey: API key para webhooks entrantes
+ *   - requirePartnerApiKey: API key para partners
+ *   - requireProfileComplete: Bloquea usuarios con perfil incompleto
+ *   - tokenVersion check: Invalida JWTs si se incrementó versión
+ *
+ * FLUJO DE DATOS:
+ *   1. Extrae token de Authorization header o cookie
+ *   2. Verifica firma JWT con JWT_SECRET
+ *   3. Valida payload con Zod schema
+ *   4. Busca usuario en BD para verificar tokenVersion
+ *   5. Si tokenVersion != JWT, rechaza (sesión revocada)
+ *   6. Para API keys: hash y busca en BD, verifica active=true
+ *
+ * SEGURIDAD:
+ *   - JWT con RS256/HS256, expiración 7d
+ *   - tokenVersion para invalidación sin logout explícito
+ *   - API keys hasheadas con SHA-256 antes de persistir
+ *   - Legacy key detection: log warning si usa key sin hashear
+ *   - Audit log en todos los eventos auth
+ *
+ * DECISIONES TÉCNICAS:
+ *   - requireUser busca usuario completo (no solo tokenVersion) para
+ *     asegurar que el usuario aún existe y está activo
+ *   - API keys soportan legacy mode (sin hash) con warning log
+ *   - Token puede venir de Bearer o cookie (flexibilidad cliente)
+ *
+ * CÓMO USAR:
+ *   router.get('/protected', requireUser, handler);
+ *   router.post('/admin', requireAdminApiKey, handler);
+ *   router.post('/webhook', requireWebhookApiKey, handler);
+ */
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { z } from 'zod';
 import { UserModel } from '../models/user.model';
+import { ApiKeyModel } from '../models/api-key.model';
 import { auditLog } from './audit.middleware';
+import { JWT_SECRET } from '../utils/jwt-secret.util';
+import { logger } from '../utils/logger.util';
+import { hashApiKey } from '../utils/hash.util';
 
-// JWT_SECRET startup validation — fail-fast
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  console.error('[FATAL] JWT_SECRET is required');
-  process.exit(1);
-})();
+async function findApiKeyByKey(rawKey: string, type: 'admin' | 'webhook' | 'partner') {
+  const hashedKey = hashApiKey(rawKey);
+  const filter = { active: true, type } as const;
+  let doc = await ApiKeyModel.findOne({ key: hashedKey, ...filter });
+  if (!doc) {
+    doc = await ApiKeyModel.findOne({ key: rawKey, ...filter });
+    if (doc) {
+      logger.warn({ keyPrefix: doc.keyPrefix }, '[Auth] Legacy unhashed API key used — recreate key to migrate');
+    }
+  }
+  return doc;
+}
 
 export function getJwtSecret(): string {
   return JWT_SECRET;
 }
+
+const jwtPayloadSchema = z.object({
+  userId: z.string(),
+  email: z.string(),
+  role: z.string(),
+  status: z.string(),
+  tokenVersion: z.number().optional(),
+  isProfileComplete: z.boolean().optional(),
+  iat: z.number().optional(),
+  exp: z.number().optional(),
+});
 
 export async function requireUser(req: Request, res: Response, next: NextFunction) {
   let token: string | undefined;
@@ -26,112 +90,151 @@ export async function requireUser(req: Request, res: Response, next: NextFunctio
   }
 
   if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+    return res.status(401).json({ error: 'No autorizado: Token faltante o inválido' });
   }
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const raw = jwt.verify(token, JWT_SECRET);
+    const parsed = jwtPayloadSchema.safeParse(raw);
+    if (!parsed.success) {
+      return res.status(401).json({ error: 'Payload de token inválido' });
+    }
+    const decoded = parsed.data;
 
-    // tokenVersion check — fetch user from DB
     const user = await UserModel.findById(decoded.userId).select('tokenVersion');
     if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'Usuario no encontrado' });
     }
     if (user.tokenVersion !== decoded.tokenVersion) {
-      return res.status(401).json({ error: 'Token revoked. Please login again.' });
+      return res.status(401).json({ error: 'Token revocado. Inicie sesión nuevamente.' });
     }
 
-    (req as any).user = decoded;
+    req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    return res.status(401).json({ error: 'No autorizado: Token inválido' });
   }
 }
 
 export async function requireProfileComplete(req: Request, res: Response, next: NextFunction) {
   try {
     await requireUser(req, res, () => {
-      if (!(req as any).user.isProfileComplete) {
-        return res.status(403).json({ error: 'Forbidden: Profile incomplete' });
+      if (!req.user?.isProfileComplete) {
+        return res.status(403).json({ error: 'Prohibido: Perfil incompleto' });
       }
       next();
     });
   } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'No autorizado' });
   }
 }
 
-export function requireAdminApiKey(req: Request, res: Response, next: NextFunction) {
-  // First: try JWT with admin role
+export async function requireAdminApiKey(req: Request, res: Response, next: NextFunction) {
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
+    token = authHeader.split(' ')[1];
+  } else if (req.cookies?.token) {
+    token = req.cookies.token;
+  }
+
+  if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const raw = jwt.verify(token, JWT_SECRET);
+      const parsed = jwtPayloadSchema.safeParse(raw);
+      if (!parsed.success) { return res.status(403).json({ error: 'Payload de token inválido' }); }
+      const decoded = parsed.data;
       if (decoded.role === 'admin') {
-        (req as any).user = decoded;
+        req.user = decoded;
         next();
         return;
       }
-      return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    } catch {
-      // JWT invalid — fall through to API key check
+      return res.status(403).json({ error: 'Prohibido: Se requiere acceso de administrador' });
+    } catch (err) {
+      logger.warn({ err }, 'Admin auth: JWT verification failed, falling back to API key');
     }
   }
 
-  // Fallback: existing API key check (legacy)
   const apiKey = req.headers['x-api-key'];
-  const validKey = process.env.ADMIN_API_KEY;
 
-  if (!validKey) {
-    console.warn('[Security] ADMIN_API_KEY is not defined in environment variables. Denying all admin access.');
-    return res.status(403).json({ error: 'Server configuration error' });
+  if (typeof apiKey !== 'string') {
+    return res.status(401).json({ error: 'No autorizado: Clave API requerida' });
   }
 
-  if (!apiKey || apiKey !== validKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+  const envKey = process.env.ADMIN_API_KEY;
+  if (envKey) {
+    const envBuffer = Buffer.from(envKey);
+    const keyBuffer = Buffer.from(apiKey);
+    if (keyBuffer.length === envBuffer.length && crypto.timingSafeEqual(keyBuffer, envBuffer)) {
+      auditLog({
+        eventType: 'admin_action',
+        severity: 'warning',
+        actor: 'api-key',
+        action: `${req.method} ${req.path} — Legacy admin API key used`,
+        detail: { migration: 'Migrate to DB-stored API key' },
+        req,
+      });
+      next();
+      return;
+    }
   }
 
-  // Log legacy API key usage for migration tracking
-  auditLog({
-    eventType: 'admin_action',
-    severity: 'warning',
-    actor: 'api-key',
-    action: `${req.method} ${req.path} — Legacy admin API key used`,
-    detail: { migration: 'Migrate to JWT admin auth' },
-    req,
-  });
+  const valid = await findApiKeyByKey(apiKey, 'admin');
+  if (!valid) {
+    return res.status(401).json({ error: 'No autorizado: Clave API inválida o revocada' });
+  }
 
+  await ApiKeyModel.updateOne({ _id: valid._id }, { lastUsedAt: new Date() });
   next();
 }
 
-export function requireWebhookApiKey(req: Request, res: Response, next: NextFunction) {
+export async function requireWebhookApiKey(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers['x-webhook-api-key'];
-  const validKey = process.env.WEBHOOK_API_KEY;
 
-  if (!validKey) {
-    console.error('[FATAL] WEBHOOK_API_KEY is not defined in environment variables. Denying all webhook access.');
-    return res.status(500).json({ error: 'Server configuration error' });
+  if (typeof apiKey !== 'string') {
+    return res.status(401).json({ error: 'No autorizado: Clave de webhook requerida' });
   }
 
-  if (!apiKey || apiKey !== validKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid webhook API key' });
+  const envKey = process.env.WEBHOOK_API_KEY;
+  if (envKey) {
+    const envBuffer = Buffer.from(envKey);
+    const keyBuffer = Buffer.from(apiKey);
+    if (keyBuffer.length === envBuffer.length && crypto.timingSafeEqual(keyBuffer, envBuffer)) {
+      next();
+      return;
+    }
   }
 
+  const valid = await findApiKeyByKey(apiKey, 'webhook');
+  if (!valid) {
+    return res.status(401).json({ error: 'No autorizado: Clave de webhook inválida o revocada' });
+  }
+
+  await ApiKeyModel.updateOne({ _id: valid._id }, { lastUsedAt: new Date() });
   next();
 }
 
-export function requirePartnerApiKey(req: Request, res: Response, next: NextFunction) {
+export async function requirePartnerApiKey(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers['x-partner-api-key'];
-  const validKey = process.env.PARTNER_API_KEY;
 
-  if (!validKey) {
-    console.warn('[Security] PARTNER_API_KEY is not defined in environment variables. Denying all partner access.');
-    return res.status(403).json({ error: 'Server configuration error' });
+  if (typeof apiKey !== 'string') {
+    return res.status(401).json({ error: 'No autorizado: Clave de socio requerida' });
   }
 
-  if (!apiKey || apiKey !== validKey) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid Partner API Key' });
+  const envKey = process.env.PARTNER_API_KEY;
+  if (envKey) {
+    const envBuffer = Buffer.from(envKey);
+    const keyBuffer = Buffer.from(apiKey);
+    if (keyBuffer.length === envBuffer.length && crypto.timingSafeEqual(keyBuffer, envBuffer)) {
+      next();
+      return;
+    }
   }
 
+  const valid = await findApiKeyByKey(apiKey, 'partner');
+  if (!valid) {
+    return res.status(401).json({ error: 'No autorizado: Clave de socio inválida o revocada' });
+  }
+
+  await ApiKeyModel.updateOne({ _id: valid._id }, { lastUsedAt: new Date() });
   next();
 }

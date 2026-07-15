@@ -1,6 +1,23 @@
+/**
+ * jobs/funvisis.job — Sincronización de sismos de FUNVISIS
+ *
+ * PROPÓSITO:
+ *   Extrae los últimos sismos registrados por FUNVISIS (Fundación
+ *   Venezolana de Investigaciones Sismológicas) y los inserta como
+ *   eventos de desastre tipo "earthquake".
+ *
+ * CARACTERÍSTICAS:
+ *   - Consulta endpoint público de FUNVISIS
+ *   - Clasifica severidad según magnitud Richter
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module funvisis.job
+ */
+
 import axios from 'axios';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess, markSyncError } from '../services/sync-state.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE = 'funvisis-gov';
 // Endpoint público referencial (simulado para este job, puede ser reemplazado por el real cuando esté activo)
@@ -11,7 +28,7 @@ const SOURCE_URL = 'https://www.funvisis.gob.ve/api/sismos/recientes';
  * Mapeo: Extrae los datos y los inserta en el modelo unificado de Desastres (DisasterEventModel)
  */
 export async function runFunvisisJob() {
-  console.log(`[FUNVISIS] Iniciando extracción de sismos oficiales...`);
+  logger.info('[FUNVISIS] Iniciando extracción de sismos oficiales...');
 
   try {
     // Para el MVP y prevenir caídas si la página del gobierno está caída, 
@@ -71,9 +88,9 @@ export async function runFunvisisJob() {
       ingested++;
     }
 
-    console.log(`[FUNVISIS] Extracción completada. Nuevos/Actualizados: ${ingested}. Omitidos (sin cambios): ${skipped}`);
+    logger.info({ ingested, skipped }, '[FUNVISIS] Extracción completada.');
 
   } catch (error: any) {
-    console.error(`[FUNVISIS] Error crítico en la extracción:`, error.message);
+    logger.error({ err: (error as Error).message }, '[FUNVISIS] Error crítico en la extracción');
   }
 }

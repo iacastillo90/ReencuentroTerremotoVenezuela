@@ -1,18 +1,35 @@
+/**
+ * queues/disaster-sync.queue — Cola de sincronización de desastres
+ *
+ * PROPÓSITO:
+ *   Define la cola BullMQ para la sincronización programada de eventos
+ *   de desastre desde múltiples fuentes (USGS, FIRMS, GDACS, FUNVISIS,
+ *   INAMEH, CORPOELEC, Protección Civil, Cruz Roja).
+ *
+ * CARACTERÍSTICAS:
+ *   - Configuración con backoff exponencial (5 reintentos)
+ *   - Jobs repetitivos (cron) registrados en setupDisasterSyncJobs
+ *   - Limpieza automática de jobs completados y fallidos
+ *
+ * @module disaster-sync.queue
+ */
+
 import { Queue } from 'bullmq';
 import { connection } from '../config/redis.config';
+import { logger } from '../utils/logger.util';
 
 export const DISASTER_SYNC_QUEUE_NAME = 'disaster-sync';
 
 export const disasterSyncQueue = new Queue(DISASTER_SYNC_QUEUE_NAME, {
   connection: connection as any,
   defaultJobOptions: {
-    attempts: 3,
+    attempts: 5,
     backoff: {
       type: 'exponential',
       delay: 5000,
     },
     removeOnComplete: true,
-    removeOnFail: false,
+    removeOnFail: { age: 24 * 3600, count: 100 },
   }
 });
 
@@ -74,5 +91,15 @@ export async function setupDisasterSyncJobs() {
     repeat: { pattern: '*/20 * * * *' }
   });
 
-  console.log('[DisasterSync] Cron jobs registered.');
+  // BARRIDO BIOMÉTRICO cada 12 horas (Sanitización Self-Healing)
+  await disasterSyncQueue.add('sync-biometric-sweep', {}, {
+    repeat: { pattern: '0 */12 * * *' }
+  });
+
+  // BARRIDO LOPNNA cada 12 horas (Sanitización Histórica)
+  await disasterSyncQueue.add('sync-lopnna-sweep', {}, {
+    repeat: { pattern: '0 */12 * * *' }
+  });
+
+  logger.info('[DisasterSync] Cron jobs registered.');
 }

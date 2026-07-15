@@ -1,5 +1,21 @@
+/**
+ * services/ai/anthropic.service — Proveedor de IA Anthropic (Claude)
+ *
+ * PROPÓSITO:
+ *   Implementa IAIProvider usando el SDK de Anthropic para procesar
+ *   reportes de texto libre con Claude.
+ *
+ * CARACTERÍSTICAS:
+ *   - processRecord: extrae datos estructurados de texto libre
+ *   - transcribeAudio: lanza error (Anthropic no soporta audio nativo)
+ *   - Limpia wrappers markdown del JSON de respuesta
+ *
+ * @module anthropic.service
+ */
+
 import Anthropic from '@anthropic-ai/sdk';
 import { IAIProvider, AIProcessResult, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class AnthropicProvider implements IAIProvider {
   private client: Anthropic;
@@ -32,7 +48,7 @@ export class AnthropicProvider implements IAIProvider {
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('Anthropic Error:', error);
+      logger.error({ err: error }, 'Anthropic Error');
       throw error;
     }
   }

@@ -1,7 +1,25 @@
+/**
+ * jobs/gdacs.job — Sincronización de alertas globales GDACS
+ *
+ * PROPÓSITO:
+ *   Consulta el feed RSS de GDACS (Global Disaster Alert and Coordination
+ *   System) para detectar desastres naturales activos en el área de
+ *   Venezuela y los inserta como eventos de desastre.
+ *
+ * CARACTERÍSTICAS:
+ *   - Parseo de RSS con campos personalizados GDACS
+ *   - Filtro geoespacial por bounding box de Venezuela
+ *   - Mapeo de tipos: earthquake, flood, hurricane, fire
+ *   - Clasificación de severidad: Green → medium, Orange → high, Red → critical
+ *
+ * @module gdacs.job
+ */
+
 import Parser from 'rss-parser';
 import { z } from 'zod';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { getTargetBoundingBox, isPointInsideBBox } from '../utils/geo.util';
+import { logger } from '../utils/logger.util';
 
 const rawDataSchema = z.record(z.string(), z.unknown());
 
@@ -85,14 +103,14 @@ export async function fetchGDACS() {
 
     if (operations.length > 0) {
       await DisasterEventModel.bulkWrite(operations as any[]);
-      console.log(`[GDACS Sync] Processed ${operations.length} global alerts for target region.`);
+      logger.info({ count: operations.length }, '[GDACS Sync] Processed global alerts.');
     } else {
-       console.log(`[GDACS Sync] No active alerts for target region.`);
+       logger.info('[GDACS Sync] No active alerts for target region.');
     }
 
     return operations.length;
   } catch (error: any) {
-    console.error('[GDACS Sync] Error fetching data:', error.message);
+    logger.error({ err: (error as Error).message }, '[GDACS Sync] Error fetching data');
     throw error;
   }
 }

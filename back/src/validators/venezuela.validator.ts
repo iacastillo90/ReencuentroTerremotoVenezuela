@@ -1,10 +1,21 @@
 /**
- * Utilidades de validación y limpieza específicas para formatos venezolanos.
- * Extraído y adaptado para ReencuentrosVE v3.0
+ * validators/venezuela.validator.ts — Validación de formatos venezolanos
  *
- * Política de privacidad (TDD §Seguridad):
+ * PROPÓSITO:
+ *   Utilidades de validación y limpieza específicas para formatos
+ *   venezolanos (cédula de identidad, teléfono). Extraído y adaptado
+ *   para ReencuentrosVE v3.0
+ *
+ * POLÍTICA DE PRIVACIDAD (TDD §Seguridad):
  *   - Los datos raw (cédula, teléfono) JAMÁS se persisten en MongoDB.
  *   - Solo se almacena el hash SHA-256 para verificación cruzada interna.
+ *
+ * FUNCIONES:
+ *   - normalizeCedula: Normaliza cédula V/E + dígitos (V-12345678 → V12345678)
+ *   - normalizePhoneVE: Normaliza teléfono a E.164 (+584141234567)
+ *   - hashSensitiveData: SHA-256 de dato normalizado (nunca raw)
+ *
+ * @module venezuela.validator
  */
 import { createHash } from 'crypto';
 

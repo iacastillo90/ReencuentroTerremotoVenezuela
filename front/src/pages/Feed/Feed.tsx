@@ -1,9 +1,53 @@
+/**
+ * pages/Feed/Feed.tsx — Feed principal de personas y desastres
+ *
+ * PROPÓSITO:
+ *   Lista paginada con scroll infinito de personas reportadas.
+ *   Incluye búsqueda por texto y filtros por categoría.
+ *
+ * COMPONENTES:
+ *   - FeedPage: lista principal con chip filters, search, infinite scroll.
+ *   - FeedSidebar: panel de estadísticas para desktop (sidebar).
+ *
+ * FILTROS (chips):
+ *   - Desaparecidos: status === 'missing' (default).
+ *   - Encontrados: status === 'found'.
+ *   - Mascotas: type === 'animal'.
+ *   - Todos: sin filtro.
+ *   - Desastres: lista de Disaster (no Person).
+ *
+ * SCROLL INFINITO (IntersectionObserver):
+ *   Un div "sentinel" al final de la lista se observa con
+ *   IntersectionObserver. Cuando entra en el viewport y
+ *   hay más datos (hasMore) y no se está cargando (loadingMore),
+ *   se dispara onLoadMore().
+ *   La búsqueda activa (searchQuery) desactiva el scroll infinito
+ *   porque los resultados de búsqueda no se pagan.
+ *
+ * BÚSQUEDA:
+ *   El input de búsqueda es controlado por el padre (App.tsx)
+ *   que pasa searchQuery y onSearchChange. La lógica de debounce
+ *   (500ms) está en el padre.
+ *
+ * ALERTAS DE BÚSQUEDA:
+ *   Si el usuario está logueado y la búsqueda no da resultados,
+ *   puede crear una "Alerta de Búsqueda" que notificará cuando
+ *   aparezca una coincidencia.
+ *
+ * SIDEBAR (desktop):
+ *   FeedSidebar muestra 4 tarjetas de estadísticas:
+ *   desaparecidos, encontrados, alertas activas, total en BD.
+ *   Se renderiza condicionalmente desde App.tsx.
+ */
 import React, { useState, useRef, useEffect } from 'react';
+import * as Sentry from '@sentry/react';
 import { Search, AlertTriangle, Users, MapPin, Loader2, PawPrint } from 'lucide-react';
 import { FeedCard } from './components/FeedCard';
-import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/common/EmptyState';
+import { FeedSkeletonList } from '../../components/common/Skeleton';
 import type { Person, Disaster } from '../../types';
 import { useAuth } from '../../store/AuthContext';
+import { useToast } from '../../store/ToastContext';
 import { api } from '../../services/api';
 import './Feed.css';
 
@@ -29,8 +73,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 }) => {
   const [filter, setFilter] = useState<Filter>('missing');
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const hasMoreRef = useRef(hasMore);
+  const loadingMoreRef = useRef(loadingMore);
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { loadingMoreRef.current = loadingMore; }, [loadingMore]);
+  useEffect(() => { searchQueryRef.current = searchQuery; }, [searchQuery]);
+  const [isSearchPending, setIsSearchPending] = useState(false);
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [creatingAlert, setCreatingAlert] = useState(false);
+
+  useEffect(() => { setIsSearchPending(false); }, [searchQuery]);
+
+  const handleSearchChange = (value: string) => {
+    if (value !== searchQuery) setIsSearchPending(true);
+    onSearchChange(value);
+  };
 
   const handleCreateSearchRequest = async () => {
     if (!searchQuery) return;
@@ -38,25 +97,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({
       setCreatingAlert(true);
       await api.post('/search-requests', {
         searchName: searchQuery,
-        category: 'adulto', // Default category
+        category: 'adulto',
         isMinor: false
       });
-      alert('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.');
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Error al crear alerta de búsqueda');
+      addToast('Alerta de búsqueda creada exitosamente. Te notificaremos si hay coincidencias.', 'success');
+    } catch (e) {
+      const err = e as { response?: { data?: { error?: string } } };
+      addToast(err.response?.data?.error || 'Error al crear alerta de búsqueda', 'error');
     } finally {
       setCreatingAlert(false);
     }
   };
 
-  // IntersectionObserver — dispara loadMore al llegar al final
+  // IntersectionObserver para scroll infinito
+  // Cuando el sentinel entra en el viewport, carga más datos.
+  // Solo se activa si hasMore y !loadingMore y !searchQuery.
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !searchQuery) {
+        if (entries[0].isIntersecting && hasMoreRef.current && !loadingMoreRef.current && !searchQueryRef.current) {
           onLoadMore();
         }
       },
@@ -65,8 +127,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore, onLoadMore]);
+  }, [onLoadMore]);
 
+  // Filtra personas según el chip activo
   const filtered = persons
     .filter(p => {
       if (filter === 'missing') return p.status === 'missing' && p.type !== 'animal';
@@ -78,14 +141,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({
   const chips: { key: Filter; icon: React.ReactNode; label: string; count?: number }[] = [
     { key: 'missing',   icon: <AlertTriangle size={13} />, label: 'Desaparecidos', count: counts.missing },
     { key: 'found',     icon: <Users size={13} />,         label: 'Encontrados',   count: counts.found },
-    { key: 'animals',   icon: <PawPrint size={13} />, label: 'Mascotas',      count: (counts as any).animals || 0 },
+    { key: 'animals',   icon: <PawPrint size={13} />,      label: 'Mascotas',      count: (counts as unknown as {animals: number}).animals || 0 },
     { key: 'all',       icon: <MapPin size={13} />,        label: 'Todos',         count: counts.total },
     { key: 'disasters', icon: <AlertTriangle size={13} />, label: 'Desastres',     count: disasters.length },
   ];
 
   return (
     <div className="feed-page">
-      {/* Filter bar */}
+      {/* Barra de búsqueda y filtros */}
       <div className="feed-filter-bar">
         <div className="feed-search-row">
           <Search size={17} color="var(--clr-text-dim)" />
@@ -93,8 +156,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             type="text"
             placeholder="Buscar por nombre o zona..."
             value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
+            aria-label="Buscar personas"
           />
+          {isSearchPending && <span className="feed-search-pending">Buscando...</span>}
         </div>
         <div className="feed-chips">
           {chips.map(c => (
@@ -112,19 +177,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({
         </div>
       </div>
 
-      {/* Feed list */}
+      {/* Lista del feed */}
       {loading ? (
-        <div className="feed-loading">
-          <Loader2 size={28} className="spinner" />
-          <span>Cargando registros...</span>
+        <div className="feed-list" data-testid="feed-skeleton-loading">
+          <FeedSkeletonList count={5} />
         </div>
       ) : filter === 'disasters' ? (
+        /* Lista de desastres (no personas) */
         <div className="feed-list">
           {disasters.length === 0 ? (
-            <div className="feed-empty">
-              <AlertTriangle size={40} />
-              <p>No hay desastres activos reportados.</p>
-            </div>
+            <EmptyState icon="alert" message="No hay desastres activos reportados" subtext="Los desastres activos aparecerán aquí automáticamente." />
           ) : disasters.map(d => (
             <article key={d._id} className={`feed-card ${d.severity === 'critical' ? 'feed-card-critical' : 'feed-card-amber'}`}>
               <div className="feed-card-header">
@@ -143,24 +205,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="feed-empty">
-          <Users size={48} />
-          <p>No se encontraron personas con esos filtros.</p>
-          {searchQuery && (
-            <div className="feed-empty-actions">
-              <p className="feed-empty-hint">
-                ¿No encuentras a quien buscas?
-              </p>
-              {user ? (
-                <Button 
-                  onClick={handleCreateSearchRequest} 
-                  disabled={creatingAlert}
-                >
-                  {creatingAlert ? 'Creando...' : 'Crear Alerta de Búsqueda'}
-                </Button>
-              ) : (
-                <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
-              )}
+        /* Sin resultados: muestra botón de crear alerta si hay búsqueda */
+        <div className="feed-list">
+          <EmptyState
+            icon="search"
+            message={searchQuery ? `Sin resultados para "${searchQuery}"` : "No se encontraron personas con esos filtros"}
+            subtext={searchQuery ? "Prueba con otros términos o crea una alerta para recibir notificaciones." : "Intenta cambiar el filtro o crear un reporte."}
+            action={searchQuery && user ? {
+              label: 'Crear Alerta de Búsqueda',
+              onClick: handleCreateSearchRequest,
+              disabled: creatingAlert
+            } : undefined}
+          />
+          {searchQuery && !user && (
+            <div className="feed-empty feed-empty--no-pad-top">
+              <p className="feed-empty-login-hint">Inicia sesión para crear una alerta de búsqueda automatizada por IA.</p>
             </div>
           )}
         </div>
@@ -176,7 +235,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
           {/* Sentinel para scroll infinito */}
           <div ref={sentinelRef} className="feed-sentinel" />
 
-          {/* Spinner de carga más */}
+          {/* Spinner de carga de más datos */}
           {loadingMore && (
             <div className="feed-loading-more">
               <Loader2 size={20} className="spinner" />
@@ -184,7 +243,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
             </div>
           )}
 
-          {/* Fin del feed */}
+          {/* Indicador de fin del feed */}
           {!hasMore && persons.length > 0 && (
             <div className="feed-end">
               <span>✓ {total.toLocaleString()} registros encontrados</span>
@@ -196,7 +255,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({
   );
 };
 
-/* ─── Sidebar panel (desktop) ─── */
+/* ─── Sidebar panel para desktop ─── */
 export const FeedSidebar: React.FC<{
   persons: Person[];
   disasters: Disaster[];
@@ -241,3 +300,7 @@ export const FeedSidebar: React.FC<{
     </p>
   </div>
 );
+
+export default Sentry.withErrorBoundary(FeedPage, {
+  fallback: <div className="error-boundary-fallback">Ocurrió un error al cargar el feed.</div>
+});

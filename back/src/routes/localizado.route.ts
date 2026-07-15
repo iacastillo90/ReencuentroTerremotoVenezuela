@@ -1,98 +1,51 @@
-import { Router, Request, Response } from 'express';
-import { LocalizadoModel } from '../models/localizado.model';
+/**
+ * routes/localizado.route.ts — Rutas de personas localizadas
+ *
+ * PROPÓSITO:
+ *   Rutas para consulta pública e ingesta de personas localizadas
+ *   en refugios/hospitales. El GET tiene rate limit de 30 req/min
+ *   y validación de query params. El POST requiere partner API key
+ *   con rate limit de 5 req/min.
+ *
+ * SEGURIDAD:
+ *   - GET: rate limit 30/min + validateQuery (sanitizedQueryParam)
+ *   - POST: requirePartnerApiKey + rate limit 5/min
+ *   - Zod validation: q/location sanitizados, limit max 500
+ *
+ * @module localizado.route
+ */
+import { Router } from 'express';
+import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { requirePartnerApiKey } from '../middlewares/auth.middleware';
-import { localizadoPayloadSchema } from '../validators/localizado.validator';
-import { auditLog } from '../middlewares/audit.middleware';
-import { safeRegexQuery } from '../utils/regex-escape.util';
+import { getLocalizadosHandler, postLocalizadosHandler } from '../controllers/localizado.controller';
+import { validateQuery } from '../middlewares/validate.middleware';
+import { sanitizedQueryParam } from '../utils/sanitize.util';
 
-const MAX_SEARCH_LENGTH = 100;
-const MAX_SPECIAL_CHARS = 10;
+const getLocalizadosQuerySchema = z.object({
+  q: sanitizedQueryParam.optional(),
+  location: sanitizedQueryParam.optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+});
 
-function isSafeRegexInput(input: string): boolean {
-  if (input.length > MAX_SEARCH_LENGTH) return false;
-  const specialChars = (input.match(/[.^$*+?{}[\]\\|()]/g) || []).length;
-  return specialChars <= MAX_SPECIAL_CHARS;
-}
+const localizadoGetLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente en 1 minuto.' },
+});
+
+const localizadoPostLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes de ingreso. Intente nuevamente en 1 minuto.' },
+});
 
 export const localizadoRouter = Router();
 
-// GET /api/localizados - Búsqueda de personas localizadas en hospitales (abierto al público)
-localizadoRouter.get('/', async (req: Request, res: Response) => {
-  try {
-    const { q, location, limit = '100', offset = '0' } = req.query;
-    
-    const filter: any = {};
-    
-    if (q && typeof q === 'string') {
-      if (!isSafeRegexInput(q)) {
-        return res.status(400).json({ error: 'Búsqueda demasiado larga o con demasiados caracteres especiales.' });
-      }
-      const sanitizedQ = safeRegexQuery(q);
-      if (sanitizedQ) {
-        const searchRegex = new RegExp(sanitizedQ, 'i');
-        filter.$or = [
-          { name: searchRegex },
-          { cedula: searchRegex }
-        ];
-      }
-    }
-    
-    if (location && typeof location === 'string') {
-      if (!isSafeRegexInput(location)) {
-        return res.status(400).json({ error: 'Búsqueda demasiado larga o con demasiados caracteres especiales.' });
-      }
-      const sanitizedLocation = safeRegexQuery(location);
-      if (sanitizedLocation) {
-        filter.location = new RegExp(sanitizedLocation, 'i');
-      }
-    }
-
-    const maxLimit = Math.min(parseInt(limit as string) || 100, 500);
-    const skip = parseInt(offset as string) || 0;
-
-    const data = await LocalizadoModel.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(maxLimit)
-      .lean();
-
-    const total = await LocalizadoModel.countDocuments(filter);
-
-    return res.status(200).json({ ok: true, total, offset: skip, limit: maxLimit, data });
-  } catch (error) {
-    console.error('[LocalizadoRoute] GET / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// POST /api/localizados - Ingesta de listados masivos (solo partners)
-localizadoRouter.post('/', requirePartnerApiKey, async (req: Request, res: Response) => {
-  try {
-    const validation = localizadoPayloadSchema.safeParse(req.body);
-    if (!validation.success) {
-      auditLog({
-        eventType: 'validation_failure',
-        severity: 'warning',
-        actor: 'system',
-        action: 'POST /localizados validation failed',
-        detail: { issues: validation.error.issues },
-        req,
-      });
-      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
-    }
-
-    const { data } = validation.data;
-
-    // Insertar masivamente para optimizar rendimiento
-    const result = await LocalizadoModel.insertMany(data, { ordered: false });
-    
-    return res.status(201).json({ ok: true, message: 'Localizados ingested successfully', count: result.length });
-  } catch (error: any) {
-    // Si hay errores de duplicidad u otros al usar insertMany con ordered:false, lo capturamos
-    if (error.code === 11000) {
-       return res.status(201).json({ ok: true, message: 'Ingested with some duplicates skipped' });
-    }
-    console.error('[LocalizadoRoute] POST / Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+localizadoRouter.get('/', localizadoGetLimiter, validateQuery(getLocalizadosQuerySchema), getLocalizadosHandler);
+localizadoRouter.post('/', localizadoPostLimiter, requirePartnerApiKey, postLocalizadosHandler);

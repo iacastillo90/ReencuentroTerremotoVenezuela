@@ -19,14 +19,14 @@
 }
 
 .hero-content h2 {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   color: var(--clr-text);
   margin-bottom: 0.5rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 
 .hero-content p {
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   color: var(--clr-text-muted);
   line-height: 1.4;
 }
@@ -61,11 +61,23 @@
   border: none;
   outline: none;
   color: var(--clr-text);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   padding: 0.65rem 0;
 }
 
 .feed-search-row input::placeholder { color: var(--clr-text-dim); }
+
+.feed-search-pending {
+  font-size: 0.7rem;
+  color: var(--clr-text-dim);
+  white-space: nowrap;
+  animation: feed-pulse 1s ease-in-out infinite;
+}
+
+@keyframes feed-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
 
 .feed-chips {
   display: flex;
@@ -84,8 +96,8 @@
   border: 1px solid var(--clr-border);
   background: transparent;
   color: var(--clr-text-muted);
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -100,7 +112,7 @@
 .chip-count {
   background: rgba(255,255,255,0.15);
   border-radius: var(--radius-full);
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   padding: 1px 6px;
 }
 
@@ -158,8 +170,8 @@
 .feed-card-meta { flex: 1; min-width: 0; }
 
 .feed-card-name {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
   color: var(--clr-text);
   white-space: nowrap;
   overflow: hidden;
@@ -167,7 +179,7 @@
 }
 
 .feed-card-sub {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
   display: flex;
   align-items: center;
@@ -210,7 +222,7 @@
   justify-content: center;
   gap: 0.5rem;
   color: var(--clr-text-dim);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 /* Card footer */
@@ -231,7 +243,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
 }
 
@@ -254,7 +266,7 @@
 .urgency-fill.low    { background: var(--clr-success); }
 
 .feed-card-desc {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -273,6 +285,10 @@
   gap: 0.75rem;
   color: var(--clr-text-muted);
   text-align: center;
+}
+
+.feed-empty--no-pad-top {
+  padding-top: 0;
 }
 
 .feed-loading {
@@ -316,8 +332,8 @@
 .sidebar-stat.primary { color: var(--clr-primary); }
 .sidebar-stat.success { color: var(--clr-success); }
 
-.sidebar-stat h4 { font-size: 1.3rem; color: var(--clr-text); }
-.sidebar-stat p  { font-size: 0.72rem; color: var(--clr-text-muted); }
+.sidebar-stat h4 { font-size: var(--text-xl); color: var(--clr-text); }
+.sidebar-stat p  { font-size: var(--text-xs); color: var(--clr-text-muted); }
 
 /* ─── Responsive tweaks ─── */
 @media (min-width: 768px) {
@@ -354,14 +370,14 @@
   gap: 0.5rem;
   padding: 1.25rem 1rem;
   color: var(--clr-text-dim);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .feed-end {
   text-align: center;
   padding: 1.25rem 1rem 2rem;
   color: var(--clr-text-dim);
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   border-top: 1px solid var(--clr-border);
 }
 
@@ -369,10 +385,10 @@
 .feed-card-amber { border-left: 3px solid var(--clr-amber); }
 .feed-avatar-danger { color: var(--clr-danger); }
 .feed-empty-actions { margin-top: 15px; }
-.feed-empty-hint { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px; }
-.feed-empty-login-hint { font-size: 0.85rem; color: var(--clr-amber); }
+.feed-empty-hint { font-size: var(--text-md); color: var(--text-secondary); margin-bottom: 10px; }
+.feed-empty-login-hint { font-size: var(--text-base); color: var(--clr-amber); }
 .feed-sentinel { height: 1px; }
 .sidebar-stat-amber { color: var(--clr-amber); }
-.sidebar-stat-icon-large { font-size: 1.1rem; }
-.sidebar-panel-footer { font-size: 0.78rem; color: var(--clr-text-muted); line-height: 1.6; }
-.feed-card-urgency-text { color: var(--clr-text-dim); font-size: 0.72rem; }
+.sidebar-stat-icon-large { font-size: var(--text-xl); }
+.sidebar-panel-footer { font-size: var(--text-sm); color: var(--clr-text-muted); line-height: 1.6; }
+.feed-card-urgency-text { color: var(--clr-text-dim); font-size: var(--text-xs); }

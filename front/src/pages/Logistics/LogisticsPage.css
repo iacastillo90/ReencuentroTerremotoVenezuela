@@ -1,3 +1,10 @@
+/* ═══════════════════════════
+   LogisticsPage.css — Vista de logística y ayuda
+   ═══════════════════════════
+   Cards de alertas logísticas con icono por fuente,
+   título, severidad y descripción. Layout optimizado
+   para bajo consumo de datos (sin imágenes).
+   ═══════════════════════════ */
 .logistics-page {
   padding: 1.5rem;
   max-width: 1000px;
@@ -12,14 +19,14 @@
 }
 
 .logistics-header h2 {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
   margin-bottom: 0.5rem;
 }
 
 .logistics-header p {
   color: var(--clr-text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -82,17 +89,17 @@
 }
 
 .card-title-row h3 {
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
   margin: 0;
   color: var(--clr-text);
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .severity-badge {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-full);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }
 .severity-badge.sev-high, .severity-badge.sev-critical {
   background-color: var(--clr-danger-bg);
@@ -108,7 +115,7 @@
 }
 
 .card-desc {
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   color: var(--clr-text-dim);
   line-height: 1.4;
   margin-bottom: 1rem;
@@ -117,14 +124,14 @@
 .card-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--clr-text-muted);
   border-top: 1px solid var(--clr-border);
   padding-top: 0.5rem;
 }
 
 .card-source {
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 @media (min-width: 768px) {

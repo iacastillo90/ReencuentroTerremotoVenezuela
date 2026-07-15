@@ -1,29 +1,55 @@
-import { Router, Request, Response } from 'express';
-import { OAuth2Client } from 'google-auth-library';
-import jwt from 'jsonwebtoken';
+/**
+ * routes/auth.route.ts — Rutas de autenticación
+ *
+ * PROPÓSITO:
+ *   Define los endpoints de autenticación con rate limiting específico:
+ *   Google OAuth, registro por email, login, perfil, y CSRF token.
+ *   Cada endpoint mutante tiene su propio rate limiter configurable.
+ *
+ * ENDPOINTS:
+ *   GET  /api/auth/csrf-token — Obtener token CSRF (sin auth)
+ *   POST /api/auth/google — Login con Google OAuth (5 intentos/15min)
+ *   POST /api/auth/register — Registro email/pass (10 intentos/15min)
+ *   POST /api/auth/login — Login email/pass (5 intentos/15min)
+ *   GET  /api/auth/me — Perfil del usuario (auth required)
+ *   POST /api/auth/profile — Actualizar perfil (auth required)
+ *   POST /api/auth/logout — Cerrar sesión (auth required)
+ *   GET  /api/auth/google — Stub para Google OAuth redirect
+ *
+ * RATE LIMITING (configurable por env vars):
+ *   - authLimiter: 5 req/15min (prod), 1000 (dev) — Google Auth
+ *   - loginLimiter: 5 req/15min (prod), 1000 (dev) — Login
+ *   - registerLimiter: 10 req/15min (prod), 1000 (dev) — Registro
+ *   - Se sobreescribe con AUTH_RATE_LIMIT, LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT
+ *
+ * SEGURIDAD:
+ *   - Rate limiters INDEPENDIENTES: No comparten contador entre endpoints
+ *   - Auth rate limit en producción (5/día): Previene brute force
+ *   - requireUser: JWT válido para endpoints de perfil
+ *   - CSRF exento en /auth/google (Google OAuth redirect no lleva cookie)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - 3 rate limiters separados: Evita que un ataque bloquee otros endpoints
+ *   - Env var override: Flexibilidad para staging/testing
+ *   - 1000 en dev: No bloquear desarrollo, 5 en prod: Seguridad
+ *
+ * EJEMPLOS:
+ *   POST /api/auth/login { email, password } → { token, user }
+ *   GET /api/auth/me (Authorization: Bearer xxx) → { user }
+ *   GET /api/auth/csrf-token → { token }
+ */
+import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { UserModel } from '../models/user.model';
 import { requireUser } from '../middlewares/auth.middleware';
-import { generateCsrfToken } from '../middlewares/csrf.middleware';
-import { googleAuthSchema, profileUpdateSchema, registerSchema, loginSchema } from '../validators/auth.validator';
-import { auditLog } from '../middlewares/audit.middleware';
-import { hashPassword, verifyPassword } from '../utils/password.util';
+import {
+  getCsrfToken, googleAuth, register, login, googleGetStub
+} from '../controllers/auth.controller';
+import {
+  getMe, updateProfile, logout
+} from '../controllers/auth-profile.controller';
 
 const router = Router();
 
-// JWT_SECRET startup validation — fail-fast
-const JWT_SECRET = (() => {
-  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-  console.error('[FATAL] JWT_SECRET is required');
-  process.exit(1);
-})();
-
-const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || (process.env.DEV_MODE === 'true' ? 'dev-client-id' : '');
-
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-
-// Rate limiter for auth routes — estricto en producción (5/15min), generoso en desarrollo.
-// Configurable con AUTH_RATE_LIMIT si se necesita otro valor.
 const AUTH_MAX = Number(process.env.AUTH_RATE_LIMIT) ||
   (process.env.NODE_ENV === 'production' ? 5 : 1000);
 const authLimiter = rateLimit({
@@ -34,273 +60,33 @@ const authLimiter = rateLimit({
   message: { error: 'Demasiados intentos de autenticación. Intente nuevamente en 15 minutos.' },
 });
 
-// CSRF token endpoint
-router.get('/csrf-token', (req: Request, res: Response) => {
-  const token = generateCsrfToken();
-  // Patrón double-submit: el cliente DEBE poder leer esta cookie por JS
-  // (document.cookie) para reenviarla como header `x-csrf-token`. Por eso NO
-  // es httpOnly (no es un secreto de sesión; el JWT sí sigue httpOnly). En
-  // desarrollo (http://localhost) `secure` debe ser false o el navegador la descarta.
-  res.cookie('csrf-token', token, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24h
-  });
-  return res.json({ token });
+const LOGIN_MAX = Number(process.env.LOGIN_RATE_LIMIT) ||
+  (process.env.NODE_ENV === 'production' ? 5 : 1000);
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: LOGIN_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de inicio de sesión. Intente nuevamente en 15 minutos.' },
 });
 
-router.post('/google', authLimiter, async (req: Request, res: Response) => {
-  try {
-    const validation = googleAuthSchema.safeParse(req.body);
-    if (!validation.success) {
-      auditLog({
-        eventType: 'auth_login_failure',
-        severity: 'warning',
-        actor: req.ip || 'unknown',
-        action: 'POST /auth/google validation failed',
-        detail: { issues: validation.error.issues },
-        req,
-      });
-      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
-    }
-
-    const { token } = validation.data;
-    let payload: any;
-
-    try {
-      // Verify Google token
-      const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: GOOGLE_CLIENT_ID,
-      });
-      payload = ticket.getPayload();
-    } catch (e) {
-      console.error('[AuthRoute] Google token verification failed:', e);
-      return res.status(401).json({ error: 'Invalid Google Token' });
-    }
-
-    if (!payload) return res.status(401).json({ error: 'Invalid Google Token' });
-
-    const { sub: googleId, email, name, picture } = payload;
-
-    let user = await UserModel.findOne({ googleId });
-    if (!user) {
-      const isAdmin = process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
-      user = await UserModel.create({
-        googleId,
-        email,
-        name,
-        picture,
-        isProfileComplete: false,
-        role: isAdmin ? 'admin' : 'user',
-        status: isAdmin ? 'approved' : 'pending'
-      });
-    }
-
-    const authToken = jwt.sign(
-      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-        role: user.role, status: user.status, tokenVersion: user.tokenVersion },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Set httpOnly cookie
-    res.cookie('token', authToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
-    });
-
-    auditLog({
-      eventType: 'auth_login_success',
-      severity: 'info',
-      actor: user._id.toString(),
-      action: 'POST /auth/google',
-      detail: { email: user.email },
-      req,
-    });
-
-    return res.status(200).json({ token: authToken, user });
-  } catch (error: any) {
-    console.error('[AuthRoute] Google Auth Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
+const REGISTER_MAX = Number(process.env.REGISTER_RATE_LIMIT) ||
+  (process.env.NODE_ENV === 'production' ? 10 : 1000);
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: REGISTER_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de registro. Intente nuevamente en 15 minutos.' },
 });
 
-// Firma el JWT (con tokenVersion) y fija la cookie httpOnly, igual que el flujo de Google.
-function issueSession(res: Response, user: any): string {
-  const authToken = jwt.sign(
-    { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-      role: user.role, status: user.status, tokenVersion: user.tokenVersion },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-  res.cookie('token', authToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
-  });
-  return authToken;
-}
-
-// ── Registro con correo/contraseña ───────────────────────────────────────────
-router.post('/register', authLimiter, async (req: Request, res: Response) => {
-  try {
-    const validation = registerSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
-    }
-    const { name, lastName, email, password, contactNumber, country, state, municipality } = validation.data;
-    const normEmail = email.toLowerCase().trim();
-
-    const existing = await UserModel.findOne({ email: normEmail });
-    if (existing) {
-      return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
-    }
-
-    const isAdmin = process.env.ADMIN_EMAIL && normEmail === process.env.ADMIN_EMAIL.toLowerCase();
-    const user = await UserModel.create({
-      email: normEmail,
-      name,
-      lastName,
-      passwordHash: hashPassword(password),
-      contactNumber,
-      country,
-      state,
-      municipality,
-      isProfileComplete: Boolean(contactNumber),
-      role: isAdmin ? 'admin' : 'user',
-      status: isAdmin ? 'approved' : 'pending'
-    });
-
-    const authToken = issueSession(res, user);
-    auditLog({
-      eventType: 'auth_login_success',
-      severity: 'info',
-      actor: user._id.toString(),
-      action: 'POST /auth/register',
-      detail: { email: user.email },
-      req,
-    });
-    return res.status(201).json({ token: authToken, user });
-  } catch (error) {
-    console.error('[AuthRoute] POST /register Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// ── Login con correo/contraseña ──────────────────────────────────────────────
-router.post('/login', authLimiter, async (req: Request, res: Response) => {
-  try {
-    const validation = loginSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
-    }
-    const { email, password } = validation.data;
-    const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
-    if (!user || !verifyPassword(password, user.passwordHash)) {
-      auditLog({
-        eventType: 'auth_login_failure',
-        severity: 'warning',
-        actor: req.ip || 'unknown',
-        action: 'POST /auth/login failed',
-        detail: { email },
-        req,
-      });
-      return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
-    }
-
-    const authToken = issueSession(res, user);
-    auditLog({
-      eventType: 'auth_login_success',
-      severity: 'info',
-      actor: user._id.toString(),
-      action: 'POST /auth/login',
-      detail: { email: user.email },
-      req,
-    });
-    return res.status(200).json({ token: authToken, user });
-  } catch (error) {
-    console.error('[AuthRoute] POST /login Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.get('/me', requireUser, async (req: Request, res: Response) => {
-  try {
-    const user = await UserModel.findById((req as any).user.userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.status(200).json({ user });
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.post('/profile', requireUser, async (req: Request, res: Response) => {
-  try {
-    const validation = profileUpdateSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Validation Error', details: validation.error.issues });
-    }
-
-    const { sector, contactNumber } = validation.data;
-
-    const user = await UserModel.findByIdAndUpdate(
-      (req as any).user.userId,
-      { sector, contactNumber, isProfileComplete: true },
-      { new: true }
-    );
-
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const authToken = jwt.sign(
-      { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
-        role: user.role, status: user.status, tokenVersion: user.tokenVersion },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Set httpOnly cookie
-    res.cookie('token', authToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
-    });
-
-    return res.status(200).json({ token: authToken, user });
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// Logout — increment tokenVersion to invalidate all existing JWTs
-router.post('/logout', requireUser, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.userId;
-    await UserModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
-
-    res.clearCookie('token');
-
-    auditLog({
-      eventType: 'auth_logout',
-      severity: 'info',
-      actor: userId,
-      action: 'POST /auth/logout',
-      req,
-    });
-
-    return res.json({ message: 'Logged out successfully' });
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.get('/google', (_req: Request, res: Response) => {
-  res.status(405).json({ error: 'Use POST /api/auth/google' });
-});
+router.get('/csrf-token', getCsrfToken);
+router.post('/google', authLimiter, googleAuth);
+router.post('/register', registerLimiter, register);
+router.post('/login', loginLimiter, login);
+router.get('/me', requireUser, getMe);
+router.post('/profile', requireUser, updateProfile);
+router.post('/logout', requireUser, logout);
+router.get('/google', googleGetStub);
 
 export const authRouter = router;

@@ -1,3 +1,9 @@
+/* ═══════════════════════════
+   Map.css — Estilos del InteractiveMap (Leaflet)
+   ═══════════════════════════
+   Contenedor del mapa, popups, status badges y
+   layout responsive (el mapa ocupa todo el espacio disponible).
+   ═══════════════════════════ */
 .map-container {
   height: 100%;
   width: 100%;
@@ -19,6 +25,10 @@
   min-width: 180px;
 }
 
+.popup-action {
+  margin-top: 10px;
+}
+
 .popup-photo {
   width: 80px;
   height: 80px;
@@ -32,14 +42,14 @@
 
 .popup-card h3 {
   margin: 0 0 8px 0;
-  font-size: 16px;
+  font-size: var(--text-lg);
   color: #1f2937;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .popup-card p {
   margin: 4px 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: #4b5563;
   text-align: left;
 }
@@ -48,8 +58,8 @@
   display: inline-block;
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   margin-bottom: 8px !important;
   text-align: center !important;
@@ -71,6 +81,11 @@
   text-align: left;
 }
 
+.disaster-popup h3[data-severity="critical"] { color: #ef4444; }
+.disaster-popup h3[data-severity="high"] { color: #f97316; }
+.disaster-popup h3[data-severity="medium"] { color: #eab308; }
+.disaster-popup h3[data-severity="low"] { color: var(--clr-primary); }
+
 /* Clúster Customization */
 .marker-cluster-small,
 .marker-cluster-medium,
@@ -84,5 +99,5 @@
   background-color: rgba(37, 99, 235, 0.9);
   color: white;
   font-family: 'Inter', sans-serif;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
 }

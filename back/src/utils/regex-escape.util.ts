@@ -1,5 +1,20 @@
 /**
- * Escape regex special characters to prevent regex injection.
+ * utils/regex-escape.util.ts — Escape de regex + ReDoS prevention
+ *
+ * PROPÓSITO:
+ *   Previene ReDoS (Regular expression Denial of Service) escapando
+ *   caracteres especiales de regex en inputs de usuario y limitando
+ *   la longitud máxima del string.
+ *
+ * CARACTERÍSTICAS:
+ *   - escapeRegex: Escapa metacaracteres .^$*+?{}[]\\|()
+ *   - safeRegexQuery: Trim + límite 200 chars + escape
+ *
+ * USO:
+ *   const safe = safeRegexQuery(userInput); // "John Doe"
+ *   const regex = new RegExp(safe, 'i');
+ *
+ * @module regex-escape.util
  */
 export function escapeRegex(str: string): string {
   return str.replace(/[.^$*+?{}[\]\\|()]/g, '\\$&');

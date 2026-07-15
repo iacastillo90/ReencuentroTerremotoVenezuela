@@ -1,5 +1,20 @@
+/**
+ * services/ai/openai.service — Proveedor de IA OpenAI (GPT-4)
+ *
+ * PROPÓSITO:
+ *   Implementa IAIProvider usando el SDK de OpenAI para procesar
+ *   reportes de texto y transcribir audio con Whisper.
+ *
+ * CARACTERÍSTICAS:
+ *   - processRecord: extrae datos estructurados con response_format json_object
+ *   - transcribeAudio: transcripción con Whisper-1 (español)
+ *
+ * @module openai.service
+ */
+
 import OpenAI from 'openai';
 import { IAIProvider, AIProcessResult, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class OpenAIProvider implements IAIProvider {
   private client: OpenAI;
@@ -22,7 +37,7 @@ export class OpenAIProvider implements IAIProvider {
       const text = response.choices[0].message.content || '{}';
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('OpenAI Error:', error);
+      logger.error({ err: error }, 'OpenAI Error');
       throw error;
     }
   }
@@ -40,7 +55,7 @@ export class OpenAIProvider implements IAIProvider {
       });
       return response.text;
     } catch (error) {
-      console.error('OpenAI Transcription Error:', error);
+      logger.error({ err: error }, 'OpenAI Transcription Error');
       throw new Error('No se pudo transcribir el audio usando OpenAI Whisper.');
     }
   }

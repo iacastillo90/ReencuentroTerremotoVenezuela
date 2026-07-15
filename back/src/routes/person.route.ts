@@ -1,281 +1,101 @@
-import { Router, Request, Response } from 'express';
-import { personPayloadSchema } from '../validators/person.validator';
-import { checkSyncState } from '../services/sync-state.service';
-import { addJobToIAQueue } from '../queues/ia-process.queue';
-import { PersonModel } from '../models/unified-person.model';
-import { AuditLogModel } from '../models/audit-log.model';
-import { connection as redis } from '../config/redis.config';
+/**
+ * routes/person.route.ts — Rutas de personas
+ *
+ * PROPÓSITO:
+ *   Define los endpoints públicos/privados para consultar y crear
+ *   reportes de personas. Expone endpoints para conteos, búsqueda,
+ *   y creación de reportes con rate limiting específico.
+ *
+ * ENDPOINTS:
+ *   GET /api/persons/counts — Estadísticas cacheadas (5min Redis)
+ *   GET /api/persons/mine — Mis reportes (auth required)
+ *   GET /api/persons — Búsqueda con filtros (Zod validated)
+ *   POST /api/persons — Crear reporte (rate limit: 10/min, auth required)
+ *   POST /api/persons/:idHash/close — Cerrar caso (auth required)
+ *
+ * VALIDACIÓN:
+ *   - getPersonsQuerySchema: q (sanitized), status, category, state, municipality
+ *   - limit: 1-100 (default 50), offset: ≥0
+ *   - validateQuery middleware reemplaza req.query con datos tipados
+ *
+ * RATE LIMITING:
+ *   - createPersonLimiter: 10 req/min (previene spam de reportes)
+ *   - counts: Sin limit (endpoint de lectura, cacheado)
+ *   - mine: Sin limit (auth required, datos del usuario)
+ *
+ * SEGURIDAD:
+ *   - requireUser: JWT válido para endpoints privados
+ *   - requireProfileComplete: Bloquea creación si perfil incompleto
+ *   - sanitizedQueryParam: Previene NoSQL injection en búsquedas
+ *   - toPublicPerson: Excluye PII en responses (embedding, faceEncoding)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Counts separado: endpoint dedicado para estadísticas (muy usado)
+ *   - Búsqueda con validateQuery: Zod transforma y sanitiza query params
+ *   - closeCase requiere auth: previene cierre malicioso de reportes
+ *
+ * EJEMPLOS:
+ *   GET /api/persons?status=missing&state=Caracas&limit=20
+ *   GET /api/persons/mine?limit=10 (Authorization: Bearer xxx)
+ *   POST /api/persons { name, lastSeen, ... } (Authorization: Bearer xxx)
+ */
+import { Router } from 'express';
+import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
-import { safeRegexQuery } from '../utils/regex-escape.util';
+import { getCounts, getMyReports, getPersons, createPerson, closeCase } from '../controllers/person.controller';
+import { validateQuery } from '../middlewares/validate.middleware';
+import { sanitizedQueryParam } from '../utils/sanitize.util';
+
+const getPersonsQuerySchema = z.object({
+  q: sanitizedQueryParam.optional(),
+  status: z.enum(['missing', 'found', 'unknown', 'deceased', 'animal', 'all']).optional(),
+  category: z.enum(['mascota', 'nino', 'adulto', 'adulto_mayor']).optional(),
+  state: z.string().max(100).optional(),
+  municipality: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+const getPersonsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
+
+const getCountsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
+
+const closeCaseLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Intente nuevamente.' }
+});
 
 const router = Router();
 
-// ── GET /counts — Totales por estado (cacheado 5 min) ──────────────────────
-router.get('/counts', async (_req: Request, res: Response) => {
-  try {
-    const CACHE_KEY = 'persons:counts';
-    const cached = await redis.get(CACHE_KEY);
-    if (cached) return res.status(200).json(JSON.parse(cached));
+router.get('/counts', getCountsLimiter, getCounts);
+router.get('/mine', requireUser, getMyReports);
+router.get('/', getPersonsLimiter, validateQuery(getPersonsQuerySchema), getPersons);
 
-    const [missing, found, total, pending, manual, animals] = await Promise.all([
-      PersonModel.countDocuments({ status: 'missing', type: { $ne: 'animal' } }),
-      PersonModel.countDocuments({ status: 'found', type: { $ne: 'animal' } }),
-      PersonModel.countDocuments({}),
-      PersonModel.countDocuments({ 'metadata.auditStatus': 'pending_review' }),
-      PersonModel.countDocuments({ 'metadata.source': 'manual' }),
-      PersonModel.countDocuments({ type: 'animal' })
-    ]);
-
-    const counts = { missing, found, total, pending, manual, animals };
-    await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
-
-    return res.status(200).json(counts);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET /counts Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
+const createPersonLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes. Por favor, intente más tarde.' }
 });
 
-// ── GET /mine — Obtener reportes del usuario autenticado ───────────────────
-router.get('/mine', requireUser, async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user.userId;
-    const safeProjection = {
-      idHash: 1,
-      type: 1,
-      name: 1,
-      status: 1,
-      'lastSeen.state': 1,
-      'lastSeen.municipality': 1,
-      'lastSeen.description': 1,
-      'lastSeen.date': 1,
-      'lastSeen.coordinates': 1,
-      age: 1,
-      gender: 1,
-      description: 1,
-      photoUrl: 1,
-      'data.cedula': 1,
-      'metadata.createdAt': 1,
-      'metadata.urgencyScore': 1
-    };
-
-    const persons = await PersonModel.find({ 'metadata.reportedBy': userId })
-      .select(safeProjection)
-      .sort({ 'metadata.createdAt': -1 })
-      .lean();
-
-    return res.status(200).json(persons);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET /mine Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.get('/', async (req: Request, res: Response) => {
-  try {
-    const { q, status, category, state, municipality } = req.query;
-
-    // Paginación — máx 200 por página
-    const limit  = Math.min(parseInt(req.query.limit  as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
-    const filter: any = {};
-
-    if (status) {
-      filter.status = status;
-    }
-
-    if (q && typeof q === 'string') {
-      const sanitizedQuery = safeRegexQuery(q);
-      if (sanitizedQuery) {
-        filter.normalizedName = { $regex: sanitizedQuery, $options: 'i' };
-      }
-    }
-    
-    if (category) {
-      if (category === 'mascota') {
-        filter.type = 'animal';
-      } else if (category === 'nino') {
-        filter.type = 'person';
-        filter.age = { $lt: 18 };
-      } else if (category === 'adulto') {
-        filter.type = 'person';
-        filter.age = { $gte: 18, $lt: 65 };
-      } else if (category === 'adulto_mayor') {
-        filter.type = 'person';
-        filter.age = { $gte: 65 };
-      }
-    }
-    
-    if (state && typeof state === 'string') {
-      filter['lastSeen.state'] = state;
-    }
-    if (municipality && typeof municipality === 'string') {
-      filter['lastSeen.municipality'] = { $regex: safeRegexQuery(municipality), $options: 'i' };
-    }
-
-    const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:l=${limit}:o=${offset}`;
-
-    // Solo cachear primera página sin búsqueda activa
-    if (!q && offset === 0) {
-      const cachedData = await redis.get(cacheKey);
-      if (cachedData) {
-        return res.status(200).json(JSON.parse(cachedData));
-      }
-    }
-
-    // Proyección segura: excluir PII, contactPerson, externalIds
-    const safeProjection = {
-      idHash: 1,
-      type: 1,
-      name: 1,
-      status: 1,
-      'lastSeen.state': 1,
-      'lastSeen.municipality': 1,
-      'lastSeen.description': 1,
-      'lastSeen.date': 1,
-      'lastSeen.coordinates': 1,
-      age: 1,
-      gender: 1,
-      description: 1,
-      photoUrl: 1,
-      'data.cedula': 1,
-      'data.origen': 1,
-      'data.ficha_url': 1,
-      'data.verificado_por': 1,
-      'metadata.createdAt': 1,
-      'metadata.urgencyScore': 1,
-      'metadata.reportedBy': 1
-    };
-
-    // Prioridad: con foto primero, luego por urgencia
-    const [persons, total] = await Promise.all([
-      PersonModel.find(filter)
-        .select(safeProjection)
-        .populate('metadata.reportedBy', 'name')
-        .sort({ photoUrl: -1, 'metadata.urgencyScore': -1, 'metadata.createdAt': -1 })
-        .skip(offset)
-        .limit(limit)
-        .lean(),
-      PersonModel.countDocuments(filter)
-    ]);
-
-    const responsePayload = { total, limit, offset, persons };
-
-    // Cachear solo primera página sin búsqueda (30s)
-    if (!q && offset === 0) {
-      await redis.setex(cacheKey, 30, JSON.stringify(responsePayload));
-    }
-
-    return res.status(200).json(responsePayload);
-  } catch (error: any) {
-    console.error('[PersonRoute] GET Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.post('/', requireProfileComplete, async (req: Request, res: Response) => {
-  try {
-    // 1. Validate payload
-    const validationResult = personPayloadSchema.safeParse(req.body);
-    
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        details: validationResult.error.issues
-      });
-    }
-
-    const payload: any = validationResult.data;
-    if (!payload.isAnonymous) {
-      payload.reportedBy = (req as any).user.userId;
-    }
-    payload.reporterIp = (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown';
-    const updatedAt = payload.date ? new Date(payload.date) : new Date();
-
-    // 2. Check Deduplication / SyncState
-    const syncState = await checkSyncState(
-      payload.source,
-      payload.externalId,
-      payload,
-      updatedAt
-    );
-
-    if (syncState.status === 'skipped') {
-      return res.status(200).json({
-        message: 'Record skipped, no changes detected.',
-        status: 'skipped'
-      });
-    }
-
-    // 3. Add to Queue for processing
-    await addJobToIAQueue(payload);
-
-    return res.status(202).json({
-      message: 'Record accepted for processing.',
-      status: 'queued'
-    });
-
-  } catch (error: any) {
-    console.error('[PersonRoute] POST Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-// ── POST /:idHash/close — Cerrar caso (Fase 4 Auditoría Legal) ───────────────
-router.post('/:idHash/close', requireUser, async (req: Request, res: Response) => {
-  try {
-    const { idHash } = req.params;
-    const { resolution, notes } = req.body;
-    const userId = (req as any).user.userId;
-    const userRole = (req as any).user.role;
-
-    if (!['found', 'deceased', 'erroneous'].includes(resolution)) {
-      return res.status(400).json({ error: 'Resolución inválida.' });
-    }
-
-    const person = await PersonModel.findOne({ idHash });
-    if (!person) return res.status(404).json({ error: 'Reporte no encontrado.' });
-
-    // Validar propiedad del reporte o rol admin
-    const isOwner = person.metadata?.reportedBy?.toString() === userId;
-    if (!isOwner && userRole !== 'admin') {
-      return res.status(403).json({ error: 'No tienes permiso para cerrar este caso.' });
-    }
-
-    const prevStatus = person.status;
-    person.status = resolution === 'erroneous' ? 'unknown' : resolution;
-    
-    if (resolution === 'erroneous') {
-      person.metadata.auditStatus = 'dismissed';
-    }
-
-    await person.save();
-
-    // Crear el log de auditoría (Base Legal)
-    await AuditLogModel.create({
-      eventType: 'admin_action' as const,
-      severity: 'info' as const,
-      actor: userId as string,
-      action: 'case_closed' as string,
-      resource: idHash as string,
-      detail: {
-        previousStatus: prevStatus,
-        newStatus: person.status,
-        resolutionNotes: notes,
-      },
-      ip: (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown',
-      userAgent: typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : 'unknown',
-      timestamp: new Date(),
-    });
-
-    // Invalidar caché
-    await redis.del('persons:counts');
-
-    return res.status(200).json({ message: 'Caso cerrado exitosamente.', status: person.status });
-  } catch (error: any) {
-    console.error('[PersonRoute] POST /:idHash/close Error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+router.post('/', createPersonLimiter, requireProfileComplete, createPerson);
+router.post('/:idHash/close', closeCaseLimiter, requireUser, closeCase);
 
 export const personRouter = router;

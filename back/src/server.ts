@@ -1,52 +1,144 @@
-import 'dotenv/config'; // Carga back/.env ANTES que cualquier módulo lea process.env (JWT_SECRET, etc.)
-import mongoose from 'mongoose';
+/**
+ * server.ts — Entry point del backend
+ *
+ * PROPÓSITO:
+ *   Bootstrap de la aplicación: inicializa MongoDB, Redis, colas BullMQ,
+ *   workers de procesamiento, outbox pattern, Socket.IO, y levanta el
+ *   servidor HTTP. Maneja graceful shutdown.
+ *
+ * FLUJO DE INICIALIZACIÓN:
+ *   1. Valida JWT_SECRET (requerido en producción)
+ *   2. Conecta a MongoDB con retry
+ *   3. Inicia workers (ia-processor, disaster-sync, matching) si está en monolith mode
+ *   4. Registra handler de unhandledRejection (fatal log + exit)
+ *   5. Inicia procesador de outbox
+ *   6. Crea servidor HTTP + Socket.IO
+ *   7. Escucha en PORT
+ *   8. Inicializa storage (S3/MinIO)
+ *   9. Setup de jobs programados (disaster sync)
+ *   10. Graceful shutdown handlers (SIGTERM, SIGINT)
+ *
+ * MODO DE OPERACIÓN:
+ *   - Monolith mode: RUN_WORKERS_IN_API=true o NODE_ENV=development
+ *     → Workers corren dentro del mismo proceso
+ *   - Microservices mode: NODE_ENV=production + RUN_WORKERS_IN_API=false
+ *     → Workers en containers separados
+ *
+ * SEGURIDAD:
+ *   - unhandledRejection handler: previene crashes silenciosos
+ *   - Graceful shutdown: cierra conexiones limpiamente
+ *   - Validación de env vars en startup: fail fast
+ *
+ * DEPENDENCIAS CRÍTICAS:
+ *   - MongoDB: Required (sin él no hay BD)
+ *   - Redis: Required (cache, colas, sockets)
+ *   - Storage: Optional (uploads de archivos)
+ *   - Workers: Optional (según modo de deploy)
+ *
+ * GRACEFUL SHUTDOWN:
+ *   1. Detiene servidor HTTP (deja de aceptar conexiones)
+ *   2. Cierra Socket.IO clients
+ *   3. Detiene procesador de outbox
+ *   4. Cierra workers de BullMQ
+ *   5. Cierra conexión a MongoDB
+ *   6. Cierra conexión a Redis
+ *   7. Proceso exit(0)
+ */
+import './sentry';
+import 'dotenv/config';
+import mongoose from 'mongoose'; // Necesario para el graceful shutdown
+import http from 'http';
 import app from './app';
 import { setupDisasterSyncJobs } from './queues/disaster-sync.queue';
 import { initializeStorage } from './services/storage.service';
-import { UserModel } from './models/user.model';
-import './workers/disaster-sync.worker';
-import './workers/ia-processor.worker';
+import { initializeSocketServer } from './services/socket.service';
+import { startOutboxProcessor, stopOutboxProcessor } from './services/outbox.service';
+import { connection as redis } from './config/redis.config';
+import { logger } from './utils/logger.util';
+import { connectDB } from './database/connection';
 
 const PORT = process.env.PORT || 4000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/reencuentro';
 
 async function bootstrap() {
   try {
-    // Fail-fast in production if JWT_SECRET is missing
     if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-      console.error('[FATAL] JWT_SECRET is required in production');
+      logger.fatal('JWT_SECRET is required in production');
       process.exit(1);
     }
 
-    console.log(`[Server] Conectando a MongoDB en ${MONGO_URI}...`);
-    await mongoose.connect(MONGO_URI);
-    console.log('[Server] MongoDB Conectado exitosamente.');
+    await connectDB('Server');
 
-    // Alinea los índices del modelo User con el esquema: reemplaza un índice viejo
-    // de googleId (único no-parcial) por el parcial actual y evita el error
-    // E11000 { googleId: null } al registrar por correo. No bloquea el arranque.
-    try {
-      await UserModel.syncIndexes();
-      console.log('[Server] Índices de User sincronizados.');
-    } catch (err) {
-      console.warn('[Server] No se pudieron sincronizar los índices de User:', (err as Error).message);
+    let workers: any[] = [];
+
+    if (process.env.NODE_ENV !== 'production' || process.env.RUN_WORKERS_IN_API === 'true') {
+      logger.info('Starting internal workers (monolith mode)');
+      const { iaProcessorWorker } = require('./workers/ia-processor.worker');
+      const { disasterSyncWorker } = require('./workers/disaster-sync.worker');
+      const { personMatchingWorker } = require('./workers/matching.worker');
+      workers = [iaProcessorWorker, disasterSyncWorker, personMatchingWorker].filter(Boolean);
+    } else {
+      logger.info('Internal workers disabled (assuming dedicated containers)');
     }
 
-    // El servidor abre el puerto de inmediato; las tareas pesadas (storage e
-    // ingesta/sincronización) corren en segundo plano para NO bloquear el arranque.
-    app.listen(PORT, () => {
-      console.log(`[Server] Backend de Reencuentro Terremoto Venezuela corriendo en http://localhost:${PORT}`);
+    process.on('unhandledRejection', (reason) => {
+      logger.fatal({ err: reason }, 'Unhandled Rejection');
+      process.exit(1);
+    });
+
+    startOutboxProcessor();
+
+    const server = http.createServer(app);
+
+    const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4000')
+      .split(',')
+      .map(s => s.trim().replace(/\/$/, ''));
+
+    initializeSocketServer(server, corsOrigins);
+    logger.info('Socket.IO server initialized');
+
+    server.listen(PORT, () => {
+      logger.info({ port: PORT }, `Backend running on http://localhost:${PORT}`);
 
       initializeStorage()
-        .then(() => console.log('[Server] Almacenamiento inicializado.'))
-        .catch((err) => console.error('[Server] Error inicializando almacenamiento:', err));
+        .then(() => logger.info('Storage initialized'))
+        .catch((err) => logger.error({ err }, 'Error initializing storage'));
 
       setupDisasterSyncJobs()
-        .then(() => console.log('[Server] Jobs de sincronización registrados (segundo plano).'))
-        .catch((err) => console.error('[Server] Error registrando jobs de sync:', err));
+        .then(() => logger.info('Sync jobs registered (background)'))
+        .catch((err) => logger.error({ err }, 'Error registering sync jobs'));
     });
+
+    function shutdown(signal: string) {
+      logger.info({ signal }, `Received signal — starting graceful shutdown`);
+      server.close(async () => {
+        logger.info('HTTP server closed');
+        stopOutboxProcessor();
+
+        for (const worker of workers) {
+          try {
+            await worker.close();
+            logger.info('Worker closed');
+          } catch (err) {
+            logger.warn({ err }, 'Error closing worker');
+          }
+        }
+
+        await mongoose.disconnect();
+        logger.info('MongoDB disconnected');
+        redis.disconnect();
+        logger.info('Redis disconnected');
+        process.exit(0);
+      });
+      setTimeout(() => {
+        logger.error('Forced shutdown by timeout');
+        process.exit(1);
+      }, 10000).unref();
+    }
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
-    console.error('[Server] Error crítico durante el inicio:', error);
+    logger.error({ err: error }, 'Critical error during startup');
     process.exit(1);
   }
 }

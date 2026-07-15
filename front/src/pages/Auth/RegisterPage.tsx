@@ -1,9 +1,43 @@
+/**
+ * pages/Auth/RegisterPage.tsx — Página de registro de cuenta
+ *
+ * PROPÓSITO:
+ *   Formulario completo de creación de cuenta. Es una página
+ *   independiente de LoginPage para mantener el flujo de
+ *   autenticación limpio y permitir enlaces directos.
+ *
+ * CAMPOS:
+ *   - Nombre, Apellido, Email (obligatorios).
+ *   - Teléfono con prefijo +58 (Venezuela).
+ *   - País (Venezuela, Colombia, Otro).
+ *   - Estado (lista de 24 estados de Venezuela).
+ *   - Municipio.
+ *   - Contraseña + confirmación (mínimo 8 caracteres).
+ *   - 3 checkboxes de políticas: privacidad, términos, uso responsable.
+ *
+ * VALIDACIONES:
+ *   - Campos obligatorios: name, lastName, email, password.
+ *   - Password: mínimo 8 caracteres.
+ *   - Confirmación: debe coincidir con password.
+ *   - Checkboxes: los 3 deben estar marcados.
+ *
+ * FLUJO:
+ *   1. Usuario completa el formulario.
+ *   2. Submit → POST /auth/register con los datos.
+ *   3. El backend crea el usuario y devuelve los datos + cookie.
+ *   4. AuthContext.login(usuario) → onSuccess() (redirige).
+ *
+ * ERRORES:
+ *   Se muestran con humanizeError, que traduce errores comunes
+ *   del backend (como "email already exists") a español.
+ */
 import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { humanizeError } from '../../utils/humanizeError';
 import { Button } from '../../components/ui/Button';
+import { ESTADOS_VE } from '../../services/mockSearchData';
 import './Auth.css';
 
 interface RegisterPageProps {
@@ -11,13 +45,6 @@ interface RegisterPageProps {
   onGoLogin: () => void;
   onBack: () => void;
 }
-
-const ESTADOS_VE = [
-  'Amazonas', 'Anzoátegui', 'Apure', 'Aragua', 'Barinas', 'Bolívar', 'Carabobo',
-  'Cojedes', 'Delta Amacuro', 'Distrito Capital', 'Falcón', 'Guárico', 'La Guaira',
-  'Lara', 'Mérida', 'Miranda', 'Monagas', 'Nueva Esparta', 'Portuguesa', 'Sucre',
-  'Táchira', 'Trujillo', 'Yaracuy', 'Zulia',
-];
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin, onBack }) => {
   const { login } = useAuth();
@@ -58,8 +85,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
       });
       login(res.data.user);
       onSuccess();
-    } catch (err: any) {
-      setError(humanizeError(err, 'No se pudo crear la cuenta.'));
+    } catch (err) {
+      setError(humanizeError(err as { response?: { data?: { error?: string } } }, 'No se pudo crear la cuenta.'));
     } finally {
       setLoading(false);
     }
@@ -73,13 +100,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
         <p className="auth-sub">Completa tus datos para registrarte</p>
 
         <form onSubmit={submit} className="auth-form">
-          <div className="auth-field"><User size={18} /><input placeholder="Nombre" value={form.name} onChange={set('name')} /></div>
-          <div className="auth-field"><User size={18} /><input placeholder="Apellido" value={form.lastName} onChange={set('lastName')} /></div>
-          <div className="auth-field"><Mail size={18} /><input type="email" placeholder="Correo electrónico" value={form.email} onChange={set('email')} autoComplete="email" /></div>
+          <div className="auth-field"><User size={18} /><input placeholder="Nombre" value={form.name} onChange={set('name')} aria-label="Nombre" /></div>
+          <div className="auth-field"><User size={18} /><input placeholder="Apellido" value={form.lastName} onChange={set('lastName')} aria-label="Apellido" /></div>
+          <div className="auth-field"><Mail size={18} /><input type="email" placeholder="Correo electrónico" value={form.email} onChange={set('email')} autoComplete="email" aria-label="Correo electrónico" /></div>
 
           <div className="auth-row">
             <div className="auth-field auth-phone"><span className="auth-country-code">🇻🇪 +58</span></div>
-            <div className="auth-field"><input type="tel" placeholder="Teléfono" value={form.phone} onChange={set('phone')} /></div>
+            <div className="auth-field"><input type="tel" placeholder="Teléfono" value={form.phone} onChange={set('phone')} aria-label="Teléfono" /></div>
           </div>
 
           <label className="auth-label">País</label>
@@ -94,14 +121,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
           </div>
 
           <label className="auth-label">Municipio</label>
-          <div className="auth-field"><input placeholder="Municipio" value={form.municipality} onChange={set('municipality')} /></div>
+          <div className="auth-field"><input placeholder="Municipio" value={form.municipality} onChange={set('municipality')} aria-label="Municipio" /></div>
 
           <div className="auth-field">
             <Lock size={18} />
-            <input type={showPw ? 'text' : 'password'} placeholder="Contraseña" value={form.password} onChange={set('password')} autoComplete="new-password" />
+            <input type={showPw ? 'text' : 'password'} placeholder="Contraseña" value={form.password} onChange={set('password')} autoComplete="new-password" aria-label="Contraseña" />
             <button type="button" className="auth-eye" onClick={() => setShowPw(s => !s)} aria-label="Mostrar contraseña">{showPw ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
-          <div className="auth-field"><Lock size={18} /><input type={showPw ? 'text' : 'password'} placeholder="Confirmar contraseña" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" /></div>
+          <div className="auth-field"><Lock size={18} /><input type={showPw ? 'text' : 'password'} placeholder="Confirmar contraseña" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" aria-label="Confirmar contraseña" /></div>
 
           <div className="auth-checks">
             <label className="auth-check"><input type="checkbox" checked={checks.privacy} onChange={e => setChecks(c => ({ ...c, privacy: e.target.checked }))} /><span>Acepto la <b>Política de Privacidad</b></span></label>

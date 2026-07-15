@@ -1,0 +1,74 @@
+/**
+ * services/admin/match.service — Gestión de coincidencias (admin)
+ *
+ * PROPÓSITO:
+ *   Provee operaciones administrativas para consultar y actualizar
+ *   el estado de coincidencias entre personas.
+ *
+ * CARACTERÍSTICAS:
+ *   - getAdminMatches: lista coincidencias con lookup de personas y search requests
+ *   - updateMatchStatus: actualiza estado de una coincidencia
+ *   - Audit logging de todas las acciones
+ *
+ * @module match.service
+ */
+
+import { MatchModel } from '../../models/match.model';
+import { auditLog } from '../../middlewares/audit.middleware';
+import type { Request } from 'express';
+
+export async function getAdminMatches(limit: number, offset: number) {
+  const total = await MatchModel.countDocuments({ status: { $in: ['posible', 'probable', 'revisar'] } });
+
+  const matches = await MatchModel.aggregate([
+    { $match: { status: { $in: ['posible', 'probable', 'revisar'] } } },
+    { $sort: { score: -1 } },
+    { $skip: offset },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: 'unifiedpeople',
+        localField: 'reportId',
+        foreignField: 'idHash',
+        as: 'person'
+      }
+    },
+    { $unwind: { path: '$person', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'unifiedpeople',
+        localField: 'matchedPersonId',
+        foreignField: 'idHash',
+        as: 'matchedPerson'
+      }
+    },
+    { $unwind: { path: '$matchedPerson', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'searchrequests',
+        localField: 'searchRequestId',
+        foreignField: '_id',
+        as: 'searchRequestId'
+      }
+    },
+    { $unwind: { path: '$searchRequestId', preserveNullAndEmptyArrays: true } },
+  ]);
+  return { data: matches, total, limit, offset };
+}
+
+export async function updateMatchStatus(id: string, status: string, actor: string, req: Request) {
+  const match = await MatchModel.findByIdAndUpdate(id, { status }, { new: true });
+  if (!match) return { status: 404, error: 'Coincidencia no encontrada' };
+
+  auditLog({
+    eventType: 'admin_action',
+    severity: 'info',
+    actor,
+    action: 'PATCH /admin/matches/:id/status',
+    resource: id,
+    detail: { newStatus: status },
+    req,
+  });
+
+  return { status: 200, data: match };
+}

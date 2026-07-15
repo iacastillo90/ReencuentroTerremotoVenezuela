@@ -1,3 +1,28 @@
+/**
+ * models/localizado.model.ts — Personas localizadas en refugios/hospitales
+ *
+ * PROPÓSITO:
+ *   Almacena registros de personas que han sido localizadas (encontradas)
+ *   en refugios, hospitales o albergues durante desastres. Datos provistos
+ *   por partners (protección civil, hospitales, ONGs).
+ *
+ * CARACTERÍSTICAS:
+ *   - name: Nombre completo (índice text)
+ *   - cedula: Cédula de identidad (índice text)
+ *   - age, gender: Datos demográficos
+ *   - origin: Procedencia
+ *   - location: Hospital/Refugio/Albergue
+ *   - isVerified: Verificado en el registro
+ *   - sourceUrl: URL de la ficha original
+ *   - timestamps: createdAt + updatedAt
+ *
+ * ÍNDICES:
+ *   - name: text + cedula: text (text search compuesto)
+ *   - name: index (búsqueda exacta)
+ *   - cedula: index (búsqueda por cédula)
+ *
+ * @module localizado.model
+ */
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ILocalizado extends Document {

@@ -1,3 +1,17 @@
+/**
+ * __tests__/AuthModal.test.tsx — Tests del modal de autenticación
+ *
+ * PROPÓSITO:
+ *   Verifica que AuthModal renderice correctamente sus 3 estados:
+ *   - Estado 1: usuario no logueado → muestra botón de Google Login.
+ *   - Estado 2: usuario sin perfil completo → formulario de sector/teléfono.
+ *   - Estado 3: usuario pendiente de revisión → mensaje informativo.
+ *
+ * MOCKS:
+ *   - useAuth() mockeado para simular diferentes estados del usuario.
+ *   - GoogleLogin mockeado (no se puede renderizar en JSDOM).
+ *   - api.post mockeado para evitar llamadas reales.
+ */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { AuthModal } from '../components/modals/AuthModal';

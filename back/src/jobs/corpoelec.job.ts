@@ -1,13 +1,29 @@
+/**
+ * jobs/corpoelec.job — Sincronización de alertas de CORPOELEC
+ *
+ * PROPÓSITO:
+ *   Extrae alertas y comunicados oficiales del sitio web de CORPOELEC
+ *   mediante scraping y los inserta como eventos de desastre tipo "social".
+ *
+ * CARACTERÍSTICAS:
+ *   - Scraping del sitio web de CORPOELEC en busca de comunicados oficiales
+ *   - Fallback a datos de contingencia si el sitio está caído
+ *   - Deduplicación mediante checkSyncState
+ *
+ * @module corpoelec.job
+ */
+
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { DisasterEventModel } from '../models/disaster-event.model';
 import { checkSyncState, markSyncSuccess } from '../services/sync-state.service';
+import { logger } from '../utils/logger.util';
 
 const SOURCE = 'corpoelec-gov';
 const SOURCE_URL = 'http://www.corpoelec.gob.ve/'; // URL base de Corpoelec
 
 export async function runCorpoelecJob() {
-  console.log(`[CORPOELEC] Iniciando extracción de alertas eléctricas...`);
+  logger.info('[CORPOELEC] Iniciando extracción de alertas eléctricas...');
   
   try {
     let alerts: any[] = [];
@@ -32,7 +48,7 @@ export async function runCorpoelecJob() {
       if (alerts.length === 0) throw new Error('No alertas HTML');
       
     } catch (e) {
-      console.log(`[CORPOELEC] Scraping falló, usando datos de contingencia...`);
+      logger.warn('[CORPOELEC] Scraping falló, usando datos de contingencia...');
       alerts = [
         {
           id: `corpoelec-fallback-01`,
@@ -75,9 +91,9 @@ export async function runCorpoelecJob() {
       ingested++;
     }
 
-    console.log(`[CORPOELEC] Completado. Nuevos: ${ingested}.`);
+    logger.info({ ingested }, '[CORPOELEC] Completado.');
 
   } catch (error: any) {
-    console.error(`[CORPOELEC] Error crítico en la extracción:`, error.message);
+    logger.error({ err: (error as Error).message }, '[CORPOELEC] Error crítico en la extracción');
   }
 }

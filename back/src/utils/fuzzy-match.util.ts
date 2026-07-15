@@ -1,3 +1,18 @@
+/**
+ * utils/fuzzy-match.util.ts — Similitud difusa entre strings
+ *
+ * PROPÓSITO:
+ *   Calcula el score de similitud entre dos strings usando distancia
+ *   de Levenshtein (fastest-levenshtein). Se usa en el motor de
+ *   reconciliación (reconciliation.service) para detectar duplicados.
+ *
+ * CARACTERÍSTICAS:
+ *   - calculateSimilarity: Score 0-1 basado en Levenshtein distance
+ *   - Normalización: trim + lowercase antes de comparar
+ *   - Exact match → score 1 (short-circuit)
+ *
+ * @module fuzzy-match.util
+ */
 import { distance } from 'fastest-levenshtein';
 
 /**

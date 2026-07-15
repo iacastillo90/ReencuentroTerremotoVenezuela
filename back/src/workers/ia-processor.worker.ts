@@ -1,45 +1,206 @@
+/**
+ * workers/ia-processor.worker.ts — Worker de procesamiento con IA
+ *
+ * PROPÓSITO:
+ *   Procesa reportes de personas con inteligencia artificial: extrae
+ *   datos estructurados de texto libre, analiza imágenes (face encoding),
+ *   genera embeddings vectoriales para Pinecone, y enriquece perfiles
+ *   con metadatos de IA (edad estimada, ubicación probable, urgencia).
+ *
+ * CARACTERÍSTICAS:
+ *   - aiOutputSchema: Valida output de la IA (name, estado, age, urgencyScore, safeDescription)
+ *   - processAndReconcilePerson: Pipeline de reconciliación con datos existentes
+ *   - extractFaceEncoding: Llama al microservicio Python (vision) para encoding facial
+ *   - upsertVectorToPinecone: Indexa embedding textual en Pinecone para búsqueda vectorial
+ *   - emitToUser: Notifica al usuario vía Socket.IO cuando el procesamiento termina
+ *
+ * FLUJO DE PROCESAMIENTO:
+ *   1. BullMQ entrega job con datos crudos del reporte
+ *   2. Extrae face encoding del microservicio vision (si hay foto)
+ *   3. IA analiza descripción textual y extrae datos estructurados
+ *   4. Valida output con aiOutputSchema
+ *   5. Reconciliation: cruza con perfiles existentes (name + state)
+ *   6. Si aplicable, upsert a Pinecone para matching vectorial
+ *   7. Emite evento Socket.IO al usuario para notificar completado
+ *
+ * SEGURIDAD:
+ *   - aiOutputSchema: Zod valida output de la IA (previene datos corruptos)
+ *   - AbortSignal.timeout(35000): Timeout para llamadas HTTP externas
+ *   - Vision service URL configurable via env var
+ *   - Face encoding opcional: No bloquea si falla (graceful degradation)
+ *
+ * DECISIONES TÉCNICAS:
+ *   - Worker separado de API: No bloquea responses del usuario
+ *   - Vision service timeout 35s: Balance entre calidad y latencia
+ *   - Graceful degradation: Si face encoding falla, continúa sin él
+ *   - Zod validation del output IA: Previene que IA corrupta entre a BD
+ *
+ * CÓMO USAR:
+ *   // Encolar desde controller:
+ *   await addJobToIAQueue({ personId, rawDescription, imageUrl });
+ *   // Worker procesa automáticamente en background
+ */
+import 'dotenv/config';
+import { z } from 'zod';
 import { Worker, Job } from 'bullmq';
+import { connectDB } from '../database/connection';
 import { processAndReconcilePerson } from '../services/reconciliation.service';
 import { connection } from '../config/redis.config';
 import { getAIProvider } from '../services/ai/ai.factory';
 import { upsertVectorToPinecone } from '../services/pinecone.service';
+import { emitToUser } from '../services/socket.service';
+import { UnifiedPerson } from '../models/unified-person.model';
+import { logger } from '../utils/logger.util';
+
+const aiOutputSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  estado: z.string().min(1).max(100).optional(),
+  age: z.number().int().positive().max(150).optional(),
+  urgencyScore: z.number().min(0).max(100).optional(),
+  safeDescription: z.string().max(10000).optional(),
+});
+
+connectDB('Worker');
+
+const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
+
+interface FaceExtractResult {
+  encoding: number[] | null;
+  containsMinor: boolean;
+  containsMinorAges: Array<{ age_range: string; age_approx: number }>;
+}
+
+async function extractFaceEncoding(imageUrl: string): Promise<FaceExtractResult> {
+  const defaultResult: FaceExtractResult = { encoding: null, containsMinor: false, containsMinorAges: [] };
+  try {
+    const response = await fetch(`${VISION_SERVICE_URL}/extract-face`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_url: imageUrl, timeout: 30 }),
+      signal: AbortSignal.timeout(35000),
+    });
+
+    if (!response.ok) {
+      logger.warn({ status: response.status }, '[ia-processor] Vision service returned error');
+      return defaultResult;
+    }
+
+    const result = await response.json();
+
+    const containsMinorAges: Array<{ age_range: string; age_approx: number }> = [];
+    let containsMinor = false;
+
+    if (result.faces && Array.isArray(result.faces)) {
+      for (const face of result.faces) {
+        if (face.age_approx && face.age_approx <= 20) {
+          containsMinor = true;
+          containsMinorAges.push({ age_range: face.age_range, age_approx: face.age_approx });
+        }
+      }
+    }
+
+    if (!result.face_detected || !result.face_encoding) {
+      logger.info({ containsMinor }, '[ia-processor] No face encoding but age data may exist');
+      return { encoding: null, containsMinor, containsMinorAges };
+    }
+
+    logger.info(
+      { dims: result.face_encoding.length, containsMinor, minorAges: containsMinorAges },
+      '[ia-processor] Face encoding extracted'
+    );
+    return { encoding: result.face_encoding, containsMinor, containsMinorAges };
+  } catch (error: any) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      logger.warn('[ia-processor] Vision service timeout (35s)');
+    } else {
+      logger.warn({ err: error }, '[ia-processor] Vision service error');
+    }
+    return defaultResult;
+  }
+}
 
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
   
-  // 1. Fase de Análisis IA
-  const aiProvider = getAIProvider();
-  
-  // Send the full raw data or text to the AI for extraction
-  const rawTextToAnalyze = typeof rawData.text === 'string' 
-    ? rawData.text 
-    : JSON.stringify(rawData);
-  
-  const aiResult = await aiProvider.processRecord(rawTextToAnalyze);
-  
-  // 2. Extracted Data
-  const aiProcessedText = aiResult.safeDescription; 
-  const urgencyScore = aiResult.urgencyScore;
-  const personName = aiResult.name || rawData.name || 'Desconocido';
-  const personState = aiResult.estado || rawData.estado || 'Desconocido';
-  const personAge = aiResult.age || (rawData.data?.age ? Number(rawData.data.age) : undefined);
-  
-  // Generar Embedding Vectorial (Fase 3)
-  let embedding: number[] | undefined = undefined;
-  if (aiProvider.generateEmbedding) {
-    const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
-    try {
-      embedding = await aiProvider.generateEmbedding(textToEmbed);
-    } catch (e) {
-      console.warn('[ia-processor] Error generando embedding, ignorando:', e);
+  try {
+    const isMinor = rawData.isMinor === true;
+    let aiProcessedText = rawData.text || 'Sin descripción';
+    let urgencyScore = isMinor ? 10 : 1;
+    let personName = rawData.name || 'Desconocido';
+    let personState = rawData.estado || 'Desconocido';
+    let personAge = rawData.data?.age ? Number(rawData.data.age) : undefined;
+    let embedding: number[] | undefined = undefined;
+    let faceEncoding: number[] | undefined = undefined;
+
+    if (!isMinor) {
+      const aiProvider = getAIProvider();
+      
+      const rawTextToAnalyze = typeof rawData.text === 'string' 
+        ? rawData.text 
+        : JSON.stringify(rawData);
+      
+      let aiResult: any = null;
+      try {
+        aiResult = await aiProvider.processRecord(rawTextToAnalyze);
+        const validated = aiOutputSchema.safeParse(aiResult);
+        if (!validated.success) {
+          logger.warn({ issues: validated.error.issues }, '[ia-processor] AI output validation failed, using raw fields');
+        } else {
+          aiResult = validated.data;
+        }
+      } catch (error) {
+        logger.error({ err: error }, '[ia-processor] AI API Error, falling back to manual fields');
+      }
+      
+      aiProcessedText = aiResult?.safeDescription || aiProcessedText; 
+      urgencyScore = aiResult?.urgencyScore || urgencyScore;
+      personName = aiResult?.name || personName;
+      personState = aiResult?.estado || personState;
+      personAge = aiResult?.age || personAge;
+      
+      // Generar Embedding Vectorial (texto) solo para adultos
+      if (aiProvider.generateEmbedding) {
+        const textToEmbed = `Nombre: ${personName}. Estado: ${personState}. Edad: ${personAge || 'Desconocida'}. Descripción: ${aiProcessedText}`;
+        try {
+          embedding = await aiProvider.generateEmbedding(textToEmbed);
+        } catch (e) {
+          logger.warn({ err: e }, '[ia-processor] Error generating text embedding');
+        }
+      }
     }
-  }
-  
-  // 3. Reconciliación e Inserción Idempotente
-  const result = await processAndReconcilePerson(
-    rawData.source || 'manual',
-    rawData.externalId || job.id || 'unknown',
-    {
+    
+    // 2. Extraer encoding facial + detección de edad (protección LOPNNA)
+    let containsMinor = false;
+    let containsMinorAges: Array<{ age_range: string; age_approx: number }> = [];
+
+    if (rawData.photoUrl) {
+      let imageUrl = rawData.photoUrl;
+      if (imageUrl.startsWith('/api/media/')) {
+        const apiBaseUrl = process.env.API_BASE_URL || 'http://api:4000';
+        imageUrl = `${apiBaseUrl}${imageUrl}`;
+      }
+      const faceResult = await extractFaceEncoding(imageUrl);
+      faceEncoding = faceResult.encoding || undefined;
+      containsMinor = faceResult.containsMinor;
+      containsMinorAges = faceResult.containsMinorAges;
+    }
+
+    let biometricHash = undefined;
+    if (faceEncoding && faceEncoding.length > 0) {
+      const buffer = Buffer.from(new Float32Array(faceEncoding).buffer);
+      biometricHash = require('crypto').createHash('sha256').update(buffer).digest('hex').substring(0, 16);
+    }
+
+    // 3. Determinar auditStatus: si contiene menor, va a moderación LOPNNA
+    let auditStatus: UnifiedPerson['metadata']['auditStatus'] = 'clean';
+    if (containsMinor) {
+      auditStatus = 'flagged_moderation';
+    } else if (!rawData.source || rawData.source === 'manual') {
+      auditStatus = 'pending_moderation';
+    }
+
+    // 3. Reconciliación e Inserción Idempotente
+    const personData = {
       type: rawData.type || 'person',
       name: personName,
       normalizedName: String(personName).toLowerCase(),
@@ -51,32 +212,124 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
       age: personAge,
       photoUrl: rawData.photoUrl,
       embedding: embedding,
+      faceEncoding: faceEncoding,
       metadata: {
         urgencyScore: urgencyScore,
         confidenceScore: rawData.confidence_score,
         confidenceLabel: rawData.confidence_label,
-        aiProcessed: true,
-        auditStatus: 'clean',
+        aiProcessed: !isMinor,
+        isMinor: isMinor,
+        containsMinor: containsMinor,
+        containsMinorAges: containsMinorAges,
+        auditStatus: auditStatus,
         createdAt: new Date(),
         updatedAt: new Date(),
         lastSync: new Date(),
         source: rawData.source || 'manual',
         reportedBy: rawData.reportedBy,
         reporterIp: rawData.reporterIp,
-        reporterLocation: rawData.reporterLocation
+        reporterLocation: rawData.reporterLocation,
+        biometricHash: biometricHash
+      }
+    };
+
+    const personDataValidation = z.object({
+      type: z.enum(['person', 'animal']),
+      name: z.string().min(1).max(200),
+      normalizedName: z.string().min(1).max(200),
+      lastSeen: z.object({
+        description: z.string().max(10000),
+        state: z.string().min(1).max(100),
+        date: z.date(),
+      }),
+      age: z.number().int().positive().max(150).optional(),
+      photoUrl: z.string().max(2000).optional(),
+      embedding: z.array(z.number()).optional(),
+      faceEncoding: z.array(z.number()).optional(),
+      metadata: z.object({
+        urgencyScore: z.number().min(0).max(100),
+        confidenceScore: z.number().optional(),
+        confidenceLabel: z.string().optional(),
+        aiProcessed: z.boolean(),
+        isMinor: z.boolean(),
+        containsMinor: z.boolean().optional(),
+        containsMinorAges: z.array(z.object({ age_range: z.string(), age_approx: z.number() })).optional(),
+        auditStatus: z.string(),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        lastSync: z.date(),
+        source: z.string(),
+        reportedBy: z.any().optional(),
+        reporterIp: z.string().optional(),
+        reporterLocation: z.any().optional(),
+        biometricHash: z.string().optional(),
+      }),
+    });
+
+    const validation = personDataValidation.safeParse(personData);
+    if (!validation.success) {
+      logger.error({ issues: validation.error.issues, jobId: job.id }, '[ia-processor] Person data validation failed');
+      throw new Error('Person data validation failed');
+    }
+
+    const result = await processAndReconcilePerson(
+      rawData.source || 'manual',
+      rawData.externalId || job.id || 'unknown',
+      personData
+    );
+
+    // 4. Guardar en Pinecone si está activo y hay embedding
+    if (embedding && result.idHash && process.env.USE_PINECONE_VECTOR_SEARCH === 'true') {
+      await upsertVectorToPinecone(result.idHash, embedding, {
+        name: personName,
+        status: 'missing',
+        state: personState
+      });
+    }
+
+    // 5. Guardar faceEncoding en Pinecone (índice separado o mismo con prefijo)
+    if (faceEncoding && result.idHash && process.env.USE_PINECONE_VECTOR_SEARCH === 'true') {
+      await upsertVectorToPinecone(`face_${result.idHash}`, faceEncoding, {
+        name: personName,
+        status: 'missing',
+        state: personState,
+        type: 'face'
+      });
+    }
+
+    // 6. Notificar al usuario creador por WebSocket en tiempo real
+    if (rawData.reportedBy) {
+      let title = 'Reporte Procesado';
+      let message = `El reporte para "${personName}" ha sido procesado exitosamente.`;
+      let type: 'success' | 'warning' | 'info' = 'success';
+
+      if (result.status === 'auto-merged') {
+        title = 'Reporte Fusionado';
+        message = `El reporte para "${personName}" se fusionó con un registro existente debido a alta similitud (>95%).`;
+        type = 'info';
+      } else if (result.status === 'pending_audit') {
+        title = 'Reporte en Auditoría';
+        message = `El reporte para "${personName}" está bajo revisión por posible duplicado.`;
+        type = 'warning';
+      }
+
+      try {
+        emitToUser(rawData.reportedBy.toString(), 'notification', {
+          title,
+          message,
+          type,
+        });
+      } catch (err) {
+        logger.warn({ err }, '[ia-processor] Socket notification failed');
       }
     }
-  );
 
-  // 4. Guardar en Pinecone si está activo y hay embedding
-  if (embedding && result.idHash && process.env.USE_PINECONE_VECTOR_SEARCH === 'true') {
-    await upsertVectorToPinecone(result.idHash, embedding, {
-      name: personName,
-      status: 'missing',
-      state: personState
-    });
+    logger.info({ status: result.status, idHash: result.idHash }, '[ia-processor] Record reconciled');
+  } catch (error: any) {
+    logger.error({ err: error, jobId: job.id }, '[ia-processor] Job failed');
+    if (error.name === 'ValidationError') {
+      logger.error({ details: error.errors }, '[ia-processor] Mongoose validation error');
+    }
+    throw error;
   }
-
-  console.log(`[ia-processor] Registro reconciliado (${result.status}). idHash: ${result.idHash || 'pendiente'}`);
 }, { connection: connection as any });
-

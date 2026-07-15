@@ -1,39 +1,51 @@
-import { Queue } from 'bullmq';
-import { legacyStore } from './legacy/legacy.store';
-
-const redisConfig = {
-  connection: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: parseInt(process.env.REDIS_PORT || '6379')
-  }
-};
-
-const iaProcessQueue = new Queue('ia-process', redisConfig);
-
 /**
- * Patrón de Escritura Dual (Dual Write) para la persistencia.
- * Mantiene compatibilidad con Reencuentro Terremoto Venezuela v2.0 (SQL/legacy) y emite eventos
- * hacia el hub de IA de MongoDB para el ecosistema TDD actual.
+ * services/bridge.service.ts — Puente legacy → nuevo sistema
+ *
+ * PROPÓSITO:
+ *   Sirve como puente durante la migración del sistema legacy (SQL)
+ *   hacia la nueva arquitectura (MongoDB + colas). Escribe en ambos
+ *   sistemas simultáneamente (dual write) y encola para procesamiento
+ *   por IA.
+ *
+ * CARACTERÍSTICAS:
+ *   - ingestDualWrite: Persiste en legacy SQL + encola a IA queue
+ *   - Error tolerante: Si legacy falla, lanza error. Si IA queue falla, solo log.
+ *   - addBulk: Encola múltiples registros en una sola operación
+ *
+ * FLUJO DE DATOS:
+ *   1. Records llegan desde adaptadores externos (n8n, scraping)
+ *   2. legacyStore.upsertMediaBatch: Persiste en SQL legacy
+ *   3. iaProcessQueue.addBulk: Encola para procesamiento IA
+ *   4. Si legacy falla → throw (rollback upstream)
+ *   5. Si IA queue falla → solo log (no crítico)
+ *
+ * SEGURIDAD:
+ *   - No validación aquí: Los records deben venir ya validados
+ *   - Error propagation: Fallo en legacy bloquea la operación
+ *   - Graceful degradation: IA queue fallo no bloquea
+ *
+ * @module bridge.service
  */
+import { iaProcessQueue } from '../queues/ia-process.queue';
+import { legacyStore } from './legacy/legacy.store';
+import { logger } from '../utils/logger.util';
+
 export async function ingestDualWrite(records: any[]): Promise<void> {
   if (!records || records.length === 0) return;
 
-  // 1. Escritura síncrona en PostgreSQL (Tablas Originales - Legacy)
   try {
     await legacyStore.upsertMediaBatch(records);
-    console.log(`[bridge] Persistidos ${records.length} registros en SQL (Legacy Reencuentro Terremoto Venezuela)`);
+    logger.info({ count: records.length }, '[bridge] Records persisted to legacy SQL');
   } catch (error: any) {
-    console.error('[bridge] Fallo crítico de persistencia en SQL legacy:', error.message);
-    throw error; // Falla rápido para asegurar integridad relacional
+    logger.error({ err: error }, '[bridge] Legacy SQL persistence failed');
+    throw error;
   }
 
-  // 2. Transmisión asíncrona hacia BullMQ → ecosistema MongoDB + IA
   try {
     const jobs = records.map(record => ({ name: 'process', data: record }));
     await iaProcessQueue.addBulk(jobs);
-    console.log(`[bridge] ${records.length} registros encolados a 'ia-process' para IA`);
+    logger.info({ count: records.length }, '[bridge] Records enqueued to ia-process');
   } catch (error: any) {
-    // No lanzamos error: el registro SQL ya fue exitoso.
-    console.error('[bridge] Advertencia: Error encolando flujo hacia la IA:', error.message);
+    logger.error({ err: error }, '[bridge] Error enqueuing to IA queue');
   }
 }

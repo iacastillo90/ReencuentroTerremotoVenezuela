@@ -79,13 +79,14 @@ services:
     env_file:
       - ./back/.env
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 4000
       MONGO_URI: mongodb://mongodb:27017/reencuentro
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
+      VISION_SERVICE_URL: http://vision:8000
     depends_on:
       mongodb:
         condition: service_healthy
@@ -106,21 +107,48 @@ services:
     image: reencuentros-api:latest
     container_name: reencuentros_worker
     restart: always
-    command: ["node", "dist/src/workers/ia-processor.worker.js"]
+    command: ["node", "dist/src/worker.js"]
     env_file:
       - ./back/.env
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       MONGO_URI: mongodb://mongodb:27017/reencuentro
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
+      VISION_SERVICE_URL: http://vision:8000
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      disable: true
     # El worker puede escalar horizontalmente si hay alta demanda:
     # docker compose up -d --scale worker=3
+
+  # ── 6. Visión Artificial (face_recognition) ─────────────────
+  # Microservicio Python/FastAPI para extraer vectores faciales.
+  # Corre en CPU. No requiere GPU. Procesa ~1-3s por foto.
+  # Si falla o no detecta rostro, el worker de IA lo ignora gracefulmente.
+  vision:
+    build:
+      context: ./vision
+      dockerfile: Dockerfile
+    image: reencuentros-vision:latest
+    container_name: reencuentros_vision
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 # ── Volúmenes Persistentes ────────────────────────────────────
 # Los datos de personas sobreviven a reinicios y actualizaciones

@@ -1,5 +1,22 @@
+/**
+ * services/ai/gemini.service — Proveedor de IA Google Gemini
+ *
+ * PROPÓSITO:
+ *   Implementa IAIProvider usando el SDK de Google GenAI para procesar
+ *   reportes de texto, transcribir audio y analizar imágenes.
+ *
+ * CARACTERÍSTICAS:
+ *   - processRecord: extrae datos estructurados (usa responseMimeType JSON)
+ *   - transcribeAudio: transcripción nativa de archivos de audio
+ *   - analyzeImageDraft: separa rasgos permanentes de ropa/accesorios
+ *   - generateEmbedding: genera embeddings con text-embedding-004
+ *
+ * @module gemini.service
+ */
+
 import { GoogleGenAI } from '@google/genai';
 import { IAIProvider, AIProcessResult, ImageDraftAnalysis, SYSTEM_PROMPT } from './ai.interface';
+import { logger } from '../../utils/logger.util';
 
 export class GeminiProvider implements IAIProvider {
   private client: GoogleGenAI;
@@ -24,7 +41,7 @@ export class GeminiProvider implements IAIProvider {
       
       return JSON.parse(text) as AIProcessResult;
     } catch (error) {
-      console.error('Gemini Error:', error);
+      logger.error({ err: error }, 'Gemini Error');
       throw error;
     }
   }
@@ -35,18 +52,25 @@ export class GeminiProvider implements IAIProvider {
         model: 'gemini-2.5-flash',
         contents: [
           {
-            inlineData: {
-              data: audioBuffer.toString('base64'),
-              mimeType: mimeType
-            }
-          },
-          { text: "Eres un experto transcribiendo audio. Transcribe todo lo que escuches en el audio adjunto palabra por palabra. Si el audio está vacío, en silencio, o solo hay ruido, responde exactamente con: 'No se detectó voz clara en el audio.'" }
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  data: audioBuffer.toString('base64'),
+                  mimeType: mimeType
+                }
+              },
+              {
+                text: 'Transcribe exactamente lo que se dice en este audio, palabra por palabra, en el idioma en que fue hablado. Solo devuelve el texto transcrito, sin comentarios adicionales.'
+              }
+            ]
+          }
         ]
       });
 
       return response.text || '';
     } catch (error) {
-      console.error('Gemini Transcription Error:', error);
+      logger.error({ err: error }, 'Gemini Transcription Error');
       throw new Error('No se pudo transcribir el audio usando Gemini.');
     }
   }
@@ -82,7 +106,7 @@ No agregues comentarios ni markdown fuera del JSON.
       const text = response.text || '{}';
       return JSON.parse(text) as ImageDraftAnalysis;
     } catch (error) {
-      console.error('Gemini Image Analysis Error:', error);
+      logger.error({ err: error }, 'Gemini Image Analysis Error');
       throw new Error('No se pudo analizar la imagen usando Gemini.');
     }
   }
@@ -95,7 +119,7 @@ No agregues comentarios ni markdown fuera del JSON.
       });
       return response.embeddings?.[0]?.values || [];
     } catch (error) {
-      console.error('Gemini Embedding Error:', error);
+      logger.error({ err: error }, 'Gemini Embedding Error');
       throw new Error('No se pudo generar el embedding con Gemini.');
     }
   }

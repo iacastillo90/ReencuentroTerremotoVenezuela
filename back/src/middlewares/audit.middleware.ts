@@ -1,5 +1,29 @@
+/**
+ * middlewares/audit.middleware.ts — Auditoría de acciones
+ *
+ * PROPÓSITO:
+ *   Provee dos mecanismos de auditoría: un middleware Express que
+ *   captura automáticamente cada request (con status code y duración),
+ *   y una función independiente (auditLog) para logging manual desde
+ *   handlers. Ambos son fire-and-forget (nunca bloquean la respuesta).
+ *
+ * CARACTERÍSTICAS:
+ *   - createAuditMiddleware: Factory que crea middleware por eventType
+ *   - auditLog: Función standalone para logging manual
+ *   - Captura método HTTP, path, IP, user-agent, status code, duración
+ *   - Fire-and-forget: catch silencioso si la BD falla
+ *   - getResource callback opcional: Extrae recurso del req
+ *
+ * FLUJO (middleware):
+ *   1. Intercepta res.end antes de la respuesta
+ *   2. Después de res.end (response enviada), crea AuditLog entry
+ *   3. No bloquea la respuesta (next() se llama inmediatamente)
+ *
+ * @module audit.middleware
+ */
 import { Request, Response, NextFunction } from 'express';
 import { AuditLogModel, IAuditLog } from '../models/audit-log.model';
+import { logger } from '../utils/logger.util';
 
 export function createAuditMiddleware(
   eventType: IAuditLog['eventType'],
@@ -13,7 +37,7 @@ export function createAuditMiddleware(
     const originalEnd = res.end;
     res.end = function (this: Response, ...args: any[]) {
       const duration = Date.now() - startTime;
-      const actor = (req as any).user?.userId || req.ip || 'unknown';
+      const actor = req.user?.userId || req.ip || 'unknown';
 
       const entry: Partial<IAuditLog> = {
         eventType,
@@ -29,7 +53,7 @@ export function createAuditMiddleware(
 
       // Fire-and-forget — never block the response
       AuditLogModel.create(entry).catch((err: Error) => {
-        console.error('[AuditLog] Failed to create audit entry:', err.message);
+        logger.error({ err: err.message }, '[AuditLog] Failed to create audit entry');
       });
 
       return originalEnd.apply(this, args as any);
@@ -64,6 +88,6 @@ export async function auditLog(params: {
       timestamp: new Date(),
     });
   } catch (err: any) {
-    console.error('[AuditLog] Failed to create audit entry:', err.message);
+    logger.error({ err: err.message }, '[AuditLog] Failed to create audit entry');
   }
 }

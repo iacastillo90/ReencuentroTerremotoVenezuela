@@ -1,3 +1,19 @@
+/**
+ * validators/auth.validator — Esquemas Zod para autenticación
+ *
+ * PROPÓSITO:
+ *   Define esquemas de validación para autenticación con Google OAuth,
+ *   registro con correo/contraseña, inicio de sesión y actualización de perfil.
+ *
+ * SCHEMAS:
+ *   - googleAuthSchema: token de Google
+ *   - profileUpdateSchema: sector y número de contacto
+ *   - registerSchema: nombre, email, password, contacto, ubicación
+ *   - loginSchema: email y password
+ *
+ * @module auth.validator
+ */
+
 import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
 

@@ -1,3 +1,17 @@
+/* ═══════════════════════════
+   ReportModal.css — Modal de 7 pasos para reportar
+   ═══════════════════════════
+   El archivo CSS más grande del proyecto (~1570 líneas). Cubre:
+   - Overlay + content con animación de entrada
+   - Header con brand + back + close
+   - Step progress bar (5 dots)
+   - Cada paso tiene su propio layout (categorías, voz,
+     características, vestimenta, señas, ubicación, éxito)
+   - Error overlay con diseño de tarjeta (ShieldAlert)
+   - Selectores visuales de color (piel, cabello, ojos)
+   - Upload area, location button, loader spinner
+   - Responsive: mobile-first con sticky bottom actions
+   ═══════════════════════════ */
 .report-modal-overlay {
   position: fixed;
   top: 0;
@@ -15,32 +29,384 @@
 }
 
 .report-modal-content {
-  background-color: var(--clr-card);
-  border-radius: 16px;
+  background: #07101C;
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--clr-border);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --clr-text-dim: #FFFFFF;
+  --clr-text-muted: #FFFFFF;
+  color: #FFFFFF;
 }
 
 .report-modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--clr-border);
-  position: sticky;
-  top: 0;
-  background-color: rgba(17, 17, 24, 0.95);
-  backdrop-filter: blur(8px);
+  justify-content: space-between;
+  min-height: 80px;
+  padding: 0 16px;
+  background: #07101C;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 100;
+}
+.report-modal-header .nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.report-modal-header .nav-logo {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 48px;
+  height: 36px;
+}
+.report-modal-header .nav-logo .logo-yellow {
+  width: 27px;
+  height: 26px;
+  border-radius: 12px;
+  background: #F2B709;
+  position: absolute;
+  top: 5px;
+  left: 0;
+  z-index: 1;
+}
+.report-modal-header .nav-logo .logo-blue {
+  width: 27px;
+  height: 26px;
+  border-radius: 12px;
+  background: #0B3D89;
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  z-index: 2;
+}
+.report-modal-header .nav-logo .logo-red {
+  width: 38px;
+  height: 33px;
+  border-radius: 2px;
+  background: #E52520;
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  z-index: 0;
+}
+.report-modal-header .nav-logo .logo-star {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  width: 18px;
+  height: 18px;
+  z-index: 3;
+  color: #fff;
+}
+.report-modal-header .nav-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.report-modal-header .nav-text .nav-tagline {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--clr-text-dim);
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+.report-modal-header .nav-profile {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.report-modal-header .nav-profile .profile-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #211F26;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-text-dim);
+  transition: background 0.2s;
+}
+.report-modal-header .nav-profile:hover .profile-circle {
+  background: #333;
+}
+.report-modal-header .nav-back {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--clr-text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   z-index: 10;
+  padding: 4px;
+  border-radius: 8px;
+}
+.report-modal-header .nav-back:hover {
+  background: rgba(255,255,255,0.06);
 }
 
-:root[data-theme='dark'] .report-modal-header {
-  background-color: rgba(30, 41, 59, 0.95);
+/* Cabecera izquierda (back + logo) */
+.header-left-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Botón de retroceso del header */
+.header-back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  padding: 4px;
+  border-radius: 8px;
+}
+.header-back-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Botón de cerrar (X) del header */
+.header-close-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.header-close-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Contenedor de paso animado (key={step}) */
+.step-animated-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Tarjeta de ubicación adjunta (paso 6) */
+.location-card {
+  margin-top: 1rem;
+  padding: 12px;
+  background: #1c1c1e;
+  border-radius: 8px;
+  border: 1px solid #333;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.location-card-icon {
+  width: 48px;
+  height: 48px;
+  background: #333;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.location-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.location-card-title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: #fff;
+}
+.location-card-meta {
+  font-size: var(--text-xs);
+  color: var(--clr-text-muted);
+}
+.location-card-check {
+  flex-shrink: 0;
+}
+
+/* ═══ Paso 1: Heading (Título dentro del contenido) ═══ */
+.step-paso-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.step-paso-num {
+  font-size: 20px;
+  font-weight: 600;
+  color: #F6F7F8;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.step-paso-desc {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+/* ═══ Paso 1: Toggle Manual / Con IA ═══ */
+.figma-toggle {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 8px 4px 4px;
+  gap: 10px;
+  width: 196px;
+  height: 52px;
+  background: #202932;
+  border-radius: 50px;
+  align-self: center;
+}
+.figma-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: 50px;
+  padding: 12px;
+  height: 44px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.figma-toggle-btn:first-child {
+  width: 74px;
+}
+.figma-toggle-btn:last-child {
+  width: 100px;
+}
+.figma-toggle-btn.active {
+  background: #3E8DEB;
+  color: #FFFFFF;
+}
+
+/* ═══ Paso 1: Alert card (Asistente IA) ═══ */
+.figma-alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #191919;
+  border: 1px solid #444444;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.figma-alert-icon {
+  flex-shrink: 0;
+  color: #4497D6;
+  margin-top: 2px;
+}
+.figma-alert-body {
+  flex: 1;
+  min-width: 0;
+}
+.figma-alert-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+.figma-alert-body p {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8E8E93;
+  line-height: 1.4;
+  margin: 0;
+}
+.figma-alert-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 50px;
+  background: transparent;
+  color: #3E8DEB;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.figma-alert-btn:hover {
+  background: rgba(62, 141, 235, 0.12);
+}
+
+/* Step Progress Bar */
+.step-progress {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px 0;
+  background: #07101C;
+}
+.step-progress .step-dot {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #9CA0A4;
+  transition: background 0.4s ease;
+}
+.step-progress .step-dot.active {
+  background: #3E8DEB;
+}
+
+/* Step Header */
+.step-header {
+  padding: 12px 16px 8px;
+  background: #07101C;
+  text-align: center;
+  margin: 1.5rem 0 1rem;
+}
+.step-header .step-paso {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--clr-text-dim);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.step-header .step-title {
+  font-size: var(--text-lg);
+  color: var(--clr-text-dim);
+  font-weight: var(--weight-medium);
+  margin-top: 4px;
+  letter-spacing: -0.01em;
 }
 
 .report-modal-title {
@@ -48,25 +414,27 @@
   align-items: center;
   gap: 0.75rem;
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
   color: var(--clr-text);
 }
 
 .report-modal-body {
-  padding: 1.5rem;
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .ai-notice {
   background-color: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  color: #2563eb;
+  color: var(--clr-primary);
   padding: 1rem;
   border-radius: 8px;
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   align-items: flex-start;
 }
 
@@ -81,9 +449,9 @@
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   color: var(--clr-text);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
 }
 
 .form-group input,
@@ -96,7 +464,7 @@
   background-color: transparent;
   color: var(--clr-text);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: var(--text-lg);
   transition: border-color 0.2s;
 }
 
@@ -124,7 +492,7 @@
 .btn-cancel {
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   border: 1px solid var(--clr-border);
   background: transparent;
   color: var(--clr-text);
@@ -134,7 +502,7 @@
 .btn-submit {
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   border: none;
   background-color: var(--clr-primary);
   color: white;
@@ -155,7 +523,7 @@
   color: var(--clr-text);
   border: 1px solid var(--clr-border);
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -174,7 +542,7 @@
 }
 
 .btn-submit:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: var(--clr-primary);
 }
 
 .success-state {
@@ -195,7 +563,7 @@
 .auth-modal-error {
   padding: 1rem;
   background-color: #fee2e2;
-  color: #b91c1c;
+  color: var(--clr-danger);
   border-radius: 8px;
   margin-bottom: 1rem;
 }
@@ -210,6 +578,20 @@
   color: var(--clr-text-muted);
 }
 
+.auth-modal-pending {
+  text-align: center;
+  padding: 20px;
+}
+
+.auth-modal-pending h3 {
+  color: #d97706;
+  margin-bottom: 10px;
+}
+
+.auth-modal-pending-btn {
+  margin-top: 15px;
+}
+
 .auth-modal-login-actions {
   display: flex;
   flex-direction: column;
@@ -220,7 +602,7 @@
 .auth-modal-profile-text {
   margin-bottom: 1.5rem;
   color: var(--clr-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-md);
 }
 
 .report-modal-form-group-row {
@@ -251,7 +633,7 @@
   align-items: center;
   gap: 6px;
   color: var(--clr-primary);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 
 .report-modal-ai-box {
@@ -276,11 +658,11 @@
 }
 .audio-recorder-title {
   display: block;
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   margin-bottom: 4px;
 }
 .audio-recorder-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 .audio-recorder-controls {
@@ -290,7 +672,7 @@
 }
 .audio-recorder-status {
   margin-top: 8px;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--clr-danger);
   display: flex;
   align-items: center;
@@ -305,13 +687,13 @@
 }
 .audio-recorder-error {
   margin-top: 8px;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--clr-danger);
 }
 
 .required-mark {
   color: var(--clr-amber);
-  font-weight: 800;
+  font-weight: var(--weight-extrabold);
 }
 
 .report-modal-overlay {
@@ -326,7 +708,6 @@
     height: 100%;
     max-height: none;
     border-radius: 0;
-    padding-bottom: 84px; /* Space for the bottom nav */
   }
 }
 
@@ -345,30 +726,24 @@
 }
 
 .report-modal-content {
-  width: 100%;
-  max-width: none;
-  height: 100dvh;
-  max-height: none;
-  border-radius: 0;
-  border: 0;
-  box-shadow: none;
-  background: var(--clr-bg);
+  z-index: 1000;
 }
 
-.report-modal-header {
-  min-height: var(--nav-h);
-  padding: 0 1rem;
-  background: rgba(9, 17, 30, 0.96);
+.report-modal-content--auth {
+  max-width: 400px;
 }
-
 .report-modal-title {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
 }
 
 .report-modal-body {
   width: min(100%, 760px);
   margin: 0 auto;
   padding: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .report-modal-form-group-row {
@@ -430,7 +805,7 @@
 
   .ai-notice {
     padding: .85rem;
-    font-size: .84rem;
+    font-size: var(--text-base);
   }
 
   .report-modal-cne-row {
@@ -486,7 +861,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--clr-text-muted);
   background-color: rgba(255, 255, 255, 0.02);
   border-radius: 6px;
@@ -517,8 +892,8 @@
   border-radius: 10px;
   padding: 1rem 0.5rem;
   color: var(--clr-text-muted);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
@@ -532,8 +907,8 @@
 
 .category-btn.active-red {
   background-color: rgba(229, 37, 32, 0.08);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--clr-danger);
+  color: var(--clr-danger);
 }
 
 .category-btn.active-blue {
@@ -580,3 +955,973 @@
 }
 
 
+
+textarea::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+
+
+/* ─── Figma-aligned Title Row (Paso + Descripción) ─── */
+.figma-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.figma-title-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.figma-paso-label {
+  font-size: 20px;
+  font-weight: var(--weight-semibold);
+  color: #F6F7F8;
+  line-height: 1.2;
+}
+.figma-step-title {
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+.figma-signal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #3E8DEB;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.figma-signal-btn:hover {
+  background: rgba(62, 141, 235, 0.1);
+}
+
+/* ─── Figma AI Alert (Con IA step) ─── */
+.figma-ai-alert {
+  background: #222222;
+  border: 1px solid #545458;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+}
+.figma-ai-alert-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.figma-ai-alert-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.figma-ai-alert-title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: #FFFFFF;
+}
+.figma-ai-alert-close {
+  background: none;
+  border: none;
+  color: #8E8E93;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.figma-ai-alert-close:hover {
+  color: #FFFFFF;
+}
+.figma-ai-alert-desc {
+  color: var(--clr-text-muted);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.audio-recorder-compact {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+}
+.audio-recorder-compact .audio-recorder-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.audio-recorder-compact .audio-recorder-controls {
+  width: 100%;
+}
+.audio-recorder-compact .report-modal-analyzing-msg {
+  color: var(--clr-text-muted);
+  font-size: var(--text-sm);
+  justify-content: center;
+  padding: 12px 0;
+}
+.audio-recorder-compact .audio-recorder-status {
+  margin-top: 4px;
+  font-size: var(--text-xs);
+}
+
+/* ─── Voice actions below textarea ─── */
+.figma-voice-actions {
+  margin-top: 8px;
+}
+.figma-voice-actions .audio-recorder-compact .audio-recorder-header {
+  flex-direction: row;
+  align-items: center;
+}
+.figma-voice-actions .audio-recorder-compact .audio-recorder-controls {
+  width: auto;
+}
+
+/* ─── Recording View (Figma 631:2711) ─── */
+.step-recording-content {
+  width: 100%;
+  max-width: 358px;
+  margin: 24px auto 0;
+  background: #121826;
+  border: 1px solid #2A2F3A;
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.step-recording-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #8E8E93;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.step-recording-close:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.step-recording-status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #E2E8F0;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.step-recording-waveform {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 48px;
+}
+
+.step-recording-bar {
+  width: 6px;
+  height: 100%;
+  background: #3E8DEB;
+  border-radius: 4px;
+  animation: recordingWave 0.8s ease-in-out infinite alternate;
+}
+
+.step-recording-bar:nth-child(1) { animation-delay: 0s; }
+.step-recording-bar:nth-child(2) { animation-delay: 0.15s; }
+.step-recording-bar:nth-child(3) { animation-delay: 0.3s; }
+.step-recording-bar:nth-child(4) { animation-delay: 0.15s; }
+.step-recording-bar:nth-child(5) { animation-delay: 0s; }
+
+@keyframes recordingWave {
+  0%   { transform: scaleY(0.3); }
+  50%  { transform: scaleY(0.8); }
+  100% { transform: scaleY(0.4); }
+}
+
+.step-recorder-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.step-recorder-wrapper .audio-recorder-box {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+}
+.step-recorder-wrapper .audio-recorder-status {
+  display: none;
+}
+.step-recorder-wrapper .audio-recorder-header {
+  justify-content: center;
+}
+.step-recorder-wrapper .btn {
+  min-width: 140px;
+  justify-content: center;
+}
+
+/* ─── Figma Footer Section ─── */
+.figma-footer-section {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0 0;
+}
+
+/* Category Microcards - Figma Paso 1 */
+.category-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.category-microcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  aspect-ratio: 171/112;
+  border-radius: 8px;
+  border: 1px solid #5B5B5B;
+  background: #2D2D2D;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  padding: 16px;
+  font-family: inherit;
+}
+.category-microcard:hover {
+  background: #333333;
+  border-color: #6B6B6B;
+}
+.category-microcard.selected {
+  border-color: #3E8DEB;
+  border-width: 3px;
+  background: #202932;
+}
+.category-microcard .card-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #AAAAAA;
+}
+.category-microcard.selected .card-icon {
+  color: #3E8DEB;
+}
+.category-microcard .card-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #D9D9D9;
+  line-height: 1.3;
+  white-space: pre-line;
+}
+.category-microcard.selected .card-label {
+  color: #FFFFFF;
+}
+
+/* Figma-aligned Step Indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+}
+.step-indicator .step-number {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--clr-text-dim);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.step-indicator .step-divider {
+  font-size: var(--text-2xl);
+  color: var(--clr-text-dim);
+  margin: 0 2px;
+}
+.step-indicator .step-name {
+  font-size: var(--text-lg);
+  color: var(--clr-text-dim);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.01em;
+}
+
+/* Figma-aligned Section */
+.figma-section-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--clr-text-dim);
+  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Figma-aligned Card Group (side by side) */
+.figma-card-group {
+  display: flex;
+  gap: 12px;
+}
+@media (max-width: 360px) {
+  .figma-card-group {
+    flex-direction: column;
+  }
+}
+
+/* Figma-aligned Card Grid (2x2) */
+.figma-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Figma-aligned Card (Complexion) */
+.figma-card {
+  flex: 1;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #8E8E93;
+  background: #07101C;
+  color: var(--clr-text-dim);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.figma-card.selected {
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+}
+.figma-card.selected strong {
+  color: #FFFFFF;
+}
+.figma-card.selected span {
+  color: rgba(255, 255, 255, 0.7);
+}
+.figma-card strong {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--clr-text-dim);
+}
+.figma-card span {
+  font-size: var(--text-xs);
+  color: var(--clr-text-muted);
+  line-height: 1.3;
+}
+.figma-card:hover:not(.selected) {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Figma-aligned Gender Card */
+.figma-card-gender {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 16px;
+  gap: 8px;
+  height: 100px;
+  flex: 1;
+  background: #07111B;
+  border: 1px solid #D9D9D9;
+  border-radius: 8px;
+  color: var(--clr-text-dim);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-align: left;
+}
+.figma-card-gender .gender-icon {
+  font-size: 36px;
+  line-height: 1;
+  display: block;
+}
+.figma-card-gender .gender-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  display: block;
+}
+.figma-card-gender.selected {
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+  color: #FFFFFF;
+}
+.figma-card-gender.selected .gender-label {
+  color: #FFFFFF;
+}
+.figma-card-gender:hover:not(.selected) {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Figma-aligned Input Field */
+.figma-input-field label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--clr-text-dim);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.figma-input-field input,
+.figma-input-field textarea {
+  width: 100%;
+  max-width: 358px;
+  min-height: 56px;
+  padding: 16px;
+  border-radius: 50px;
+  border: 1px solid #8E8E93;
+  background: #8E8E93;
+  color: #FFFFFF;
+  font-size: var(--text-md);
+  font-weight: var(--weight-normal);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  display: flex;
+  gap: 10px;
+}
+.figma-input-field textarea {
+  resize: vertical;
+  min-height: 120px;
+  border-radius: 16px; /* textareas look bad with 50px border-radius */
+  color: #FFFFFF;
+}
+.figma-input-field input:focus,
+.figma-input-field textarea:focus {
+  border-color: #4497D6;
+}
+.figma-input-field input::placeholder,
+.figma-input-field textarea::placeholder {
+  color: #FFFFFF;
+  opacity: 0.6;
+}
+
+/* Figma-aligned Select Field */
+.figma-select-field {
+  position: relative;
+}
+.figma-select-field label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--clr-text-dim);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.figma-select-trigger {
+  width: 100%;
+  max-width: 358px;
+  height: 56px;
+  padding: 16px;
+  border-radius: 50px;
+  border: 1px solid #8E8E93;
+  background: #8E8E93;
+  color: #07101C;
+  font-size: var(--text-md);
+  font-weight: var(--weight-normal);
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.figma-select-trigger:focus {
+  border-color: #4497D6;
+}
+.figma-select-trigger .swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+.figma-select-trigger .select-label {
+  flex: 1;
+  text-align: left;
+  color: #FFFFFF;
+}
+.figma-select-trigger .select-placeholder {
+  flex: 1;
+  text-align: left;
+  color: #FFFFFF;
+  opacity: 0.6;
+}
+.figma-select-trigger .chevron {
+  color: #FFFFFF;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.figma-select-trigger .chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Backdrop for closing select on click outside */
+.figma-select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.figma-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #D9D9D9;
+  border-radius: 8px;
+  z-index: 10;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(12,12,13,0.05), 0 2px 8px rgba(12,12,13,0.1);
+  padding: 8px;
+}
+.figma-select-option {
+  padding: 8px 8px 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #1E1E1E;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-normal);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.figma-select-option:hover {
+  background: rgba(0,0,0,0.05);
+}
+.figma-select-option.selected {
+  background: rgba(68,151,214,0.10);
+  font-weight: var(--weight-semibold);
+}
+.figma-select-option .option-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+
+/* Figma-aligned Footer Privacy */
+.report-footer-privacy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--clr-text-dim);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.report-footer-privacy svg {
+  flex-shrink: 0;
+  color: #8E8E93;
+}
+
+/* --- Step 4-6 CSS classes --- */
+
+.figma-alert-danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.figma-alert-danger strong {
+  display: block;
+  color: #fff;
+  font-size: var(--text-lg);
+  margin-bottom: 8px;
+}
+.figma-alert-danger p {
+  color: #fca5a5;
+  font-size: var(--text-base);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.figma-upload-area {
+  display: block;
+  width: 100%;
+  border: 2px dashed rgba(255,255,255,0.2);
+  border-radius: 16px;
+  padding: 3rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 2rem;
+  position: relative;
+}
+.figma-upload-area input[type="file"] {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.figma-upload-area svg {
+  margin: 0 auto 1rem;
+}
+.figma-upload-area strong {
+  display: block;
+  color: #fff;
+  font-size: var(--text-lg);
+  margin-bottom: 4px;
+}
+.figma-upload-area span {
+  color: #64748b;
+  font-size: var(--text-base);
+}
+
+.figma-location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: #fff;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+.figma-location-btn:hover {
+  border-color: #4497D6;
+}
+.figma-location-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.figma-location-btn.success {
+  color: var(--clr-success);
+  border-color: var(--clr-success);
+}
+
+.figma-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  background: rgba(255,255,255,0.05);
+  padding: 1rem;
+  border-radius: 12px;
+}
+.figma-checkbox-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #4497D6;
+}
+.figma-checkbox-row span {
+  font-size: var(--text-md);
+  color: var(--clr-text-muted);
+}
+
+.centered-icon {
+  margin: 0 auto 1rem;
+  display: block;
+}
+
+.figma-feature-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.figma-feature-btn-group .figma-feature-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  text-align: left;
+}
+.figma-feature-btn-group .figma-feature-btn:hover {
+  border-color: #4497D6;
+}
+.figma-feature-btn-group .figma-feature-btn.active {
+  border: 2px solid #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+}
+.figma-feature-btn-group .figma-feature-btn .radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+.figma-feature-btn-group .figma-feature-btn.active .radio-circle {
+  border-color: #4497D6;
+}
+.figma-feature-btn-group .figma-feature-btn.active .radio-circle::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #4497D6;
+}
+.figma-feature-btn-group .figma-feature-btn .feature-text {
+  flex: 1;
+}
+.figma-feature-btn-group .figma-feature-btn strong {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  display: block;
+  margin-bottom: 2px;
+}
+.figma-feature-btn-group .figma-feature-btn span {
+  font-size: var(--text-xs);
+  color: var(--clr-text-muted);
+  line-height: 1.3;
+}
+
+/* Muted form group for step 4 */
+.figma-muted-group {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Step content wrapper */
+.report-step-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  padding: 0 16px 16px;
+  animation: fadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 768px) {
+  .report-step-content {
+    padding: 0 24px 24px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+.report-step-content-centered {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 4rem;
+  animation: fadeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-step-content,
+  .report-step-content-centered {
+    animation: none;
+  }
+}
+.sticky-bottom-action {
+  margin-top: auto;
+  position: sticky;
+  bottom: -1rem;
+  background: #07101C;
+  z-index: 20;
+  padding-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.step-submit-row {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+.step-submit-row-flex {
+  width: 100%;
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+
+/* --- Step 7 (Success) --- */
+.success-hero-icon {
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+.success-heading {
+  font-size: var(--text-2xl);
+  margin-bottom: 1rem;
+  font-weight: var(--weight-extrabold);
+  color: #fff;
+}
+.success-description {
+  font-size: var(--text-lg);
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+  margin-bottom: 3rem;
+}
+.success-actions {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 2rem;
+}
+.success-actions .btn-outline {
+  background: transparent;
+  color: var(--clr-text-dim);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 50px;
+}
+.success-actions .btn-outline:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+/* --- Error Overlay --- */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.error-card {
+  background: #1e293b;
+  border: 1px solid var(--clr-danger);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+.error-card-icon {
+  margin: 0 auto 1rem;
+}
+.error-card-title {
+  display: block;
+  font-size: var(--text-xl);
+  margin-bottom: 1rem;
+  color: #fff;
+}
+.error-card-message {
+  color: var(--clr-text-muted);
+  margin-bottom: 2rem;
+}
+.error-card-btn {
+  background: var(--clr-danger);
+}
+
+.dark-record-btn-override .btn {
+  background-color: transparent !important;
+  border-color: #4497D6 !important;
+  color: #FFFFFF !important;
+}
+
+
+/* Figma Color Cards (Horizontal) */
+.figma-card-group-horizontal {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.figma-card-color {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #222222;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 14px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.figma-card-color:hover {
+  background: #2a2a2a;
+}
+.figma-card-color.selected {
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+}
+.figma-card-color .color-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.figma-card-color .color-label {
+  font-size: 13px;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
