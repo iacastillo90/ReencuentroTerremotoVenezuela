@@ -29,7 +29,7 @@
  */
 import React, { useReducer } from 'react';
 import * as Sentry from '@sentry/react';
-import { Search, ArrowLeft, ShieldCheck, Info, X, User } from 'lucide-react';
+import { Search, ArrowLeft, ShieldCheck, X, User } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { CategorySelector, SEARCH_CATEGORIES } from '../../components/common';
 import { BrandMark } from '../../components/BrandMark';
@@ -84,7 +84,7 @@ function searchReducer(state: SearchState, action: SearchAction): SearchState {
 const INITIAL_STATE: SearchState = {
   step: 1,
   ageCategory: '',
-  filters: { name: '', edad: '', fechaDesde: '', fechaHasta: '', vestimenta: '' },
+  filters: { name: '', edad: '', fechaDesde: '', fechaHasta: '', vestimenta: '', estado: '', municipio: '', raza: '', fecha: '' },
   searchMode: 'normal',
   iaQuery: '',
   results: null,
@@ -95,7 +95,7 @@ const INITIAL_STATE: SearchState = {
 /* ─── Componente ─── */
 export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onNavigate }) => {
   const [state, dispatch] = useReducer(searchReducer, INITIAL_STATE);
-  const { step, ageCategory, filters, searchMode, iaQuery, results, loading, isFallback } = state;
+  const { step, ageCategory, filters, results, loading } = state;
   const isMinorCat = ageCategory === 'nino';
 
   const buscar = async () => {
