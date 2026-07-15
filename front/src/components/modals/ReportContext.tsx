@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { api } from '../../services/api';
 import { addPendingReport } from '../../db/offlineDb';
 import { registerBackgroundSync } from '../../utils/sync-utils';
+import { useToast } from '../../store/ToastContext';
 
 export interface ReportContextType {
   step: number; setStep: (s: number | ((prev: number) => number)) => void;
@@ -34,6 +35,7 @@ export interface ReportContextType {
 const ReportCtx = createContext<ReportContextType | null>(null);
 
 export function ReportProvider({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  const { addToast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -138,6 +140,9 @@ Ubicación: ${calleEstado}`;
       }
       await api.post('/persons', payload);
       setStep(6);
+      
+      // Mostrar notificación inmediata de que está en proceso
+      addToast('Tu reporte ha entrado a nuestra red y la IA lo está analizando. Te notificaremos cuando termine.', 'info');
     } catch (err: unknown) {
       console.error(err);
       const axiosErr = err as { response?: { data?: { error?: string } } };
