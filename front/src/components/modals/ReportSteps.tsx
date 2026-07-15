@@ -7,6 +7,7 @@ import { COLORS_PIEL, COLORS_CABELLO, COLORS_OJOS, COMPLEXION, SENAS } from './r
 import { useReport } from './ReportContext';
 import { ModeToggle } from './ModeToggle';
 import { extraerDatosDeAudio } from './iaExtractor';
+import SpeechRecognition from 'react-speech-recognition';
 
 
 
@@ -47,7 +48,7 @@ export const StepCategory: React.FC = () => {
 
       <div className="sticky-bottom-action">
         <div className="step-submit-row">
-          <Button fullWidth size="lg" onClick={() => setStep(3)} disabled={!categoria}>SIGUIENTE</Button>
+          <Button fullWidth size="lg" onClick={() => setStep(3)} disabled={!categoria} style={{ color: '#000000', fontWeight: 'bold' }}>SIGUIENTE</Button>
         </div>
       </div>
     </div>
@@ -69,11 +70,13 @@ export const StepVoice: React.FC = () => {
 
   const handleGrabarClick = () => {
     resetFields();
+    SpeechRecognition.startListening({ continuous: true, language: 'es-VE' });
     setView('recording');
   };
 
   const handleReGrabar = () => {
     resetFields();
+    SpeechRecognition.startListening({ continuous: true, language: 'es-VE' });
     setView('recording');
   };
 
@@ -99,9 +102,14 @@ export const StepVoice: React.FC = () => {
       <div className="report-step-content">
         <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
 
-        <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="step-paso-num">Paso 1</span>
-          <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
+          <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: '1px solid #FFFFFF', borderRadius: '50%', width: '36px', height: '36px', padding: '0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ArrowLeft size={18} color="#FFFFFF" />
+          </button>
+          <div className="step-paso-heading" style={{ margin: 0, flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="step-paso-num">Paso 1</span>
+            <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+          </div>
         </div>
 
         <div className="step-recording-content">
@@ -119,6 +127,10 @@ export const StepVoice: React.FC = () => {
             ))}
           </div>
 
+          <div className="step-recording-live-text" style={{ color: '#FFFFFF', minHeight: '60px', marginTop: '16px', fontSize: '15px', fontStyle: 'italic', textAlign: 'center', opacity: 0.8, padding: '0 12px' }}>
+            {audioText || (isRecording ? "Escuchando... empieza a hablar" : "Sin texto capturado.")}
+          </div>
+
           <div className="step-recorder-wrapper">
             <AudioRecorder
               compact
@@ -132,11 +144,11 @@ export const StepVoice: React.FC = () => {
         </div>
 
         <div className="figma-footer-section">
-          <div className="report-footer-privacy">
+          <div className="report-footer-privacy" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#FFFFFF', opacity: 0.8, fontSize: '13px' }}>
             <Info size={14} />
             <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
           </div>
-          <Button fullWidth size="lg" disabled={isRecording || !hasText} onClick={() => setView('done')}>
+          <Button fullWidth size="lg" disabled={isRecording || !hasText} onClick={() => setView('done')} style={{ color: '#000000', fontWeight: 'bold' }}>
             Ir a confirmar datos
           </Button>
         </div>
@@ -149,32 +161,46 @@ export const StepVoice: React.FC = () => {
       <div className="report-step-content">
         <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
 
-        <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="step-paso-num">Paso 1</span>
-          <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
+          <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: '1px solid #FFFFFF', borderRadius: '50%', width: '36px', height: '36px', padding: '0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ArrowLeft size={18} color="#FFFFFF" />
+          </button>
+          <div className="step-paso-heading" style={{ margin: 0, flexDirection: 'row', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="step-paso-num">Paso 1</span>
+            <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1', display: 'flex', alignItems: 'center' }}>
+              Descripción de la persona
+            </span>
+          </div>
+        </div>
+
+        <div style={{ background: '#1C1C1E', border: '1px solid #333333', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Sparkles size={18} color="#FFFFFF" />
+            <span style={{ fontWeight: 600, fontSize: '14px', color: '#FFFFFF' }}>Asistente de IA</span>
+          </div>
+          <p style={{ color: '#CDCFD1', fontSize: '13px', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+            Graba una nota de voz de la persona/mascota indicando su nombre, edad, y características físicas. La IA lo transcribirá automáticamente.
+          </p>
+          <Button type="button" variant="outline" size="md" fullWidth onClick={handleReGrabar} style={{ borderColor: '#4497D6', color: '#FFFFFF', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+            <Mic size={16} /> Volver a grabar
+          </Button>
         </div>
 
         <div className="figma-input-field">
-          <label>DESCRIPCIÓN</label>
           <textarea
             value={audioText}
             onChange={(e) => setAudioText(e.target.value)}
-            placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
-            rows={5}
+            placeholder="Ejemplo: Hombre de piel morena, de 45 años..."
+            rows={4}
           />
-          <div className="figma-voice-actions dark-record-btn-override">
-            <Button type="button" variant="outline" size="md" fullWidth onClick={handleReGrabar}>
-              <Mic size={16} /> Volver a grabar
-            </Button>
-          </div>
         </div>
 
         <div className="figma-footer-section">
-          <div className="report-footer-privacy">
+          <div className="report-footer-privacy" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#FFFFFF', opacity: 0.8, fontSize: '13px' }}>
             <Info size={14} />
             <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
           </div>
-          <Button fullWidth size="lg" onClick={handleConfirmarYExtraer}>
+          <Button fullWidth size="lg" onClick={handleConfirmarYExtraer} style={{ color: '#000000', fontWeight: 'bold' }}>
             Ir a confirmar datos
           </Button>
         </div>
@@ -186,12 +212,17 @@ export const StepVoice: React.FC = () => {
     <div className="report-step-content">
       <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
 
-      <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
-        <span className="step-paso-num">Paso 1</span>
-        <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
+        <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: '1px solid #FFFFFF', borderRadius: '50%', width: '36px', height: '36px', padding: '0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ArrowLeft size={18} color="#FFFFFF" />
+        </button>
+        <div className="step-paso-heading" style={{ margin: 0, flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="step-paso-num">Paso 1</span>
+          <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+        </div>
       </div>
 
-      <span style={{ color: '#CDCFD1', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <span style={{ color: '#FFFFFF', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
         <Info size={14} /> ¿No tienes señal?
       </span>
 
@@ -213,7 +244,7 @@ export const StepVoice: React.FC = () => {
       </div>
 
       <div className="figma-footer-section">
-        <div className="report-footer-privacy">
+        <div className="report-footer-privacy" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#FFFFFF', opacity: 0.8, fontSize: '13px' }}>
           <Info size={14} />
           <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
         </div>
@@ -229,7 +260,7 @@ export const StepVoice: React.FC = () => {
 
 export const StepCharacteristics: React.FC = () => {
   const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, detallesVestimenta, setDetallesVestimenta, setStep, audioText } = useReport();
-  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+  const [modo, setModo] = useState<'manual' | 'ia'>(audioText ? 'ia' : 'manual');
 
   return (
     <div className="report-step-content">
@@ -238,7 +269,7 @@ export const StepCharacteristics: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
         <button type="button" onClick={() => setStep(audioText ? 2 : 1)} style={{
           background: 'none',
-          border: '1px solid #CDCFD1',
+          border: '1px solid #FFFFFF',
           borderRadius: '50%',
           width: '36px',
           height: '36px',
@@ -248,12 +279,17 @@ export const StepCharacteristics: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <ArrowLeft size={18} color="#CDCFD1" />
+          <ArrowLeft size={18} color="#FFFFFF" />
         </button>
         <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
           <span className="step-paso-num">Paso 2</span>
-          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Características</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#FFFFFF' }}>Características</span>
         </div>
+      </div>
+
+      <div style={{ background: '#222222', border: '1px solid #333333', borderRadius: '8px', padding: '12px 16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Info size={20} color="#4497D6" style={{ flexShrink: 0 }} />
+        <span style={{ color: '#FFFFFF', fontSize: '14px', fontWeight: 500, lineHeight: 1.4 }}>Revisa que las características sean correctas</span>
       </div>
 
       <div className="figma-section">
@@ -291,7 +327,18 @@ export const StepCharacteristics: React.FC = () => {
         </div>
       </div>
 
-      <CustomSelect label="Color de piel" options={COLORS_PIEL} value={piel} onChange={setPiel} placeholder="Seleccionar" />
+      <div className="figma-section">
+        <label className="figma-section-label">Color de piel</label>
+        <div className="figma-card-group-horizontal">
+          {COLORS_PIEL.map((c) => (
+            <button key={c.val} type="button" onClick={() => setPiel(c.val)}
+              className={`figma-card-color ${piel === c.val ? 'selected' : ''}`}>
+              <div className="color-circle" style={{ backgroundColor: c.hex }}></div>
+              <span className="color-label">{c.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <CustomSelect label="Color de cabello" options={COLORS_CABELLO} value={cabello} onChange={setCabello} placeholder="Seleccionar" />
       <CustomSelect label="Color de ojos" options={COLORS_OJOS} value={ojos} onChange={setOjos} placeholder="Seleccionar" />
 
@@ -306,8 +353,14 @@ export const StepCharacteristics: React.FC = () => {
       </div>
 
 
-      <div className="step-submit-row">
-        <Button fullWidth size="lg" onClick={() => setStep(4)}>SIGUIENTE</Button>
+      <div className="step-submit-row" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {audioText && (
+          <div className="report-footer-privacy" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#FFFFFF', opacity: 0.8, fontSize: '13px' }}>
+            <Info size={14} />
+            <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+          </div>
+        )}
+        <Button fullWidth size="lg" onClick={() => setStep(4)} style={{ color: '#000000', fontWeight: 'bold' }}>SIGUIENTE</Button>
       </div>
     </div>
   );
@@ -317,8 +370,8 @@ export const StepCharacteristics: React.FC = () => {
 /* ─── PASO 5: SEÑAS PARTICULARES ─── */
 
 export const StepFeatures: React.FC = () => {
-  const { senasSelected, toggleSena, detalleAdicional, setDetalleAdicional, setStep } = useReport();
-  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+  const { senasSelected, toggleSena, detalleAdicional, setDetalleAdicional, setStep, audioText } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>(audioText ? 'ia' : 'manual');
   return (
     <div className="report-step-content">
       <ModeToggle modo={modo} setModo={setModo} onIaClick={() => setStep(2)} style={{ margin: '0 auto 16px auto' }} />
@@ -326,7 +379,7 @@ export const StepFeatures: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
         <button type="button" onClick={() => setStep(3)} style={{
           background: 'none',
-          border: '1px solid #CDCFD1',
+          border: '1px solid #FFFFFF',
           borderRadius: '50%',
           width: '36px',
           height: '36px',
@@ -337,13 +390,19 @@ export const StepFeatures: React.FC = () => {
           justifyContent: 'center',
           flexShrink: 0
         }}>
-          <ArrowLeft size={18} color="#CDCFD1" />
+          <ArrowLeft size={18} color="#FFFFFF" />
         </button>
         <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
           <span className="step-paso-num">Paso 3</span>
-          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Señas particulares</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#FFFFFF' }}>Señas particulares</span>
         </div>
       </div>
+
+      <div style={{ background: '#222222', border: '1px solid #333333', borderRadius: '8px', padding: '12px 16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Info size={20} color="#4497D6" style={{ flexShrink: 0 }} />
+        <span style={{ color: '#CDCFD1', fontSize: '14px', fontWeight: 500, lineHeight: 1.4 }}>Revisa que las señas particulares sean correctas</span>
+      </div>
+
       <div className="figma-section">
         <label className="figma-section-label">Selecciona las que apliquen</label>
         <div className="figma-feature-btn-group">
@@ -369,7 +428,7 @@ export const StepFeatures: React.FC = () => {
           placeholder="Ej. Cicatriz en antebrazo derecho, llevaba un bolso negro..." />
       </div>
       <div className="step-submit-row">
-        <Button fullWidth size="lg" onClick={() => setStep(5)}>SIGUIENTE</Button>
+        <Button fullWidth size="lg" onClick={() => setStep(5)} style={{ color: '#000000', fontWeight: 'bold' }}>SIGUIENTE</Button>
       </div>
     </div>
   );
@@ -378,8 +437,8 @@ export const StepFeatures: React.FC = () => {
 /* ─── PASO 6: UBICACIÓN Y ENVÍO ─── */
 
 export const StepLocation: React.FC = () => {
-  const { categoria, file, handleFileChange, requestLocation, isRequestingLocation, locationSuccess, calleEstado, setCalleEstado, reporterLocation, isSubmitting, submitReport, setStep } = useReport();
-  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+  const { categoria, file, handleFileChange, requestLocation, isRequestingLocation, locationSuccess, calleEstado, setCalleEstado, reporterLocation, isSubmitting, submitReport, setStep, audioText } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>(audioText ? 'ia' : 'manual');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -399,7 +458,7 @@ export const StepLocation: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px', gap: 'min(50px, 10vw)' }}>
         <button type="button" onClick={() => setStep(4)} style={{
           background: 'none',
-          border: '1px solid #CDCFD1',
+          border: '1px solid #FFFFFF',
           borderRadius: '50%',
           width: '36px',
           height: '36px',
@@ -410,16 +469,16 @@ export const StepLocation: React.FC = () => {
           justifyContent: 'center',
           flexShrink: 0
         }}>
-          <ArrowLeft size={18} color="#CDCFD1" />
+          <ArrowLeft size={18} color="#FFFFFF" />
         </button>
         <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
           <span className="step-paso-num">Paso 4</span>
-          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Grabar video/Tomar foto</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#FFFFFF' }}>Grabar video/Tomar foto</span>
         </div>
       </div>
 
       <div style={{ width: '100%', maxWidth: '358px', margin: '0 auto 2px auto', textAlign: 'left' }}>
-        <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 400, color: '#CDCFD1' }}>Asegúrate de que el video o foto se vea lo más claro posible</h2>
+        <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 400, color: '#FFFFFF' }}>Asegúrate de que el video o foto se vea lo más claro posible</h2>
       </div>
 
       {categoria === 'niño/a o adolescente' ? (
