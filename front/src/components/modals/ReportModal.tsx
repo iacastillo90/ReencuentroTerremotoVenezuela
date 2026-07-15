@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ShieldAlert, X, User } from 'lucide-react';
+import { ShieldAlert, X, User } from 'lucide-react';
 import { BrandMark } from '../BrandMark';
 import { Button } from '../ui/Button';
 import {
@@ -23,7 +23,7 @@ const stepInfoMap: Record<number, { dot: number; paso: string; title: string } |
 };
 
 const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ onNavigate }) => {
-  const { step, setStep, error, setError, audioText, onClose } = useReport();
+  const { step, error, setError, onClose } = useReport();
 
   const stepInfo = step < 7 ? stepInfoMap[step] : null;
 
