@@ -25,8 +25,11 @@ const mockApi = vi.hoisted(() => ({
   },
 }));
 
+const mockRefreshCsrfToken = vi.hoisted(() => vi.fn().mockResolvedValue('mock-csrf-token'));
+
 vi.mock('../services/api', () => ({
   api: mockApi,
+  refreshCsrfToken: mockRefreshCsrfToken,
 }));
 
 const ls = (): Storage | null => {
@@ -69,7 +72,7 @@ describe('AuthContext - Cookie-based auth', () => {
       expect(mockApi.get).toHaveBeenCalledWith('/auth/me');
     });
 
-    expect(mockApi.get).toHaveBeenCalledWith('/auth/csrf-token');
+    expect(mockRefreshCsrfToken).toHaveBeenCalled();
   });
 
   it('login sets user state without storing in localStorage', () => {

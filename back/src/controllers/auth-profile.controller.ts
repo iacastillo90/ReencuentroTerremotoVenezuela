@@ -56,12 +56,12 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
 
     res.cookie('token', authToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
-      sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ token: authToken, user });
+    return res.status(200).json({ user });
   } catch (error) {
     next(error);
   }
@@ -72,7 +72,11 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     const userId = req.user!.userId;
     await UserModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
 
-    res.clearCookie('token');
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    });
 
     auditLog({
       eventType: 'auth_logout',

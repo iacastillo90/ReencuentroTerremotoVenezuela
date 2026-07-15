@@ -57,14 +57,14 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
  *   - JWT con tokenVersion para invalidación: si se cambia la
  *     contraseña o se compromete la sesión, se incrementa
  *     tokenVersion en BD y todos los JWT anteriores son inválidos.
- *   - Cookie httpOnly + secure (prod) + sameSite=none (prod)
+ *   - Cookie httpOnly + secure (prod) + sameSite=strict (prod)
  *   - CSRF cookie separada para doble submit
+ *   - Token JWT NO se incluye en la respuesta JSON (solo en cookie HttpOnly)
  *
  * @param res - Response de Express para setear cookies
  * @param user - Datos del usuario (ID, email, role, tokenVersion)
- * @returns El token JWT generado
  */
-function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): string {
+function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): void {
   const authToken = jwt.sign(
     { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
       role: user.role, status: user.status, tokenVersion: user.tokenVersion },
@@ -73,19 +73,18 @@ function issueSession(res: Response, user: { _id: string; email: string; isProfi
   );
   res.cookie('token', authToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
-    sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-  return authToken;
 }
 
 export function getCsrfToken(req: Request, res: Response) {
   const token = generateCsrfToken();
   res.cookie('csrf-token', token, {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
-    sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
   });
   return res.json({ token });
@@ -147,8 +146,8 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
 
     res.cookie('token', authToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true',
-      sameSite: (process.env.NODE_ENV === 'production' && process.env.DEV_MODE !== 'true') ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -161,7 +160,7 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
       req,
     });
 
-    return res.status(200).json({ token: authToken, user });
+    return res.status(200).json({ user });
   } catch (error) {
     next(error);
   }
@@ -196,7 +195,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       status: isAdmin ? 'approved' : 'pending'
     });
 
-    const authToken = issueSession(res, {
+    issueSession(res, {
       _id: user._id.toString(),
       email: user.email,
       isProfileComplete: user.isProfileComplete,
@@ -212,7 +211,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       detail: { email: user.email },
       req,
     });
-    return res.status(201).json({ token: authToken, user });
+    return res.status(201).json({ user });
   } catch (error) {
     next(error);
   }
@@ -239,7 +238,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
-    const authToken = issueSession(res, {
+    issueSession(res, {
       _id: user._id.toString(),
       email: user.email,
       isProfileComplete: user.isProfileComplete,
@@ -255,7 +254,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       detail: { email: user.email },
       req,
     });
-    return res.status(200).json({ token: authToken, user });
+    return res.status(200).json({ user });
   } catch (error) {
     next(error);
   }
