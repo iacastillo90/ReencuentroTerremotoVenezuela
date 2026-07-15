@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { CheckCircle, Info, Loader2, MapPin, Plus, ShieldAlert, Sparkles, Video, WifiOff, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Info, Loader2, MapPin, ShieldAlert, Sparkles, Video, WifiOff, ArrowLeft, Mic, X } from 'lucide-react';
 import { AudioRecorder } from './AudioRecorder';
 import { Button } from '../ui/Button';
 import { CustomSelect, CategorySelector, DEFAULT_CATEGORIES } from '../common';
 import { COLORS_PIEL, COLORS_CABELLO, COLORS_OJOS, COMPLEXION, SENAS } from './reportFormConstants';
 import { useReport } from './ReportContext';
+import { ModeToggle } from './ModeToggle';
+import { extraerDatosDeAudio } from './iaExtractor';
+
+
 
 /* ─── PASO 1: SELECCIÓN DE CATEGORÍA ─── */
 
@@ -14,16 +18,7 @@ export const StepCategory: React.FC = () => {
 
   return (
     <div className="report-step-content">
-      <div className="figma-toggle">
-        <button type="button" onClick={() => setModo('manual')}
-          className={`figma-toggle-btn ${modo === 'manual' ? 'active' : ''}`}>
-          Manual
-        </button>
-        <button type="button" onClick={() => { setModo('ia'); setStep(2); }}
-          className={`figma-toggle-btn ${modo === 'ia' ? 'active' : ''}`}>
-          <Sparkles size={16} /> Con IA
-        </button>
-      </div>
+      <ModeToggle modo={modo} setModo={setModo} onIaClick={() => setStep(2)} style={{ margin: '0 auto 20px auto' }} />
 
       <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
         <span className="step-paso-num">Paso 1</span>
@@ -62,42 +57,169 @@ export const StepCategory: React.FC = () => {
 /* ─── PASO 2: ASISTENTE DE VOZ / DESCRIPCIÓN ─── */
 
 export const StepVoice: React.FC = () => {
-  const { audioText, setAudioText, setStep, resetFields } = useReport();
+  const { 
+    audioText, setAudioText, setStep, resetFields,
+    setGenero, setEdad, setPiel, setCabello, setOjos, setDetallesVestimenta
+  } = useReport();
+  const [view, setView] = useState<'initial' | 'recording' | 'done'>('initial');
+  const [isRecording, setIsRecording] = useState(false);
+  const [modo, _setModo] = useState<'manual' | 'ia'>('ia');
+  const hasText = audioText.trim().length > 0;
+
+
+  const handleGrabarClick = () => {
+    resetFields();
+    setView('recording');
+  };
+
+  const handleReGrabar = () => {
+    resetFields();
+    setView('recording');
+  };
+
+  const handleCloseRecording = () => {
+    setView('initial');
+  };
+
+  const handleConfirmarYExtraer = () => {
+    const data = extraerDatosDeAudio(audioText);
+    
+    if (data.genero) setGenero(data.genero);
+    if (data.edad) setEdad(data.edad);
+    if (data.piel) setPiel(data.piel);
+    if (data.cabello) setCabello(data.cabello);
+    if (data.ojos) setOjos(data.ojos);
+    if (data.detallesVestimenta) setDetallesVestimenta(data.detallesVestimenta);
+
+    setStep(3);
+  };
+
+  if (view === 'recording') {
+    return (
+      <div className="report-step-content">
+        <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
+
+        <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="step-paso-num">Paso 1</span>
+          <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+        </div>
+
+        <div className="step-recording-content">
+          <button type="button" onClick={handleCloseRecording} className="step-recording-close" aria-label="Cerrar">
+            <X size={24} />
+          </button>
+
+          <div className="step-recording-status-text">
+            {isRecording ? 'Grabando...' : (hasText ? 'Grabación finalizada' : 'Procesando audio...')}
+          </div>
+
+          <div className="step-recording-waveform">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="step-recording-bar" />
+            ))}
+          </div>
+
+          <div className="step-recorder-wrapper">
+            <AudioRecorder
+              compact
+              autoStart
+              currentText={audioText}
+              onStartRecording={() => setIsRecording(true)}
+              onStopRecording={() => setIsRecording(false)}
+              onTranscription={(txt) => setAudioText(txt)}
+            />
+          </div>
+        </div>
+
+        <div className="figma-footer-section">
+          <div className="report-footer-privacy">
+            <Info size={14} />
+            <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+          </div>
+          <Button fullWidth size="lg" disabled={isRecording || !hasText} onClick={() => setView('done')}>
+            Ir a confirmar datos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'done' && hasText) {
+    return (
+      <div className="report-step-content">
+        <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
+
+        <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="step-paso-num">Paso 1</span>
+          <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+        </div>
+
+        <div className="figma-input-field">
+          <label>DESCRIPCIÓN</label>
+          <textarea
+            value={audioText}
+            onChange={(e) => setAudioText(e.target.value)}
+            placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
+            rows={5}
+          />
+          <div className="figma-voice-actions dark-record-btn-override">
+            <Button type="button" variant="outline" size="md" fullWidth onClick={handleReGrabar}>
+              <Mic size={16} /> Volver a grabar
+            </Button>
+          </div>
+        </div>
+
+        <div className="figma-footer-section">
+          <div className="report-footer-privacy">
+            <Info size={14} />
+            <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+          </div>
+          <Button fullWidth size="lg" onClick={handleConfirmarYExtraer}>
+            Ir a confirmar datos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="report-step-content">
-      <div className="ai-notification-card">
-        <div className="card-title">
-          <Sparkles size={20} color="#4497D6" />
-          <span>Asistente IA de Voz</span>
+      <ModeToggle modo={modo} setModo={(m) => { if (m === 'manual') setStep(3); }} />
+
+      <div className="step-paso-heading" style={{ flexDirection: 'row', gap: '8px', flexWrap: 'wrap' }}>
+        <span className="step-paso-num">Paso 1</span>
+        <span className="step-paso-desc" style={{ display: 'flex', alignItems: 'center' }}>Descripción de la persona</span>
+      </div>
+
+      <span style={{ color: '#CDCFD1', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <Info size={14} /> ¿No tienes señal?
+      </span>
+
+      <div className="figma-ai-alert">
+        <div className="figma-ai-alert-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+          <div className="figma-ai-alert-title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={20} color="#4497D6" />
+            <span className="figma-ai-alert-title">Asistente IA de Voz</span>
+          </div>
+          <p className="figma-ai-alert-desc" style={{ textAlign: 'left', margin: 0, lineHeight: 1.4 }}>
+            Graba una nota de voz de la persona/mascota indicando su nombre, edad, y características físicas. La IA lo transcribirá automáticamente.
+          </p>
         </div>
-        <p className="card-description">
-          Usa el asistente de voz. Trata de mencionar detalles como si es niño/adulto,
-          cómo está vestido y características físicas.
-        </p>
+        <div className="dark-record-btn-override" style={{ marginTop: '16px' }}>
+          <Button type="button" variant="primary" size="lg" fullWidth onClick={handleGrabarClick}>
+            <Mic size={20} /> Grabar
+          </Button>
+        </div>
       </div>
-      <AudioRecorder
-        currentText={audioText}
-        onStartRecording={resetFields}
-        onTranscription={(txt) => setAudioText(txt)}
-      />
-      <div className="figma-input-field">
-        <label>DESCRIPCIÓN (o transcribe con el asistente de voz)</label>
-        <textarea
-          value={audioText}
-          onChange={(e) => setAudioText(e.target.value)}
-          placeholder="Ejemplo: Adulto de 55 años, con una cicatriz en la cara..."
-          rows={6}
-        />
-      </div>
-      <div className="sticky-bottom-action">
+
+      <div className="figma-footer-section">
         <div className="report-footer-privacy">
           <Info size={14} />
           <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
         </div>
-        <div className="step-submit-row-flex">
-          <Button variant="outline" size="lg" onClick={() => setStep(1)}>ATRÁS</Button>
-          <Button fullWidth size="lg" onClick={() => setStep(3)}>SIGUIENTE</Button>
-        </div>
+        <Button fullWidth size="lg" onClick={() => setStep(3)}>
+          Ir a confirmar datos
+        </Button>
       </div>
     </div>
   );
@@ -106,59 +228,56 @@ export const StepVoice: React.FC = () => {
 /* ─── PASO 3: CARACTERÍSTICAS FÍSICAS ─── */
 
 export const StepCharacteristics: React.FC = () => {
-  const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, setStep, audioText } = useReport();
+  const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, detallesVestimenta, setDetallesVestimenta, setStep, audioText } = useReport();
   const [modo, setModo] = useState<'manual' | 'ia'>('manual');
-  
+
   return (
     <div className="report-step-content">
-      <div className="figma-toggle" style={{ margin: '0 auto 24px auto' }}>
-        <button type="button" onClick={() => setModo('manual')}
-          className={`figma-toggle-btn ${modo === 'manual' ? 'active' : ''}`}>
-          Manual
-        </button>
-        <button type="button" onClick={() => { setModo('ia'); setStep(2); }}
-          className={`figma-toggle-btn ${modo === 'ia' ? 'active' : ''}`}>
-          <Sparkles size={16} /> Con IA
-        </button>
-      </div>
+      <ModeToggle modo={modo} setModo={setModo} onIaClick={() => setStep(2)} />
 
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px', gap: 'min(50px, 10vw)' }}>
-        <button type="button" onClick={() => setStep(audioText ? 2 : 1)} style={{ 
-          background: 'none', 
-          border: '1px solid #CDCFD1', 
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
+        <button type="button" onClick={() => setStep(audioText ? 2 : 1)} style={{
+          background: 'none',
+          border: '1px solid #CDCFD1',
           borderRadius: '50%',
           width: '36px',
           height: '36px',
-          padding: '0', 
-          cursor: 'pointer', 
-          display: 'flex', 
+          padding: '0',
+          cursor: 'pointer',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
           <ArrowLeft size={18} color="#CDCFD1" />
         </button>
-        <div className="step-paso-heading" style={{ margin: 0 }}>
-          <span className="step-paso-num">Paso 2 Características</span>
+        <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+          <span className="step-paso-num">Paso 2</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Características</span>
         </div>
       </div>
+
       <div className="figma-section">
-        <label className="figma-section-label">Género</label>
         <div className="figma-card-group">
-          {['Masculino', 'Femenino'].map((g) => (
-            <button key={g} type="button" onClick={() => setGenero(g)}
-              className={`figma-card-gender ${genero === g ? 'selected' : ''}`}>{g}</button>
-          ))}
+          <button type="button" onClick={() => setGenero('Masculino')}
+            className={`figma-card-gender ${genero === 'Masculino' ? 'selected' : ''}`}>
+            <span className="gender-icon">♂</span>
+            <span className="gender-label">Masculino</span>
+          </button>
+          <button type="button" onClick={() => setGenero('Femenino')}
+            className={`figma-card-gender ${genero === 'Femenino' ? 'selected' : ''}`}>
+            <span className="gender-icon">♀</span>
+            <span className="gender-label">Femenino</span>
+          </button>
         </div>
       </div>
+
+
+
       <div className="figma-input-field">
-        <label>NOMBRE (Opcional)</label>
-        <input type="text" value={nombreCompleto} onChange={(e) => setNombreCompleto(e.target.value)}
-          placeholder="¿Conoces el nombre de esta persona?" />
+        <label>Edad</label>
+        <input type="number" value={edad} onChange={(e) => setEdad(e.target.value)} placeholder="¿Qué edad tiene la persona?" />
       </div>
-      <div className="figma-input-field">
-        <label>EDAD APROXIMADA (Opcional)</label>
-        <input type="number" value={edad} onChange={(e) => setEdad(e.target.value)} placeholder="Ej. 25" />
-      </div>
+
       <div className="figma-section">
         <label className="figma-section-label">Complexión</label>
         <div className="figma-card-group">
@@ -171,88 +290,77 @@ export const StepCharacteristics: React.FC = () => {
           ))}
         </div>
       </div>
-      <CustomSelect label="Color de piel" options={COLORS_PIEL} value={piel} onChange={setPiel} placeholder="Seleccionar color" />
-      <CustomSelect label="Color de cabello" options={COLORS_CABELLO} value={cabello} onChange={setCabello} placeholder="Seleccionar color" />
-      <CustomSelect label="Color de ojos" options={COLORS_OJOS} value={ojos} onChange={setOjos} placeholder="Seleccionar color" />
-      <div className="report-footer-privacy">
-        <Info size={14} />
-        <span>Nuestra inteligencia artificial manejará los datos de manera segura.</span>
+
+      <CustomSelect label="Color de piel" options={COLORS_PIEL} value={piel} onChange={setPiel} placeholder="Seleccionar" />
+      <CustomSelect label="Color de cabello" options={COLORS_CABELLO} value={cabello} onChange={setCabello} placeholder="Seleccionar" />
+      <CustomSelect label="Color de ojos" options={COLORS_OJOS} value={ojos} onChange={setOjos} placeholder="Seleccionar" />
+
+      <div className="figma-input-field">
+        <label>DETALLES DE VESTIMENTA (Opcional)</label>
+        <textarea
+          value={detallesVestimenta}
+          onChange={(e) => setDetallesVestimenta(e.target.value)}
+          placeholder="Ej. Camisa roja, pantalón azul, gorra negra..."
+          rows={3}
+        />
       </div>
+
+
       <div className="step-submit-row">
-        <Button fullWidth size="lg" onClick={() => setStep(4)}>ACEPTAR</Button>
+        <Button fullWidth size="lg" onClick={() => setStep(4)}>SIGUIENTE</Button>
       </div>
     </div>
   );
 };
 
-/* ─── PASO 4: VESTIMENTA ─── */
-
-export const StepClothing: React.FC = () => {
-  const { prendaSup, setPrendaSup, colorSup, setColorSup, prendaInf, setPrendaInf, colorInf, setColorInf, sinVestimenta, setSinVestimenta, setStep } = useReport();
-  return (
-    <div className="report-step-content">
-      <div className={sinVestimenta ? 'figma-muted-group' : ''}>
-        <div className="figma-input-field">
-          <label>PRENDA SUPERIOR</label>
-          <input type="text" list="prenda-sup-opts" value={prendaSup}
-            onChange={(e) => setPrendaSup(e.target.value)} placeholder="Ej: Camisa, sueter..." />
-          <datalist id="prenda-sup-opts">
-            <option value="Camisa"/><option value="Sueter"/><option value="Sin camisa"/>
-            <option value="Franela"/><option value="Camisa sin manga"/>
-          </datalist>
-        </div>
-        <div className="figma-input-field">
-          <label>COLOR PRENDA SUPERIOR</label>
-          <input type="text" value={colorSup} onChange={(e) => setColorSup(e.target.value)}
-            placeholder="Ej: Rojo, Azul marino..." />
-        </div>
-        <div className="figma-input-field">
-          <label>PRENDA INFERIOR</label>
-          <input type="text" list="prenda-inf-opts" value={prendaInf}
-            onChange={(e) => setPrendaInf(e.target.value)} placeholder="Ej: Pantalón, short..." />
-          <datalist id="prenda-inf-opts">
-            <option value="Pantalon"/><option value="Short"/><option value="Jean"/>
-            <option value="Mono"/><option value="Licra"/><option value="Falda"/>
-          </datalist>
-        </div>
-        <div className="figma-input-field">
-          <label>COLOR PRENDA INFERIOR</label>
-          <input type="text" value={colorInf} onChange={(e) => setColorInf(e.target.value)}
-            placeholder="Ej: Negro, Azul claro..." />
-        </div>
-      </div>
-      <label className="figma-checkbox-row">
-        <input type="checkbox" checked={sinVestimenta}
-          onChange={(e) => setSinVestimenta(e.target.checked)} />
-        <span>No tengo información de esto</span>
-      </label>
-      <div className="step-submit-row">
-        <Button fullWidth size="lg" onClick={() => setStep(5)}>ACEPTAR</Button>
-      </div>
-    </div>
-  );
-};
 
 /* ─── PASO 5: SEÑAS PARTICULARES ─── */
 
 export const StepFeatures: React.FC = () => {
   const { senasSelected, toggleSena, detalleAdicional, setDetalleAdicional, setStep } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
   return (
     <div className="report-step-content">
-      <div className="figma-feature-btn-group">
-        {SENAS.map((s) => {
-          const active = senasSelected.includes(s.val);
-          return (
-            <button key={s.val} type="button" onClick={() => toggleSena(s.val)}
-              className={`figma-feature-btn ${active ? 'active' : ''}`}>
-              <div className="radio-circle" />
-              <div className="feature-text">
-                <strong>{s.label}</strong>
-                <span>{s.desc}</span>
-              </div>
-            </button>
-          );
-        })}
+      <ModeToggle modo={modo} setModo={setModo} onIaClick={() => setStep(2)} style={{ margin: '0 auto 16px auto' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: 'min(50px, 10vw)' }}>
+        <button type="button" onClick={() => setStep(3)} style={{
+          background: 'none',
+          border: '1px solid #CDCFD1',
+          borderRadius: '50%',
+          width: '36px',
+          height: '36px',
+          padding: '0',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <ArrowLeft size={18} color="#CDCFD1" />
+        </button>
+        <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+          <span className="step-paso-num">Paso 3</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Señas particulares</span>
+        </div>
+      </div>
+      <div className="figma-section">
+        <label className="figma-section-label">Selecciona las que apliquen</label>
+        <div className="figma-feature-btn-group">
+          {SENAS.map((s) => {
+            const active = senasSelected.includes(s.val);
+            return (
+              <button key={s.val} type="button" onClick={() => toggleSena(s.val)}
+                className={`figma-feature-btn ${active ? 'active' : ''}`}>
+                <div className="radio-circle" />
+                <div className="feature-text">
+                  <strong>{s.label}</strong>
+                  <span>{s.desc}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="figma-input-field">
         <label>DETALLE ADICIONAL / DESCRIPCIÓN</label>
@@ -261,7 +369,7 @@ export const StepFeatures: React.FC = () => {
           placeholder="Ej. Cicatriz en antebrazo derecho, llevaba un bolso negro..." />
       </div>
       <div className="step-submit-row">
-        <Button fullWidth size="lg" onClick={() => setStep(6)}>ACEPTAR</Button>
+        <Button fullWidth size="lg" onClick={() => setStep(5)}>SIGUIENTE</Button>
       </div>
     </div>
   );
@@ -270,9 +378,50 @@ export const StepFeatures: React.FC = () => {
 /* ─── PASO 6: UBICACIÓN Y ENVÍO ─── */
 
 export const StepLocation: React.FC = () => {
-  const { categoria, file, handleFileChange, requestLocation, isRequestingLocation, locationSuccess, calleEstado, setCalleEstado, reporterLocation, isSubmitting, submitReport } = useReport();
+  const { categoria, file, handleFileChange, requestLocation, isRequestingLocation, locationSuccess, calleEstado, setCalleEstado, reporterLocation, isSubmitting, submitReport, setStep } = useReport();
+  const [modo, setModo] = useState<'manual' | 'ia'>('manual');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [file]);
+
   return (
     <div className="report-step-content">
+      <ModeToggle modo={modo} setModo={setModo} onIaClick={() => setStep(2)} style={{ margin: '0 auto 4px auto' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px', gap: 'min(50px, 10vw)' }}>
+        <button type="button" onClick={() => setStep(4)} style={{
+          background: 'none',
+          border: '1px solid #CDCFD1',
+          borderRadius: '50%',
+          width: '36px',
+          height: '36px',
+          padding: '0',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <ArrowLeft size={18} color="#CDCFD1" />
+        </button>
+        <div className="step-paso-heading" style={{ margin: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+          <span className="step-paso-num">Paso 4</span>
+          <span style={{ fontSize: '15px', fontWeight: 400, color: '#CDCFD1' }}>Grabar video/Tomar foto</span>
+        </div>
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '358px', margin: '0 auto 2px auto', textAlign: 'left' }}>
+        <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 400, color: '#CDCFD1' }}>Asegúrate de que el video o foto se vea lo más claro posible</h2>
+      </div>
+
       {categoria === 'niño/a o adolescente' ? (
         <div className="figma-alert-danger">
           <ShieldAlert size={36} color="#ef4444" className="centered-icon" />
@@ -281,21 +430,39 @@ export const StepLocation: React.FC = () => {
             Su reporte será enviado directamente a las autoridades correspondientes para un manejo confidencial.</p>
         </div>
       ) : (
-        <label className="figma-upload-area">
+        <label className="figma-upload-area" style={{ position: 'relative', overflow: 'hidden', height: '220px', marginBottom: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#07101C' }}>
           <input type="file" accept="image/*,video/mp4" onChange={handleFileChange} />
-          <Video size={48} color="#94a3b8" className="centered-icon" />
-          <strong>Subir Evidencia (Foto o Video)</strong>
-          <span>{file ? file.name : 'Toca para abrir la cámara o galería'}</span>
+          {previewUrl ? (
+            file?.type.startsWith('video/') ? (
+              <video src={previewUrl} style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain', top: 0, left: 0, zIndex: 0 }} autoPlay muted loop playsInline />
+            ) : (
+              <img src={previewUrl} style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'contain', top: 0, left: 0, zIndex: 0 }} alt="Preview" />
+            )
+          ) : (
+            <div style={{ zIndex: 1, position: 'relative', pointerEvents: 'none' }}>
+              <Video size={48} color="#94a3b8" className="centered-icon" style={{ margin: '0 auto 16px auto' }} />
+              <strong style={{ display: 'block', fontSize: '18px', color: '#fff', marginBottom: '8px' }}>Subir Evidencia (Foto o Video)</strong>
+              <span style={{ color: '#94A3B8', fontSize: '14px' }}>Toca para abrir la cámara o galería</span>
+            </div>
+          )}
+          {previewUrl && (
+            <div style={{ position: 'absolute', bottom: '8px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: '20px', zIndex: 1, fontSize: '12px', color: '#fff', whiteSpace: 'nowrap' }}>
+              Tocar para cambiar
+            </div>
+          )}
         </label>
       )}
+      <div style={{ width: '100%', maxWidth: '358px', margin: '10px auto', textAlign: 'left' }}>
+        <span style={{ fontSize: '14px', fontWeight: 600, color: '#9CA0A4' }}>Añade la ubicación del reporte:</span>
+      </div>
       <button type="button" onClick={requestLocation}
         disabled={isRequestingLocation || locationSuccess}
-        className={`figma-location-btn ${locationSuccess ? 'success' : ''}`}>
+        className={`figma-location-btn ${locationSuccess ? 'success' : ''}`}
+        style={locationSuccess ? { marginBottom: '4px', color: '#3b82f6', borderColor: '#3b82f6' } : { marginBottom: '4px' }}>
         {isRequestingLocation ? <Loader2 className="spinner" size={20} /> : <MapPin size={20} />}
         {locationSuccess ? 'Ubicación Adjuntada' : 'Añadir mi Ubicación actual'}
       </button>
       <div className="figma-input-field">
-        <label>CALLE Y ESTADO (Opcional)</label>
         <input type="text" value={calleEstado} onChange={(e) => setCalleEstado(e.target.value)}
           placeholder="Calle y estado..." />
       </div>
@@ -339,15 +506,12 @@ export const StepSuccess: React.FC = () => {
       ) : (
         <>
           <CheckCircle size={80} color="#10b981" className="success-hero-icon" />
-          <h3 className="success-heading">¡Tu reporte se ha realizado exitosamente!</h3>
-          <p className="success-description">Nos comunicaremos contigo en caso de necesitar información extra.</p>
+          <h3 className="success-heading">Reporte recibido</h3>
+          <p className="success-description">Cada solicitud será validada por nuestro equipo técnico previo a su publicación, para garantizar la privacidad y seguridad de la persona o mascota reportada.</p>
         </>
       )}
       <div className="success-actions">
-        <Button fullWidth size="lg" onClick={onClose}>FINALIZAR</Button>
-        <Button fullWidth size="lg" variant="outline" onClick={() => { setStep(1); resetFields(); }}>
-          <Plus size={20} /> Hacer nuevo reporte
-        </Button>
+        <Button fullWidth size="lg" onClick={onClose}>Entendido</Button>
       </div>
     </div>
   );
