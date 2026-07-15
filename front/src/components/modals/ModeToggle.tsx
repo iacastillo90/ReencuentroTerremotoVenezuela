@@ -1,3 +1,6 @@
+/**
+ * Componente visual para alternar entre el modo de ingreso manual y el asistente de IA.
+ */
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 
