@@ -43,9 +43,9 @@ export const extraerDatosDeAudio = (audioText: string) => {
   const clothingKeywords = ['franela','camisa','pantalon','pantalón','short','shorts','zapatos','gorra','sombrero','vestido','falda','chaqueta','sueter','suéter','mono','ropa','jean','jeans','bermuda','chemise'];
   const stopWords = ['y','o','con','tiene','lleva','piel','cabello','pelo','ojos','tez','edad','anos','años','hombre','mujer','nino','niño','nina','niña','es','esta','está','pero', 'de'];
   
-  let vestimenta = [];
+  let vestimenta: string[] = [];
   let isExtracting = false;
-  let currentItem = [];
+  let currentItem: string[] = [];
 
   for (let word of words) {
     const cleanWord = word.toLowerCase().replace(/[.,;]/g, '');
