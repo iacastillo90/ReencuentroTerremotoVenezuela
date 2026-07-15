@@ -20,6 +20,10 @@ export interface SearchFilters {
   fechaDesde: string;
   fechaHasta: string;
   vestimenta: string;
+  estado?: string;
+  municipio?: string;
+  raza?: string;
+  fecha?: string;
 }
 
 export const ESTADOS_VE = [
