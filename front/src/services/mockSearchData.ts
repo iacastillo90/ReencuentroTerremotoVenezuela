@@ -16,11 +16,10 @@ export type AgeCat = 'adulto' | 'adulto_mayor' | 'mascota' | 'nino';
 
 export interface SearchFilters {
   name: string;
-  estado: string;
-  municipio: string;
   edad: string;
-  raza: string;
-  fecha: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  vestimenta: string;
 }
 
 export const ESTADOS_VE = [
