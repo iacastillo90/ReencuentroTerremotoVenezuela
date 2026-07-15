@@ -13,6 +13,7 @@
  *   publicProjection: para público en general (incluye data.*)
  */
 import { PersonModel } from '../models/unified-person.model';
+import { Types } from 'mongoose';
 import { connection as redis } from '../config/redis.config';
 import { toPublicPerson } from '../utils/person-view.util';
 import { safeRegexQuery } from '../utils/regex-escape.util';
@@ -104,13 +105,13 @@ export async function getCounts() {
 
 export async function getMyReports(userId: string, limit: number, offset: number) {
   const [persons, total] = await Promise.all([
-    PersonModel.find({ 'metadata.reportedBy': userId })
+    PersonModel.find({ 'metadata.reportedBy': new Types.ObjectId(userId) })
       .select(safeProjection)
       .sort({ 'metadata.createdAt': -1 })
       .skip(offset)
       .limit(limit)
       .lean(),
-    PersonModel.countDocuments({ 'metadata.reportedBy': userId }),
+    PersonModel.countDocuments({ 'metadata.reportedBy': new Types.ObjectId(userId) }),
   ]);
 
   return { data: persons, total, limit, offset };
