@@ -34,9 +34,9 @@ export const COLORS_OJOS = [
 ];
 
 export const COMPLEXION = [
-  { val: 'delgada', title: 'Delgada', desc: 'Persona delgada' },
+  { val: 'delgada', title: 'Delgada', desc: 'Contextura delgada' },
   { val: 'media', title: 'Media', desc: 'Contextura promedio' },
-  { val: 'robusta', title: 'Robusta', desc: 'Persona de contextura fuerte' },
+  { val: 'robusta', title: 'Robusta', desc: 'Contextura fuerte' },
 ];
 
 export const SENAS = [
