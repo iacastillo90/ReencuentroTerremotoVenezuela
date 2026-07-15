@@ -3,7 +3,7 @@ import { ArrowLeft, ShieldAlert, X, User } from 'lucide-react';
 import { BrandMark } from '../BrandMark';
 import { Button } from '../ui/Button';
 import {
-  StepCategory, StepVoice, StepCharacteristics, StepClothing,
+  StepCategory, StepVoice, StepCharacteristics,
   StepFeatures, StepLocation, StepSuccess,
 } from './ReportSteps';
 import { ReportProvider, useReport } from './ReportContext';
@@ -18,9 +18,8 @@ const stepInfoMap: Record<number, { dot: number; paso: string; title: string } |
   1: { dot: 1, paso: 'Paso 1', title: '¿Qué categoría quieres reportar?' },
   2: { dot: 1, paso: 'Paso 1', title: 'Descripción de la persona' },
   3: { dot: 2, paso: 'Paso 2', title: 'Características' },
-  4: { dot: 3, paso: 'Paso 3', title: 'Vestimenta' },
-  5: { dot: 4, paso: 'Paso 4', title: 'Señas particulares' },
-  6: { dot: 5, paso: 'Paso 5', title: 'Ubicación y envío' },
+  4: { dot: 3, paso: 'Paso 3', title: 'Señas particulares' },
+  5: { dot: 4, paso: 'Paso 4', title: 'Ubicación y envío' },
 };
 
 const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ onNavigate }) => {
@@ -33,20 +32,19 @@ const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ o
       case 1: return <StepCategory />;
       case 2: return <StepVoice />;
       case 3: return <StepCharacteristics />;
-      case 4: return <StepClothing />;
-      case 5: return <StepFeatures />;
-      case 6: return <StepLocation />;
-      case 7: return <StepSuccess />;
+      case 4: return <StepFeatures />;
+      case 5: return <StepLocation />;
+      case 6: return <StepSuccess />;
       default: return null;
     }
   };
 
   return (
-    <div className="report-modal-overlay" role="dialog" aria-modal="true" aria-label={step < 7 ? 'Crear reporte' : 'Reporte finalizado'}>
+    <div className="report-modal-overlay" role="dialog" aria-modal="true" aria-label={step < 6 ? 'Crear reporte' : 'Reporte finalizado'}>
       <div className="report-modal-content">
         <header className="report-modal-header">
           <div className="header-left-group">
-            {step > 1 && step !== 3 && step < 7 && (
+            {step > 1 && step !== 3 && step !== 4 && step !== 5 && step < 6 && (
               <button onClick={() => {
                 if (step === 2) setStep(1);
                 else if (step === 3) setStep(audioText ? 2 : 1);
@@ -76,19 +74,13 @@ const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ o
           </div>
         </header>
 
-        {step < 7 && (
+        {step < 6 && (
           <>
             <div className="step-progress">
-              {[1, 2, 3, 4, 5].map(d => (
+              {[1, 2, 3, 4].map(d => (
                 <div key={d} className={`step-dot ${stepInfo && d <= stepInfo.dot ? 'active' : ''}`} />
               ))}
             </div>
-            {step > 1 && step !== 3 && (
-              <div className="step-header">
-                <div className="step-paso">{stepInfo?.paso}</div>
-                <div className="step-title">{stepInfo?.title}</div>
-              </div>
-            )}
           </>
         )}
 
