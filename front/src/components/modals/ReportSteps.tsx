@@ -259,7 +259,7 @@ export const StepVoice: React.FC = () => {
 /* ─── PASO 3: CARACTERÍSTICAS FÍSICAS ─── */
 
 export const StepCharacteristics: React.FC = () => {
-  const { genero, setGenero, nombreCompleto, setNombreCompleto, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, detallesVestimenta, setDetallesVestimenta, setStep, audioText } = useReport();
+  const { genero, setGenero, edad, setEdad, complexion, setComplexion, piel, setPiel, cabello, setCabello, ojos, setOjos, detallesVestimenta, setDetallesVestimenta, setStep, audioText } = useReport();
   const [modo, setModo] = useState<'manual' | 'ia'>(audioText ? 'ia' : 'manual');
 
   return (
@@ -321,7 +321,6 @@ export const StepCharacteristics: React.FC = () => {
             <button key={c.val} type="button" onClick={() => setComplexion(c.val)}
               className={`figma-card ${complexion === c.val ? 'selected' : ''}`}>
               <strong>{c.title}</strong>
-              <span>{c.desc}</span>
             </button>
           ))}
         </div>
@@ -550,7 +549,7 @@ export const StepLocation: React.FC = () => {
 /* ─── PASO 7: ÉXITO / CONFIRMACIÓN ─── */
 
 export const StepSuccess: React.FC = () => {
-  const { isOfflineSaved, onClose, setStep, resetFields } = useReport();
+  const { isOfflineSaved, onClose } = useReport();
   return (
     <div className="report-step-content-centered">
       {isOfflineSaved ? (
