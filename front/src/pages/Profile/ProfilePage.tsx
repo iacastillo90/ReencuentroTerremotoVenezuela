@@ -63,7 +63,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
   const [myMatches, setMyMatches] = useState<MatchItem[]>([]);
 
   const mountedRef = useRef(true);
-  const abortRef = useRef<AbortController | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>('reports');
   const [activeConversation, setActiveConversation] = useState<{
     reportId: string; otherUserId: string
@@ -86,41 +85,41 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onSelectPerson }) => {
     }
   };
 
-  // ─── fetchData: carga datos del perfil ──────────────
   // Obtiene en paralelo:
   //   - /persons/mine: reportes del usuario.
   //   - /contacts/received: mensajes recibidos.
   //   - /contacts/sent: mensajes enviados.
-const fetchData = async () => {
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    const gen = ++fetchGenRef.current;
+  const fetchData = async () => {
     try {
       const [res, msgs, sent] = await Promise.all([
-        api.get<Person[]>('/persons/mine', { signal: ctrl.signal }),
-        api.get('/contacts/received', { signal: ctrl.signal }),
-        api.get('/contacts/sent', { signal: ctrl.signal }),
+        api.get<Person[]>('/persons/mine'),
+        api.get('/contacts/received'),
+        api.get('/contacts/sent'),
       ]);
-      if (fetchGenRef.current !== gen || !mountedRef.current) return;
-      // El backend de /persons/mine devuelve { data, total, limit, offset }
-      setMyReports((res.data as any).data || []);
-      setMessages(msgs.data);
-      setSentMessages(sent.data);
+      if (!mountedRef.current) {
+        return;
+      }
+      // El backend de /persons/mine devuelve { data, total, limit, offset } o a veces un array directo si cambia.
+      const reportsData = Array.isArray(res.data) ? res.data : (res.data as any)?.data || [];
+      setMyReports(reportsData);
+      const messagesData = Array.isArray(msgs.data) ? msgs.data : (msgs.data as any)?.data || [];
+      const sentData = Array.isArray(sent.data) ? sent.data : (sent.data as any)?.data || [];
+      setMessages(messagesData);
+      setSentMessages(sentData);
     } catch (err) {
-      if (fetchGenRef.current !== gen || !mountedRef.current) return;
+      if (!mountedRef.current) return;
       console.error('Error fetching data', err);
     } finally {
-      if (fetchGenRef.current !== gen || !mountedRef.current) return;
+      if (!mountedRef.current) return;
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     if (user) fetchData();
     return () => {
       mountedRef.current = false;
-      abortRef.current?.abort();
     };
   }, [user]);
 
