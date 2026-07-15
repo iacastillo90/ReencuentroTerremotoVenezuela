@@ -44,15 +44,7 @@ const ReportModalInner: React.FC<{ onNavigate?: (view: string) => void }> = ({ o
       <div className="report-modal-content">
         <header className="report-modal-header">
           <div className="header-left-group">
-            {step > 1 && step !== 3 && step !== 4 && step !== 5 && step < 6 && (
-              <button onClick={() => {
-                if (step === 2) setStep(1);
-                else if (step === 3) setStep(audioText ? 2 : 1);
-                else setStep(s => s - 1);
-              }} className="header-back-btn">
-                <ArrowLeft size={20} />
-              </button>
-            )}
+
             <div className="nav-brand">
               <BrandMark size={34} />
               <span className="nav-brand-text">

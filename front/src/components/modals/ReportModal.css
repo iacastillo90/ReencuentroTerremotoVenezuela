@@ -39,6 +39,9 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--clr-border);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --clr-text-dim: #FFFFFF;
+  --clr-text-muted: #FFFFFF;
+  color: #FFFFFF;
 }
 
 .report-modal-header {
@@ -265,7 +268,7 @@
 .step-paso-desc {
   font-size: 16px;
   font-weight: 600;
-  color: #CDCFD1;
+  color: #FFFFFF;
   letter-spacing: -0.01em;
 }
 
@@ -981,7 +984,7 @@ textarea::placeholder {
 .figma-step-title {
   font-size: 16px;
   font-weight: var(--weight-semibold);
-  color: #CDCFD1;
+  color: #FFFFFF;
   line-height: 1.4;
 }
 .figma-signal-btn {
@@ -1323,15 +1326,14 @@ textarea::placeholder {
   gap: 4px;
 }
 .figma-card.selected {
-  background: #FAFAFA;
-  color: #07101C;
-  border-color: #D9D9D9;
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
 }
 .figma-card.selected strong {
-  color: #07101C;
+  color: #FFFFFF;
 }
 .figma-card.selected span {
-  color: #5B5B5B;
+  color: rgba(255, 255, 255, 0.7);
 }
 .figma-card strong {
   font-size: var(--text-base);
@@ -1380,12 +1382,12 @@ textarea::placeholder {
   display: block;
 }
 .figma-card-gender.selected {
-  background: #FAFAFA;
-  color: #07101C;
-  border-color: #D9D9D9;
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+  color: #FFFFFF;
 }
 .figma-card-gender.selected .gender-label {
-  color: #07101C;
+  color: #FFFFFF;
 }
 .figma-card-gender:hover:not(.selected) {
   background: rgba(255,255,255,0.06);
@@ -1412,7 +1414,7 @@ textarea::placeholder {
   border-radius: 50px;
   border: 1px solid #8E8E93;
   background: #8E8E93;
-  color: #07101C;
+  color: #FFFFFF;
   font-size: var(--text-md);
   font-weight: var(--weight-normal);
   font-family: inherit;
@@ -1426,7 +1428,7 @@ textarea::placeholder {
   resize: vertical;
   min-height: 120px;
   border-radius: 16px; /* textareas look bad with 50px border-radius */
-  color: #07101C;
+  color: #FFFFFF;
 }
 .figma-input-field input:focus,
 .figma-input-field textarea:focus {
@@ -1434,8 +1436,8 @@ textarea::placeholder {
 }
 .figma-input-field input::placeholder,
 .figma-input-field textarea::placeholder {
-  color: #07101C;
-  opacity: 0.45;
+  color: #FFFFFF;
+  opacity: 0.6;
 }
 
 /* Figma-aligned Select Field */
@@ -1483,12 +1485,12 @@ textarea::placeholder {
 .figma-select-trigger .select-label {
   flex: 1;
   text-align: left;
-  color: #07101C;
+  color: #FFFFFF;
 }
 .figma-select-trigger .select-placeholder {
   flex: 1;
   text-align: left;
-  color: #07101C;
+  color: #FFFFFF;
   opacity: 0.6;
 }
 .figma-select-trigger .chevron {
@@ -1702,7 +1704,7 @@ textarea::placeholder {
 .figma-feature-btn-group .figma-feature-btn .radio-circle {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 4px;
   border: 2px solid rgba(255,255,255,0.3);
   flex-shrink: 0;
   display: flex;
@@ -1717,7 +1719,7 @@ textarea::placeholder {
   content: '';
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: 2px;
   background: #4497D6;
 }
 .figma-feature-btn-group .figma-feature-btn .feature-text {
@@ -1885,6 +1887,45 @@ textarea::placeholder {
 .dark-record-btn-override .btn {
   background-color: transparent !important;
   border-color: #4497D6 !important;
-  color: #CDCFD1 !important;
+  color: #FFFFFF !important;
 }
 
+
+/* Figma Color Cards (Horizontal) */
+.figma-card-group-horizontal {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.figma-card-color {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #222222;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 14px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.figma-card-color:hover {
+  background: #2a2a2a;
+}
+.figma-card-color.selected {
+  border-color: #4497D6;
+  background: rgba(68, 151, 214, 0.1);
+}
+.figma-card-color .color-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.figma-card-color .color-label {
+  font-size: 13px;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
