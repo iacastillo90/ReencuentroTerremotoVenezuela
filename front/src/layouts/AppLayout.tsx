@@ -180,9 +180,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               </button>
             </>
           ) : (
-            <Button variant="danger" size="sm" onClick={() => go('login')} className="flex-center nav-login-btn">
-              <LogIn size={16} /> <span className="hide-mobile">Ingresar</span>
-            </Button>
+            <button className="nav-profile" onClick={() => go('login')} aria-label="Ingresar">
+              <div className="profile-circle">
+                <UserIcon size={20} />
+              </div>
+            </button>
           )}
           {user?.role === 'admin' && (
             <Button variant="outline" size="sm" className="btn-icon-override" onClick={onAdmin} title="Administración">
