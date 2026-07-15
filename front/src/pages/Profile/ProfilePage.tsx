@@ -103,7 +103,8 @@ const fetchData = async () => {
         api.get('/contacts/sent', { signal: ctrl.signal }),
       ]);
       if (fetchGenRef.current !== gen || !mountedRef.current) return;
-      setMyReports(res.data);
+      // El backend de /persons/mine devuelve { data, total, limit, offset }
+      setMyReports((res.data as any).data || []);
       setMessages(msgs.data);
       setSentMessages(sent.data);
     } catch (err) {
