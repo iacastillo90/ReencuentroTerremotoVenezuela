@@ -47,6 +47,30 @@
   flex: 0 0 auto;
 }
 
+.nav-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.nav-profile .profile-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #211F26;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-text-dim);
+  transition: background 0.2s;
+}
+.nav-profile:hover .profile-circle {
+  background: #333;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;
