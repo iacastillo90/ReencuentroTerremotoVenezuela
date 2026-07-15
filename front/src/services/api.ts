@@ -33,6 +33,7 @@
  *   - La cookie csrf-token tiene HttpOnly=false (la necesita
  *     el frontend) pero SameSite=Strict y Secure en prod.
  *   - El backend valida que el header coincida con la cookie.
+ *   - JWT se envía SOLO via cookie HttpOnly (nunca localStorage).
  * ═══════════════════════════════════════════════════════════
  */
 
@@ -131,10 +132,8 @@ export async function refreshCsrfToken(): Promise<string | null> {
  * sin que cada componente tenga que acordarse de hacerlo.
  */
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  // El JWT se envía SOLO via cookie HttpOnly — NUNCA via localStorage o Bearer header.
+  // Esto previene que XSS pueda robar el token.
   if (config.method && MUTATING.includes(config.method.toLowerCase())) {
     const token = csrfToken ?? readCsrfCookie();
     if (token && config.headers) {

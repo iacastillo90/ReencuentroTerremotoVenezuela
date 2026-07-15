@@ -70,6 +70,7 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^26.0.1",
+    "@types/pino": "^7.0.4",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.0",
     "ioredis-mock": "^8.13.1",

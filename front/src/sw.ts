@@ -54,7 +54,39 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/**
+ * Endpoints sensibles que NUNCA deben cachearse en el Service Worker.
+ * Datos de personas, búsquedas y admin contienen PII que no debe
+ * quedar expuesto en la caché del navegador.
+ */
+const SENSITIVE_API_PATHS = [
+  '/api/persons/mine',
+  '/api/admin',
+  '/api/auth/me',
+  '/api/contacts',
+  '/api/matches',
+  '/api/search',
+];
+
+function isSensitiveApiPath(pathname: string): boolean {
+  return SENSITIVE_API_PATHS.some((prefix) => pathname.startsWith(prefix));
+}
+
 async function apiCacheStrategy(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+
+  // No cachear endpoints sensibles — datos PII
+  if (isSensitiveApiPath(url.pathname)) {
+    try {
+      return await fetch(request);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Sin conexión' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   const cache = await caches.open(CACHE_API);
   const cached = await cache.match(request);
 

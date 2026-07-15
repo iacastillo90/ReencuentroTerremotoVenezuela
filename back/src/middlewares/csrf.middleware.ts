@@ -33,6 +33,8 @@
  *   - Token de 32 bytes: 256 bits de entropía (imposible de forzar)
  *   - catch en timingSafeEqual: Previene crash si buffers son incompatibles
  *   - Exención selectiva: Solo lo necesario, no blind exemption
+ *   - x-api-key exemption: API key auth no necesita CSRF (no hay cookie session)
+ *   - Bearer token ya no se usa desde el frontend (JWT solo via cookie HttpOnly)
  *
  * DECISIONES TÉCNICAS:
  *   - Double-Submit Cookie sobre SameSite: Más flexible para múltiples clientes

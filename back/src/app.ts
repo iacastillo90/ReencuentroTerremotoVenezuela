@@ -7,7 +7,7 @@
  *   cuerpo, protección CSRF, logging, compresión y registro de rutas.
  *
  * CARACTERÍSTICAS:
- *   - Helmet con CSP en modo reportOnly para desarrollo
+ *   - Helmet con CSP en modo reportOnly para desarrollo, enforced en producción
  *   - CORS restringido a orígenes permitidos (CORS_ORIGINS)
  *   - Rate limiting global configurable (500 req / 15 min por defecto)
  *   - CSRF double-submit cookie pattern
@@ -78,7 +78,7 @@ if (isDev) frameAncestors.push('http://localhost:5173');
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: false,
-    reportOnly: !isDev,
+    reportOnly: isDev,
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: isDev ? ["'self'", "'unsafe-inline'"] : ["'self'"],
@@ -183,10 +183,12 @@ app.get('/health', async (req, res) => {
   res.status(allOk ? 200 : 503).json({ status: allOk ? 'ok' : 'degraded', checks });
 });
 
-// Sentry verification endpoint (intentional error)
-app.get('/debug-sentry', (req, res) => {
-  throw new Error('My first Sentry error!');
-});
+// Sentry verification endpoint — solo en desarrollo
+if (isDev) {
+  app.get('/debug-sentry', (_req, _res) => {
+    throw new Error('My first Sentry error!');
+  });
+}
 
 // --- 9. Sentry Error Handler (debe ir antes del nuestro) ---
 Sentry.setupExpressErrorHandler(app);
