@@ -1277,8 +1277,6 @@ textarea::placeholder {
 }
 
 /* Figma-aligned Section */
-.figma-section {
-}
 .figma-section-label {
   display: block;
   font-size: var(--text-sm);
@@ -1394,8 +1392,6 @@ textarea::placeholder {
 }
 
 /* Figma-aligned Input Field */
-.figma-input-field {
-}
 .figma-input-field label {
   display: block;
   font-size: var(--text-sm);
