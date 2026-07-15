@@ -139,7 +139,7 @@ function App() {
 
           {activeView === 'search' && (
             <Suspense fallback={<LoadingScreen text="Cargando..." />}>
-              <SearchPage onBack={() => setActiveView('home')} />
+              <SearchPage onBack={() => setActiveView('home')} onNavigate={navigate} />
             </Suspense>
           )}
 

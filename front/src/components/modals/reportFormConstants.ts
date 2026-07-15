@@ -11,7 +11,7 @@
  */
 export const COLORS_PIEL = [
   { val: 'clara', hex: '#fadcbc', label: 'Clara' },
-  { val: 'media', hex: '#d2996c', label: 'Media' },
+  { val: 'trigueña', hex: '#d2996c', label: 'Trigueña' },
   { val: 'morena', hex: '#8d5524', label: 'Morena' },
   { val: 'oscura', hex: '#3d2314', label: 'Oscura' },
 ];
@@ -34,9 +34,9 @@ export const COLORS_OJOS = [
 ];
 
 export const COMPLEXION = [
-  { val: 'delgada', title: 'Delgada', desc: 'Contextura delgada' },
-  { val: 'media', title: 'Media', desc: 'Contextura promedio' },
-  { val: 'robusta', title: 'Robusta', desc: 'Contextura fuerte' },
+  { val: 'delgada', title: 'Delgada' },
+  { val: 'media', title: 'Media' },
+  { val: 'robusta', title: 'Robusta' },
 ];
 
 export const SENAS = [

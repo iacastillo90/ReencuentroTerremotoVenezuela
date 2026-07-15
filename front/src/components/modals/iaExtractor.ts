@@ -21,6 +21,7 @@ export const extraerDatosDeAudio = (audioText: string) => {
 
   // Piel
   if (/(blanco|blanca)/.test(lower)) result.piel = 'clara';
+  else if (/(trigueno|triguena)/.test(lower)) result.piel = 'trigueña';
   else if (/(moreno|morena)/.test(lower)) result.piel = 'morena';
   else if (/(oscuro|oscura|negro|negra)/.test(lower) && !/(cabello|pelo|ojos)/.test(lower)) result.piel = 'oscura';
 
