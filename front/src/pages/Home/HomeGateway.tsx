@@ -18,17 +18,7 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
   <div className="public-landing hg hg--gateway">
     <div className="pl__bg" />
     <div className="hg__inner">
-      <div className="hg__brand">
-        <BrandMark size={44} />
-        <div className="hg__brand-text">
-          <span className="hg__brand-name">
-            Reencuentros <em className="hg__accent">Venezuela</em>
-          </span>
-          <small className="hg__subtitle">
-            JUNTOS TE ENCONTRAMOS
-          </small>
-        </div>
-      </div>
+
       <div className="hg__stats-section">
         <HomeStats counts={counts} />
       </div>
@@ -46,11 +36,7 @@ export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onRe
           className="hg__btn hg__btn--outline"
         />
       </div>
-      <div className="hg__comm-link">
-        <button className="hg__comm-btn" onClick={onManual}>
-          <Bell size={20} /> Ver últimos comunicados
-        </button>
-      </div>
+
     </div>
   </div>
 );
