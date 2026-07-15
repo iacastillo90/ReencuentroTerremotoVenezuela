@@ -1,3 +1,7 @@
+/**
+ * Extrae atributos físicos y de vestimenta a partir de un texto transcrito.
+ * Funciona de manera local usando algoritmos de tokenización y expresiones regulares.
+ */
 export const extraerDatosDeAudio = (audioText: string) => {
   const lower = audioText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const result: any = {};
