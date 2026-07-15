@@ -1,6 +1,5 @@
 import React from 'react';
-import { Search, Plus, Bell } from 'lucide-react';
-import { BrandMark } from '../../components/BrandMark';
+import { Search, Plus } from 'lucide-react';
 import { HomeStats } from '../../components/HomeStats';
 import { HomeActionCard } from '../../components/HomeActionCard';
 import './PublicLanding.css';
@@ -14,7 +13,7 @@ interface HomeGatewayProps {
   onManual: () => void;
 }
 
-export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar, onManual }) => (
+export const HomeGateway: React.FC<HomeGatewayProps> = ({ counts, onBuscar, onReportar }) => (
   <div className="public-landing hg hg--gateway">
     <div className="pl__bg" />
     <div className="hg__inner">
