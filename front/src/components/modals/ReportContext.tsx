@@ -7,6 +7,7 @@ export interface ReportContextType {
   step: number; setStep: (s: number | ((prev: number) => number)) => void;
   isSubmitting: boolean; error: string; setError: (v: string) => void; isOfflineSaved: boolean;
   audioText: string; setAudioText: (v: string) => void;
+  detallesVestimenta: string; setDetallesVestimenta: (v: string) => void;
   nombreCompleto: string; setNombreCompleto: (v: string) => void;
   edad: string; setEdad: (v: string) => void;
   categoria: string; setCategoria: (v: string) => void;
@@ -38,6 +39,7 @@ export function ReportProvider({ children, onClose }: { children: React.ReactNod
   const [error, setError] = useState('');
   const [isOfflineSaved, setIsOfflineSaved] = useState(false);
   const [audioText, setAudioText] = useState('');
+  const [detallesVestimenta, setDetallesVestimenta] = useState('');
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [edad, setEdad] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -60,10 +62,10 @@ export function ReportProvider({ children, onClose }: { children: React.ReactNod
   const [reporterLocation, setReporterLocation] = useState<{lat: number; lng: number} | null>(null);
 
   const resetFields = useCallback(() => {
-    setAudioText(''); setNombreCompleto(''); setEdad('');
+    setAudioText(''); setDetallesVestimenta(''); setNombreCompleto(''); setEdad('');
     setCategoria(''); setGenero(''); setComplexion('');
     setPiel(''); setCabello(''); setOjos('');
-    setPrendaSup(''); setColorSup(''); setPrendaInf(''); setColorInf('');
+      setPrendaSup(''); setColorSup(''); setPrendaInf(''); setColorInf('');
     setSinVestimenta(false); setSenasSelected([]); setDetalleAdicional('');
     setFile(null); setReporterLocation(null); setLocationSuccess(false);
     setCalleEstado(''); setIsOfflineSaved(false);
@@ -111,7 +113,7 @@ Categoría: ${categoria}
 Género: ${genero}
 Complexión: ${complexion}
 Piel: ${piel}, Cabello: ${cabello}, Ojos: ${ojos}
-Vestimenta: ${sinVestimenta ? 'Sin info' : `Sup: ${prendaSup} (${colorSup}), Inf: ${prendaInf} (${colorInf})`}
+Vestimenta: ${detallesVestimenta || (sinVestimenta ? 'Sin info' : `Sup: ${prendaSup} (${colorSup}), Inf: ${prendaInf} (${colorInf})`)}
 Señas Particulares: ${senasSelected.join(', ')}
 Detalles Adicionales: ${detalleAdicional}
 Ubicación: ${calleEstado}`;
@@ -127,7 +129,7 @@ Ubicación: ${calleEstado}`;
         const csrfToken = csrfCookie ? decodeURIComponent(csrfCookie.split('=')[1]) : undefined;
         await addPendingReport(payload, file || undefined, csrfToken);
         await registerBackgroundSync();
-        setIsOfflineSaved(true); setStep(7); return;
+        setIsOfflineSaved(true); setStep(6); return;
       }
       if (file) {
         const fd = new FormData(); fd.append('file', file);
@@ -135,13 +137,13 @@ Ubicación: ${calleEstado}`;
         payload.photoUrl = uploadRes.data.url;
       }
       await api.post('/persons', payload);
-      setStep(7);
+      setStep(6);
     } catch (err: unknown) {
       console.error(err);
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(axiosErr.response?.data?.error || 'Error al enviar reporte.');
     } finally { setIsSubmitting(false); }
-  }, [calleEstado, audioText, nombreCompleto, edad, categoria, genero, complexion, piel, cabello, ojos, prendaSup, colorSup, prendaInf, colorInf, sinVestimenta, senasSelected, detalleAdicional, file, reporterLocation]);
+  }, [calleEstado, audioText, detallesVestimenta, nombreCompleto, edad, categoria, genero, complexion, piel, cabello, ojos, prendaSup, colorSup, prendaInf, colorInf, sinVestimenta, senasSelected, detalleAdicional, file, reporterLocation]);
 
   const autoFillFromText = useCallback((text: string) => {
     const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -209,7 +211,7 @@ Ubicación: ${calleEstado}`;
 
   const value: ReportContextType = {
     step, setStep, isSubmitting, error, setError, isOfflineSaved,
-    audioText, setAudioText, nombreCompleto, setNombreCompleto, edad, setEdad,
+    audioText, setAudioText, detallesVestimenta, setDetallesVestimenta, nombreCompleto, setNombreCompleto, edad, setEdad,
     categoria, setCategoria, genero, setGenero, complexion, setComplexion,
     piel, setPiel, cabello, setCabello, ojos, setOjos,
     prendaSup, setPrendaSup, colorSup, setColorSup, prendaInf, setPrendaInf,
