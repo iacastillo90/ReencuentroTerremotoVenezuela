@@ -32,7 +32,10 @@ import { Button } from '../ui/Button';
 interface AudioRecorderProps {
   onTranscription: (text: string) => void;
   onStartRecording?: () => void;
+  onStopRecording?: () => void;
   currentText?: string;
+  compact?: boolean;
+  autoStart?: boolean;
 }
 
 // Frases que la IA del servidor devuelve cuando no entiende el audio
@@ -54,7 +57,10 @@ const isJunk = (text: string) => {
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onTranscription,
   onStartRecording,
+  onStopRecording,
   currentText = '',
+  compact = false,
+  autoStart = false,
 }) => {
   const { transcript, listening, browserSupportsSpeechRecognition, resetTranscript } =
     useSpeechRecognition();
@@ -67,6 +73,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const baseTextRef = useRef<string>('');
+
+  // ─── Auto-start si se solicita ───
+  const hasAutoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStart && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      handleStart();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
 
   // ─── Detectar si el navegador soporta Web Speech ───
   // Si no, cambiamos automáticamente al backend fallback.
@@ -104,6 +120,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const stopBrowserRecording = () => {
     SpeechRecognition.stopListening();
+    if (onStopRecording) onStopRecording();
   };
 
   // ─── Iniciar grabación por backend (MediaRecorder + API) ───
@@ -138,6 +155,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
     }
+    if (onStopRecording) onStopRecording();
   };
 
   // ─── Enviar audio al backend para transcripción ───
@@ -171,16 +189,18 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const handleStop = () => useBackend ? stopBackendRecording() : stopBrowserRecording();
 
   return (
-    <div className="audio-recorder-box">
+    <div className={`audio-recorder-box ${compact ? 'audio-recorder-compact' : ''}`}>
       <div className="audio-recorder-header">
-        <div>
-          <strong className="audio-recorder-title">Nota de Voz</strong>
-          <span className="audio-recorder-subtitle">
-            {useBackend
-              ? 'Graba tu descripción y se transcribirá al terminar.'
-              : 'Graba tu voz — el texto aparece en tiempo real abajo.'}
-          </span>
-        </div>
+        {!compact && (
+          <div>
+            <strong className="audio-recorder-title">Nota de Voz</strong>
+            <span className="audio-recorder-subtitle">
+              {useBackend
+                ? 'Graba tu descripción y se transcribirá al terminar.'
+                : 'Graba tu voz — el texto aparece en tiempo real abajo.'}
+            </span>
+          </div>
+        )}
 
         <div className="audio-recorder-controls">
           {isTranscribing ? (
@@ -188,11 +208,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               <Loader2 size={16} className="spinner" /> Procesando...
             </div>
           ) : listening || isRecording ? (
-            <Button type="button" variant="danger" size="sm" onClick={handleStop} className="flex-center gap-2">
+            <Button type="button" variant="danger" size={compact ? 'md' : 'sm'} onClick={handleStop}>
               <Square size={16} fill="currentColor" /> Detener
             </Button>
           ) : (
-            <Button type="button" variant="outline" size="sm" onClick={handleStart} className="flex-center gap-2">
+            <Button type="button" variant="outline" size={compact ? 'md' : 'sm'} fullWidth={compact} onClick={handleStart}>
               <Mic size={16} /> Grabar
             </Button>
           )}
