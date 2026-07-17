@@ -54,6 +54,35 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// ─── Token persistence (doble canal: cookie httpOnly + localStorage) ─────────
+//
+// El proxy de Vercel→Render no garantiza que la cookie httpOnly quede en el
+// dominio correcto en todos los navegadores. Guardar el JWT en localStorage
+// como segundo canal asegura que el Bearer token siempre esté disponible.
+// El interceptor de request lo leerá y lo enviará como Authorization header.
+// El backend acepta Bearer O cookie (auth.middleware.ts línea 86-90).
+//
+// Seguridad: el JWT expira en 7 días. En caso de XSS, el riesgo es el mismo
+// que con una cookie SameSite=None (ambos son accesibles desde JS malicioso).
+// La cookie httpOnly es el canal primario cuando funciona correctamente.
+
+const TOKEN_KEY = 'auth_token';
+
+/** Persiste el JWT tras un login exitoso. */
+export function persistToken(token: string): void {
+  try { localStorage.setItem(TOKEN_KEY, token); } catch { /* storage bloqueado */ }
+}
+
+/** Elimina el JWT al hacer logout o al detectar sesión inválida. */
+export function clearToken(): void {
+  try { localStorage.removeItem(TOKEN_KEY); } catch { /* storage bloqueado */ }
+}
+
+/** Lee el JWT del localStorage. */
+export function getStoredToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+
 // ─── CSRF (patrón double-submit) ────────────────────────────────────────────
 
 /**
@@ -132,12 +161,17 @@ export async function refreshCsrfToken(): Promise<string | null> {
  * sin que cada componente tenga que acordarse de hacerlo.
  */
 api.interceptors.request.use((config) => {
-  // El JWT se envía SOLO via cookie HttpOnly — NUNCA via localStorage o Bearer header.
-  // Esto previene que XSS pueda robar el token.
+  // Leer JWT del localStorage (canal secundario al httpOnly cookie)
+  // El backend acepta Bearer OR cookie — esto garantiza auth aunque
+  // la cookie cross-domain no llegue correctamente via Vercel proxy.
+  const jwt = getStoredToken();
+  if (jwt) {
+    config.headers.Authorization = `Bearer ${jwt}`;
+  }
   if (config.method && MUTATING.includes(config.method.toLowerCase())) {
-    const token = csrfToken ?? readCsrfCookie();
-    if (token && config.headers) {
-      config.headers['x-csrf-token'] = token;
+    const csrf = csrfToken ?? readCsrfCookie();
+    if (csrf && config.headers) {
+      config.headers['x-csrf-token'] = csrf;
     }
   }
   return config;
@@ -181,31 +215,37 @@ api.interceptors.response.use(
     const cfg = error.config;
     const status = error.response?.status;
     const msg = String(error.response?.data?.error ?? '');
+
+    // ─── Retry automático para 503 (Render cold start) ────────────────────
+    // Render free tier hiberna el servicio tras ~15 min sin tráfico.
+    // El primer request durante el arranque recibe 503 mientras el proceso
+    // Node.js levanta (~20-30s). Reintentamos hasta 3 veces con backoff.
+    const isColdStart = status === 503 && cfg && !cfg._retryCount;
+    if (isColdStart) {
+      cfg._retryCount = (cfg._retryCount ?? 0) + 1;
+      const MAX_RETRIES = 3;
+      if (cfg._retryCount <= MAX_RETRIES) {
+        // Espera exponencial: 3s → 6s → 12s
+        const delay = 3000 * Math.pow(2, cfg._retryCount - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return api(cfg);
+      }
+    }
+
+    // ─── Retry automático para 403 CSRF ──────────────────────────────────
     const isCsrf = status === 403 && /csrf/i.test(msg);
-
-    // Solo reintenta si:
-    //   1. Es error 403 CSRF.
-    //   2. Aún no hemos reintentado (_csrfRetried es false/undefined).
-    //   3. Tenemos la config del request original (cfg existe).
     if (isCsrf && cfg && !cfg._csrfRetried) {
-      cfg._csrfRetried = true; // Marca para no reintentar de nuevo
-
-      // Refresca el token (vuelve a sembrar la cookie y actualiza memoria)
+      cfg._csrfRetried = true;
       await refreshCsrfToken();
-
-      // Re-intenta con el token nuevo
       const token = csrfToken ?? readCsrfCookie();
       if (token) {
         cfg.headers = cfg.headers ?? {};
         cfg.headers['x-csrf-token'] = token;
       }
-
-      // Ejecuta el request original nuevamente.
-      // El usuario no nota nada — el reintento es transparente.
       return api(cfg);
     }
 
-    // Si no es CSRF o ya se reintentó, rechaza normalmente.
+    // Si no es CSRF o cold start, rechaza normalmente.
     return Promise.reject(error);
   }
 );

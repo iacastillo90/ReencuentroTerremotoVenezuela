@@ -75,7 +75,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess, onGoRegister, o
     try {
       setLoading(true);
       const res = await api.post('/auth/login', { email, password });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       onSuccess();
     } catch (err) {
       const axiosErr = err as { response?: { data?: { error?: string } } };

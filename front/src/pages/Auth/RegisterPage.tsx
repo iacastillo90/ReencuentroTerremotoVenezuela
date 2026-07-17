@@ -83,7 +83,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess, onGoLogin
         state: form.state || undefined,
         municipality: form.municipality || undefined,
       });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       onSuccess();
     } catch (err) {
       setError(humanizeError(err as { response?: { data?: { error?: string } } }, 'No se pudo crear la cuenta.'));

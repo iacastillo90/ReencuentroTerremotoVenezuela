@@ -65,7 +65,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       setIsSubmitting(true);
       setError('');
       const res = await api.post('/auth/google', { token: credentialResponse.credential });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
 
       // Si el perfil ya estaba completo y no está pendiente, cerramos el modal
       if (res.data.user.isProfileComplete && res.data.user.status !== 'pending') {
@@ -93,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       setError('');
       const res = await api.post('/auth/profile', { sector, contactNumber });
 
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       if (res.data.user.status !== 'pending') {
         onSuccess();
       }

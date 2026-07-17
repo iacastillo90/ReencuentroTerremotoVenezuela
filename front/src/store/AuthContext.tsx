@@ -35,7 +35,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { api, refreshCsrfToken } from '../services/api';
+import { api, refreshCsrfToken, persistToken, clearToken } from '../services/api';
 
 // ─── Interfaz User ──────────────────────────────────────
 // Representa al usuario logueado. Campos clave:
@@ -67,7 +67,7 @@ interface User {
 //   - isLoading: true mientras se verifica la sesión inicial.
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (user: User, token?: string) => void;
   logout: () => void;
   updateUser: (user: User) => void;
   isLoading: boolean;
@@ -113,9 +113,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // ─── login ──────────────────────────────────────────
   // Se llama después de una autenticación exitosa.
-  // Recibe el User devuelto por el backend y lo guarda
-  // en el estado del contexto.
-  const login = (newUser: User) => {
+  // Recibe el User devuelto por el backend y opcionalmente el JWT
+  // para persistirlo en localStorage (doble canal cookie + Bearer).
+  const login = (newUser: User, token?: string) => {
+    if (token) persistToken(token);
     setUser(newUser);
   };
 
@@ -132,6 +133,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Si el servidor no responde, igual cerramos sesión
       // localmente para no dejar al usuario atascado.
     }
+    clearToken();
     setUser(null);
   };
 
