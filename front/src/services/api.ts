@@ -49,8 +49,13 @@ import axios from 'axios';
  * - withCredentials: true → envía cookies HTTP-only en cada
  *   request (necesario para la cookie de sesión y CSRF).
  */
+let base = import.meta.env.VITE_API_URL || '/api';
+if (base.startsWith('http') && !base.endsWith('/api') && !base.endsWith('/api/')) {
+  base = base.replace(/\/$/, '') + '/api';
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: base,
   withCredentials: true,
 });
 
