@@ -64,7 +64,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
  * @param res - Response de Express para setear cookies
  * @param user - Datos del usuario (ID, email, role, tokenVersion)
  */
-function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): void {
+function issueSession(res: Response, user: { _id: string; email: string; isProfileComplete: boolean; role: string; status: string; tokenVersion: number }): string {
   const authToken = jwt.sign(
     { userId: user._id, email: user.email, isProfileComplete: user.isProfileComplete,
       role: user.role, status: user.status, tokenVersion: user.tokenVersion },
@@ -77,6 +77,7 @@ function issueSession(res: Response, user: { _id: string; email: string; isProfi
     sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+  return authToken;
 }
 
 export function getCsrfToken(req: Request, res: Response) {
@@ -160,7 +161,7 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
       req,
     });
 
-    return res.status(200).json({ user });
+    return res.status(200).json({ user, token: authToken });
   } catch (error) {
     next(error);
   }
@@ -195,7 +196,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       status: isAdmin ? 'approved' : 'pending'
     });
 
-    issueSession(res, {
+    const token = issueSession(res, {
       _id: user._id.toString(),
       email: user.email,
       isProfileComplete: user.isProfileComplete,
@@ -211,7 +212,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       detail: { email: user.email },
       req,
     });
-    return res.status(201).json({ user });
+    return res.status(201).json({ user, token });
   } catch (error) {
     next(error);
   }
@@ -238,7 +239,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
     }
 
-    issueSession(res, {
+    const token = issueSession(res, {
       _id: user._id.toString(),
       email: user.email,
       isProfileComplete: user.isProfileComplete,
@@ -254,7 +255,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       detail: { email: user.email },
       req,
     });
-    return res.status(200).json({ user });
+    return res.status(200).json({ user, token });
   } catch (error) {
     next(error);
   }
