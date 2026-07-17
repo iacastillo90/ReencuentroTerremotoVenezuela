@@ -125,17 +125,23 @@ export async function googleAuth(req: Request, res: Response, next: NextFunction
     const { sub: googleId, email, name, picture } = payload;
 
     let user = await UserModel.findOne({ googleId });
+    const isAdminEmail = process.env.ADMIN_EMAIL && email?.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+
     if (!user) {
-      const isAdmin = process.env.ADMIN_EMAIL && email?.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
       user = await UserModel.create({
         googleId,
         email,
         name,
         picture,
         isProfileComplete: false,
-        role: isAdmin ? 'admin' : 'user',
-        status: isAdmin ? 'approved' : 'pending'
+        role: isAdminEmail ? 'admin' : 'user',
+        status: isAdminEmail ? 'approved' : 'pending'
       });
+    } else if (isAdminEmail && (user.role !== 'admin' || user.status !== 'approved')) {
+      // Auto-promover si se configuró ADMIN_EMAIL después de registrarse
+      user.role = 'admin';
+      user.status = 'approved';
+      await user.save();
     }
 
     const authToken = jwt.sign(
@@ -237,6 +243,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         req,
       });
       return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
+    }
+
+    const isAdminEmail = process.env.ADMIN_EMAIL && user.email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+    if (isAdminEmail && (user.role !== 'admin' || user.status !== 'approved')) {
+      user.role = 'admin';
+      user.status = 'approved';
+      await user.save();
     }
 
     const token = issueSession(res, {
