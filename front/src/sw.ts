@@ -92,7 +92,7 @@ async function apiCacheStrategy(request: Request): Promise<Response> {
 
   try {
     const network = await fetch(request);
-    if (network.ok) {
+    if (network.ok && request.method === 'GET') {
       await cache.put(request, network.clone());
     }
     return network;
