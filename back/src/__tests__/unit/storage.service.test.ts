@@ -1,11 +1,19 @@
-jest.mock('minio', () => ({
-  Client: jest.fn().mockImplementation(() => ({
-    presignedGetObject: jest.fn().mockResolvedValue('http://minio-server/test/bucket/file.jpg?X-Amz-Algorithm=...'),
-    presignedPutObject: jest.fn().mockResolvedValue('http://minio-server/test/bucket/upload.jpg?X-Amz-Algorithm=...'),
-    bucketExists: jest.fn().mockResolvedValue(true),
-    putObject: jest.fn().mockResolvedValue(undefined),
-    makeBucket: jest.fn().mockResolvedValue(undefined),
-  }))
+// Mock AWS SDK v3 antes de importar el servicio
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn().mockImplementation(() => ({
+    send: jest.fn().mockResolvedValue({ ContentType: 'image/jpeg' }),
+  })),
+  HeadBucketCommand: jest.fn(),
+  CreateBucketCommand: jest.fn(),
+  PutObjectCommand: jest.fn(),
+  GetObjectCommand: jest.fn(),
+  HeadObjectCommand: jest.fn(),
+  BucketAlreadyExists: class BucketAlreadyExists extends Error {},
+  BucketAlreadyOwnedByYou: class BucketAlreadyOwnedByYou extends Error {},
+}));
+
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: jest.fn().mockResolvedValue('https://mock-endpoint/bucket/file.jpg?X-Amz-Algorithm=...'),
 }));
 
 import { getPresignedUrl, getPresignedUploadUrl } from '../../services/storage.service';
@@ -13,10 +21,13 @@ import { getPresignedUrl, getPresignedUploadUrl } from '../../services/storage.s
 describe('storage.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Re-setup getSignedUrl mock para cada test
+    const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+    (getSignedUrl as jest.Mock).mockResolvedValue('https://mock-endpoint/bucket/file.jpg?X-Amz-Algorithm=...');
   });
 
   describe('getPresignedUrl', () => {
-    it('should return a presigned URL starting with http', async () => {
+    it('should return a presigned URL starting with https', async () => {
       const url = await getPresignedUrl('test-file.jpg');
       expect(url).toMatch(/^https?:\/\//);
       expect(typeof url).toBe('string');
