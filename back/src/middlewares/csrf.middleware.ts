@@ -26,6 +26,11 @@
  *   /api/webhooks — Webhooks de n8n (no tienen sesión de navegador)
  *   /api/partners — API de partners (usan API key)
  *   /api/auth/google — Google OAuth redirect (callback externo)
+ *   /api/auth/login — Login email/pass: proxy Vercel→Render impide que la
+ *     cookie csrf-token llegue al dominio correcto (redirect HTTP ≠ proxy real).
+ *     Ya protegido por rate limiting (5 req/15min) + Zod + bcrypt.
+ *   /api/auth/register — Registro: mismo problema de cookie cross-domain.
+ *     Ya protegido por rate limiting (10 req/15min) + Zod + bcrypt.
  *   /api/localizados — Endpoints de refugios/hospitales (API key)
  *
  * SEGURIDAD:
@@ -63,6 +68,12 @@ export const CSRF_EXEMPT_PATHS = [
   '/api/webhooks',
   '/api/partners',
   '/api/auth/google',
+  // Login/register exentos: el proxy de Vercel→Render es un redirect HTTP,
+  // no un proxy real. La cookie csrf-token queda en el dominio onrender.com
+  // y no está disponible en vercel.app al hacer el primer login.
+  // Ambos endpoints están protegidos por rate limiting + Zod + bcrypt.
+  '/api/auth/login',
+  '/api/auth/register',
   '/api/localizados',
 ];
 
