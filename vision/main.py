@@ -6,16 +6,18 @@ import socket
 import traceback
 import asyncio
 import urllib.request
+import concurrent.futures
 from contextlib import asynccontextmanager
 from typing import Optional
 from urllib.parse import urlparse
+import threading
 
 import cv2
 cv2.setNumThreads(1)
 import face_recognition
 import httpx
 import numpy as np
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import BaseModel, HttpUrl
 from PIL import Image, ImageFilter
 
@@ -30,6 +32,7 @@ AGE_LIST = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53
 AGE_UPPER = [2, 6, 12, 20, 32, 43, 53, 100]
 
 age_net: Optional[cv2.dnn.Net] = None
+age_net_lock = threading.Lock()
 
 MODEL_DOWNLOAD_URLS = {
     AGE_PROTO: "https://raw.githubusercontent.com/opencv/opencv_extra/master/testdata/dnn/age_net_deploy.prototxt",
@@ -93,8 +96,9 @@ def _estimate_age(face_roi: np.ndarray) -> tuple[str, int]:
         return "unknown", 0
 
     blob = cv2.dnn.blobFromImage(face_roi, 1.0, (227, 227), (78.4263377603, 87.7689143744, 114.895847746), swapRB=False)
-    age_net.setInput(blob)
-    preds = age_net.forward()
+    with age_net_lock:
+        age_net.setInput(blob)
+        preds = age_net.forward()
     idx = preds[0].argmax()
     age_range = AGE_LIST[idx]
     age_approx = AGE_UPPER[idx]
@@ -133,7 +137,11 @@ class BlurFacesResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Vision service starting...")
+    # Limita la cantidad máxima de hilos paralelos para evitar colapso de CPU con ráfagas
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    asyncio.get_running_loop().set_default_executor(executor)
+    
+    logger.info("Vision service starting with limited ThreadPoolExecutor...")
     try:
         _download_models()
         _load_age_model()
@@ -141,6 +149,7 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Age model init failed (service continues without age detection): {e}")
     yield
     logger.info("Vision service shutting down.")
+    executor.shutdown(wait=False)
 
 
 app = FastAPI(
@@ -259,8 +268,16 @@ def _blur_faces_cpu_bound(content: bytes, image_url: str) -> BlurFacesResponse:
         return BlurFacesResponse(error=f"Blur processing error: {str(e)}")
 
 
+def _verify_api_key(x_vision_api_key: Optional[str] = Header(None, alias="x-vision-api-key")):
+    expected = os.environ.get("VISION_API_KEY")
+    if expected and x_vision_api_key != expected:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Vision-API-Key")
+
+
 @app.post("/extract-face", response_model=ExtractFaceResponse)
-async def extract_face(req: ExtractFaceRequest):
+async def extract_face(req: ExtractFaceRequest, x_vision_api_key: Optional[str] = Header(None, alias="x-vision-api-key")):
+    _verify_api_key(x_vision_api_key)
     try:
         image_url = str(req.image_url)
         logger.info(f"Downloading image: {image_url}")
@@ -297,8 +314,9 @@ async def extract_face(req: ExtractFaceRequest):
 
 
 @app.post("/blur-faces", response_model=BlurFacesResponse)
-async def blur_faces(req: BlurFacesRequest):
+async def blur_faces(req: BlurFacesRequest, x_vision_api_key: Optional[str] = Header(None, alias="x-vision-api-key")):
     """Detecta y difumina todos los rostros en la imagen, devuelve base64."""
+    _verify_api_key(x_vision_api_key)
     try:
         image_url = str(req.image_url)
         logger.info(f"Blurring faces in: {image_url}")
