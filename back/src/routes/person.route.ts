@@ -56,6 +56,7 @@ const getPersonsQuerySchema = z.object({
   age: z.coerce.number().int().min(0).max(120).optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
+  vestimenta: sanitizedQueryParam.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

@@ -108,6 +108,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onBack, onNavigate }) =>
       if (filters.edad) params.age = filters.edad;
       if (filters.fechaDesde) params.dateFrom = filters.fechaDesde;
       if (filters.fechaHasta) params.dateTo = filters.fechaHasta;
+      if (filters.vestimenta) params.vestimenta = filters.vestimenta;
       
       const res = await api.get('/persons', { params });
       dispatch({ type: 'SEARCH_SUCCESS', results: res.data.persons || [], fallback: false });

@@ -68,6 +68,7 @@ interface GetPersonsParams {
   age?: number;
   dateFrom?: string;
   dateTo?: string;
+  vestimenta?: string;
   limit: number;
   offset: number;
   viewerRole?: string;
@@ -128,7 +129,7 @@ export async function getMyReports(userId: string, limit: number, offset: number
 }
 
 export async function getPersons(params: GetPersonsParams, viewerRole?: string) {
-  const { q, status, category, state, municipality, age, dateFrom, dateTo, limit, offset } = params;
+  const { q, status, category, state, municipality, age, dateFrom, dateTo, vestimenta, limit, offset } = params;
   const effectiveViewerRole = viewerRole || params.viewerRole;
   const filter: Record<string, unknown> = { 'metadata.auditStatus': { $ne: 'pending_moderation' } };
 
@@ -140,6 +141,13 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     const sanitizedQuery = safeRegexQuery(String(q));
     if (sanitizedQuery) {
       filter['normalizedName'] = { $regex: '^' + sanitizedQuery, $options: 'i' };
+    }
+  }
+
+  if (vestimenta) {
+    const sanitizedVestimenta = safeRegexQuery(String(vestimenta));
+    if (sanitizedVestimenta) {
+      filter['lastSeen.description'] = { $regex: sanitizedVestimenta, $options: 'i' };
     }
   }
 
@@ -184,7 +192,7 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     filter['lastSeen.municipality'] = { $regex: safeRegexQuery(String(municipality)), $options: 'i' };
   }
 
-  const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:age=${age || ''}:df=${dateFrom || ''}:dt=${dateTo || ''}:l=${limit}:o=${offset}`;
+  const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:age=${age || ''}:df=${dateFrom || ''}:dt=${dateTo || ''}:v=${vestimenta || ''}:l=${limit}:o=${offset}`;
 
   if (!q && offset === 0) {
     const cachedData = await redis.get(cacheKey);
