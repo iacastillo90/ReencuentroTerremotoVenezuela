@@ -114,7 +114,7 @@ No agregues comentarios ni markdown fuera del JSON.
   async generateEmbedding(text: string): Promise<number[]> {
     try {
       const response = await this.client.models.embedContent({
-        model: 'text-embedding-004',
+        model: 'gemini-embedding-2',
         contents: text
       });
       return response.embeddings?.[0]?.values || [];
