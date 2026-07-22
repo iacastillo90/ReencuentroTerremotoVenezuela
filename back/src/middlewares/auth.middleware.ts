@@ -55,10 +55,10 @@ async function findApiKeyByKey(rawKey: string, type: 'admin' | 'webhook' | 'part
   const hashedKey = hashApiKey(rawKey);
   const filter = { active: true, type } as const;
   let doc = await ApiKeyModel.findOne({ key: hashedKey, ...filter });
-  if (!doc) {
+  if (!doc && process.env.NODE_ENV !== 'production') {
     doc = await ApiKeyModel.findOne({ key: rawKey, ...filter });
     if (doc) {
-      logger.warn({ keyPrefix: doc.keyPrefix }, '[Auth] Legacy unhashed API key used — recreate key to migrate');
+      logger.warn({ keyPrefix: doc.keyPrefix }, '[Auth] Legacy unhashed API key used in dev — recreate key to migrate');
     }
   }
   return doc;
