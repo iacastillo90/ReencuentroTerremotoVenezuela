@@ -20,7 +20,7 @@
 import { useState, lazy, Suspense } from 'react';
 import * as Sentry from '@sentry/react';
 import { AppLayout } from './layouts/AppLayout';
-import { FeedSidebar } from './pages/Feed/Feed';
+import { FeedSidebar } from './pages/Feed/FeedSidebar';
 import { ReportModal } from './components/modals/ReportModal';
 import { LogisticsPage } from './pages/Logistics/LogisticsPage';
 import { HomePage } from './pages/Home/HomePage';

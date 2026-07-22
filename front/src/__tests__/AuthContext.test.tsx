@@ -30,6 +30,8 @@ const mockRefreshCsrfToken = vi.hoisted(() => vi.fn().mockResolvedValue('mock-cs
 vi.mock('../services/api', () => ({
   api: mockApi,
   refreshCsrfToken: mockRefreshCsrfToken,
+  persistToken: vi.fn(),
+  clearToken: vi.fn(),
 }));
 
 const ls = (): Storage | null => {
@@ -40,6 +42,7 @@ describe('AuthContext - Cookie-based auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApi.get.mockResolvedValue({ data: { user: null } });
+    mockApi.post.mockResolvedValue({ data: {} });
   });
 
   it('has withCredentials set to true on axios instance', async () => {

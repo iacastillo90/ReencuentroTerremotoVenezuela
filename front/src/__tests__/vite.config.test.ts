@@ -18,13 +18,17 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const configContent = readFileSync(resolve(__dirname, '../../vite.config.ts'), 'utf-8');
+const swContent = readFileSync(resolve(__dirname, '../sw.ts'), 'utf-8');
 
 describe('Vite config PWA caching security', () => {
-  it('uses StaleWhileRevalidate caching strategy for API calls', () => {
-    expect(configContent).toContain("'StaleWhileRevalidate'");
+  it('uses injectManifest strategy with custom sw.ts', () => {
+    expect(configContent).toContain("strategies: 'injectManifest'");
+    expect(configContent).toContain("filename: 'sw.ts'");
   });
 
-  it('sets maxAgeSeconds to 300 (5 minutes)', () => {
-    expect(configContent).toContain('60 * 5');
+  it('defines apiCacheStrategy and excludes sensitive API paths in sw.ts', () => {
+    expect(swContent).toContain('SENSITIVE_API_PATHS');
+    expect(swContent).toContain('apiCacheStrategy');
   });
 });
+

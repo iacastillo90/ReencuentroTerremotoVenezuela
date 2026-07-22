@@ -27,6 +27,20 @@ vi.mock('../store/AuthContext', () => ({
   }),
 }));
 
+// Mock de SocketContext para que AppLayout no falle en tests
+vi.mock('../store/SocketContext', () => ({
+  useNotifications: vi.fn().mockReturnValue({
+    notifications: [],
+    unreadCount: 0,
+    markAllAsRead: vi.fn(),
+    clearNotifications: vi.fn(),
+  }),
+  useSocket: vi.fn().mockReturnValue({
+    socket: null,
+    isConnected: false,
+  }),
+}));
+
 // Mock del API
 vi.mock('../services/api', () => ({
   api: {
