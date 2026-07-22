@@ -148,7 +148,7 @@ Ubicación: ${calleEstado}`;
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(axiosErr.response?.data?.error || 'Error al enviar reporte.');
     } finally { setIsSubmitting(false); }
-  }, [calleEstado, audioText, detallesVestimenta, nombreCompleto, edad, categoria, genero, complexion, piel, cabello, ojos, prendaSup, colorSup, prendaInf, colorInf, sinVestimenta, senasSelected, detalleAdicional, file, reporterLocation]);
+  }, [calleEstado, audioText, detallesVestimenta, nombreCompleto, edad, categoria, genero, complexion, piel, cabello, ojos, prendaSup, colorSup, prendaInf, colorInf, sinVestimenta, senasSelected, detalleAdicional, file, reporterLocation, addToast]);
 
   const autoFillFromText = useCallback((text: string) => {
     const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");

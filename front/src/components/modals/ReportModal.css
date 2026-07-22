@@ -17,7 +17,7 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background-color: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(6px);
   display: flex;
@@ -1784,10 +1784,6 @@ textarea::placeholder {
 }
 .sticky-bottom-action {
   margin-top: auto;
-  position: sticky;
-  bottom: -1rem;
-  background: #07101C;
-  z-index: 20;
   padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
@@ -1795,7 +1791,7 @@ textarea::placeholder {
 .step-submit-row {
   width: 100%;
   margin-top: auto;
-  padding-top: 2rem;
+  padding-top: 1rem;
 }
 .step-submit-row-flex {
   width: 100%;
