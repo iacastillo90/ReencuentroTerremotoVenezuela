@@ -84,7 +84,7 @@ export async function runInamehJob() {
           affectedAreas: ['Distrito Capital', 'Miranda'],
           metadata: { rawData: alert }
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       await markSyncSuccess(SOURCE, externalId, syncResult.checksum);

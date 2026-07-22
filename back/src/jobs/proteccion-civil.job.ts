@@ -54,7 +54,7 @@ export async function runProteccionCivilJob() {
           affectedAreas: ['Vargas', 'Caracas'],
           metadata: { subType: alert.tipo, rawData: alert }
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       await markSyncSuccess(SOURCE, externalId, syncResult.checksum);

@@ -1,6 +1,5 @@
 import { PersonModel } from '../models/unified-person.model';
 import { logger } from '../utils/logger.util';
-import fetch from 'node-fetch'; // assuming node-fetch is available, or use global fetch in Node 18+
 
 const VISION_SERVICE_URL = process.env.VISION_SERVICE_URL || 'http://vision:8000';
 const API_BASE_URL = process.env.API_BASE_URL || 'http://api:4000';
@@ -13,9 +12,11 @@ interface VisionResponse {
 
 async function checkLopnna(imageUrl: string): Promise<VisionResponse | null> {
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (process.env.VISION_API_KEY) headers['x-vision-api-key'] = process.env.VISION_API_KEY;
     const response = await fetch(`${VISION_SERVICE_URL}/extract-face`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ image_url: imageUrl, timeout: 30 }),
       signal: AbortSignal.timeout(35000),
     });
@@ -104,7 +105,7 @@ export async function runLopnnaSweepJob(): Promise<void> {
     }
     
     // Small delay to prevent overwhelming the Vision microservice
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   logger.info({ success, flagged, total }, '[LopnnaSweep] Sweep completed successfully');

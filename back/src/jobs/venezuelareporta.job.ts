@@ -21,15 +21,17 @@ const SOURCE_ID = 'venezuelareporta';
 const SOURCE_URL = 'https://venezuelareporta.org/api/v1/personas?limit=100';
 const adapter = new VenezuelaReportaAdapter();
 
+const MAX_RECORDS_PER_SYNC = parseInt(process.env.VENEZUELAREPORTA_MAX_RECORDS || '1000', 10);
+
 export async function fetchVenezuelaReporta() {
-  logger.info('Starting VenezuelaReporta sync');
+  logger.info({ maxRecords: MAX_RECORDS_PER_SYNC }, 'Starting VenezuelaReporta sync');
 
   try {
     let offset = 0;
     let totalProcessed = 0;
     let hasMore = true;
 
-    while (hasMore) {
+    while (hasMore && totalProcessed < MAX_RECORDS_PER_SYNC) {
       const url = `${SOURCE_URL}&offset=${offset}`;
       logger.info({ url }, 'Fetching VenezuelaReporta page');
 

@@ -81,7 +81,7 @@ export async function runFunvisisJob() {
             rawData: sismo
           }
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       await markSyncSuccess(SOURCE, externalId, syncResult.checksum);

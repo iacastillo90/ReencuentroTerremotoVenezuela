@@ -69,7 +69,7 @@ export async function runCruzRojaJob() {
           affectedAreas: ['Caracas'],
           metadata: { subType: alert.tipo, rawData: alert }
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       await markSyncSuccess(SOURCE, externalId, syncResult.checksum);
