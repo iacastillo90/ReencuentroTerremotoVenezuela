@@ -20,17 +20,14 @@
   flex-direction: column;
   padding: 1rem 1.5rem calc(var(--bottom-nav-h, 70px) + 0.5rem);
   overflow-y: auto;
-  justify-content: center;
 }
 
 .auth-card { 
   width: 100%; 
   max-width: 420px; 
-  margin: 0 auto; 
+  margin: auto; 
   display: flex; 
   flex-direction: column; 
-  flex: 1;
-  justify-content: center;
 }
 
 .auth-title { text-align: center; font-size: var(--text-3xl); font-weight: var(--weight-bold); color: #fff; margin: 0 0 1rem; letter-spacing: -0.02em; }
