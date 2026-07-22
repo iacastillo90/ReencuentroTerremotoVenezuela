@@ -53,6 +53,9 @@ const getPersonsQuerySchema = z.object({
   category: z.enum(['mascota', 'nino', 'adulto', 'adulto_mayor']).optional(),
   state: z.string().max(100).optional(),
   municipality: z.string().max(100).optional(),
+  age: z.coerce.number().int().min(0).max(120).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

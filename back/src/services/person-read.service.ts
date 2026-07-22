@@ -65,6 +65,9 @@ interface GetPersonsParams {
   category?: string;
   state?: string;
   municipality?: string;
+  age?: number;
+  dateFrom?: string;
+  dateTo?: string;
   limit: number;
   offset: number;
   viewerRole?: string;
@@ -89,14 +92,14 @@ export async function getCounts() {
     const [missing, found, total, pending, manual, animals] = await Promise.all([
       PersonModel.countDocuments({ status: 'missing', type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
       PersonModel.countDocuments({ status: 'found', type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
-      PersonModel.countDocuments({ 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
+      PersonModel.countDocuments({ type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
       PersonModel.countDocuments({ 'metadata.auditStatus': 'pending_review' }),
-      PersonModel.countDocuments({ 'metadata.source': 'manual' }),
-      PersonModel.countDocuments({ type: 'animal', 'metadata.auditStatus': { $ne: 'pending_moderation' } })
+      PersonModel.countDocuments({ 'metadata.source': 'manual', type: { $ne: 'animal' }, 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
+      PersonModel.countDocuments({ type: 'animal', 'metadata.auditStatus': { $ne: 'pending_moderation' } }),
     ]);
 
     const counts = { missing, found, total, pending, manual, animals };
-    await redis.setex(CACHE_KEY, 300, JSON.stringify(counts));
+    await redis.setex(CACHE_KEY, 30, JSON.stringify(counts));
     return counts;
   } finally {
     await redis.del(LOCK_KEY).catch(() => {});
@@ -125,7 +128,7 @@ export async function getMyReports(userId: string, limit: number, offset: number
 }
 
 export async function getPersons(params: GetPersonsParams, viewerRole?: string) {
-  const { q, status, category, state, municipality, limit, offset } = params;
+  const { q, status, category, state, municipality, age, dateFrom, dateTo, limit, offset } = params;
   const effectiveViewerRole = viewerRole || params.viewerRole;
   const filter: Record<string, unknown> = { 'metadata.auditStatus': { $ne: 'pending_moderation' } };
 
@@ -138,6 +141,24 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     if (sanitizedQuery) {
       filter['normalizedName'] = { $regex: '^' + sanitizedQuery, $options: 'i' };
     }
+  }
+
+  if (age !== undefined) {
+    // Permitir un margen de error de +/- 2 años para mayor flexibilidad
+    filter.age = { $gte: age - 2, $lte: age + 2 };
+  }
+
+  if (dateFrom || dateTo) {
+    const dateQuery: Record<string, Date> = {};
+    if (dateFrom) {
+      dateQuery.$gte = new Date(dateFrom);
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setUTCHours(23, 59, 59, 999);
+      dateQuery.$lte = toDate;
+    }
+    filter['metadata.createdAt'] = dateQuery;
   }
 
   if (category) {
@@ -163,7 +184,7 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     filter['lastSeen.municipality'] = { $regex: safeRegexQuery(String(municipality)), $options: 'i' };
   }
 
-  const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:l=${limit}:o=${offset}`;
+  const cacheKey = `persons:q=${q || ''}:status=${status || ''}:cat=${category || ''}:st=${state || ''}:m=${municipality || ''}:age=${age || ''}:df=${dateFrom || ''}:dt=${dateTo || ''}:l=${limit}:o=${offset}`;
 
   if (!q && offset === 0) {
     const cachedData = await redis.get(cacheKey);
