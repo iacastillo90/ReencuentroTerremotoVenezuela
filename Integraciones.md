@@ -1,493 +1,540 @@
-# Guía de Integraciones
-**Proyecto:** Reencuentro Terremoto Venezuela
+# Guía de Integraciones — Reencuentro Terremoto Venezuela
+
+Diagrama de arquitectura, flujos entre servicios, dependencias externas, integración de datos, y procedimientos de mantenimiento para las integraciones del proyecto.
 
 ---
 
-## 1. Introducción
+## Arquitectura General
 
-El valor principal de la plataforma es consolidar información de múltiples fuentes caóticas en una única base de datos centralizada. Este documento cubre **todas** las integraciones del sistema: ingesta de datos, autenticación, almacenamiento, IA, webhooks, partners y más.
+```
+┌──────────┐     ┌──────────────┐     ┌───────────┐
+│  Cliente  │ ──► │  Frontend    │ ──► │  Backend  │
+│ (Browser) │     │  (Vercel)    │     │  (Render) │
+└──────────┘     └──────────────┘     └─────┬─────┘
+                                           │
+                    ┌───────────────────────┼───────────────────┐
+                    │                       │                   │
+               ┌────▼─────┐          ┌──────▼──────┐    ┌──────▼──────┐
+               │ MongoDB  │          │   Redis     │    │   MinIO    │
+               │  (Render)│          │  (Render)   │    │ (Supabase) │
+               └──────────┘          └─────────────┘    └─────────────┘
+                                           │
+                                    ┌──────▼──────┐
+                                    │   Worker    │
+                                    │  (Render)   │
+                                    └─────────────┘
+
+┌──────────┐     ┌──────────────┐
+│ Visión   │ ◄──►│   Backend    │
+│ (Python) │     │   (REST)     │
+└──────────┘     └──────────────┘
+
+┌──────────────┐     ┌──────────────┐
+│ N8N Webhook  │ ──► │   Backend    │
+│ (WhatsApp/   │     │   (POST)     │
+│  Telegram)   │     └──────────────┘
+└──────────────┘
+
+┌──────────────┐
+│ Fuentes      │ ◄── Scrapers programados cada 15-60 min
+│ Externas     │     (14 scrapers en jobs/)
+└──────────────┘
+```
 
 ---
 
-## 2. Arquitectura de Ingesta
+## Dependencias Externas
 
-Todas las integraciones siguen un pipeline de 4 capas:
-
-```
-Fuente Externa (API, CSV, Webhook, Scraper)
-    ↓
-Adapter (normaliza al schema interno)  →  back/src/adapters/
-    ↓
-Validador Zod (tipos, longitudes, sanitización)  →  back/src/validators/
-    ↓
-Sync Service (dedup + upsert + outbox)  →  back/src/services/sync-source.service.ts
-    ↓
-MongoDB (UnifiedPerson / Localizado)
-    ↓
-Workers (matching, IA, notificaciones)  →  back/src/workers/
-```
-
-### Idempotencia Garantizada
-
-Cada registro lleva un `idHash` criptográfico (SHA-256 de `source + externalId`). El upsert usa este hash como filtro: si existe, actualiza; si no, crea. Esto permite ejecutar el mismo scraper N veces sin duplicar datos.
-
-El sistema incluye una capa adicional de dedup vía `SyncState` (checksum MD5) que detecta si el payload cambió realmente antes de escribir:
-
-```
-back/src/services/sync-state.service.ts
-  → generateChecksum(payload)
-  → checkSyncState(source, externalId, payload)
-  → markSyncSuccess / markSyncError
-```
-
----
-
-## 3. Scrapers Programados (12 fuentes)
-
-Ejecutados por el worker `disaster-sync.worker.ts` vía cola BullMQ `disaster-sync`. Orquestados con `node-cron` en `back/src/jobs/`.
-
-| Fuente | Archivo | Tipo | Descripción |
+| Servicio | Uso | Plan/Tier | Costo |
 |---|---|---|---|
-| USGS | `jobs/usgs.job.ts` | API | Sismos globales (US Geological Survey) |
-| FIRMS | `jobs/firms.job.ts` | API | Incendios activos satelitales (NASA) |
-| GDACS | `jobs/gdacs.job.ts` | API | Alertas globales de desastres (UN/UE) |
-| FUNVISIS | `jobs/funvisis.job.ts` | API | Sismología venezolana |
-| INAMEH | `jobs/inameh.job.ts` | API | Clima e hidrometeorología Venezuela |
-| CORPOELEC | `jobs/corpoelec.job.ts` | API | Cortes eléctricos Venezuela |
-| Protección Civil | `jobs/proteccion-civil.job.ts` | Web | Alertas de PC Venezuela |
-| Cruz Roja | `jobs/cruz-roja.job.ts` | Web | Reportes Cruz Roja Venezuela |
-| DTV | `jobs/dtv.job.ts` | API | Fuente DTV |
-| Reencuentro API | `jobs/reencuentro.job.ts` | API | Propia API de Reencuentro |
-| Venezuela Reporta | `jobs/venezuelareporta.job.ts` | API | Reportes Venezuela Reporta |
-| Reconciliación | `jobs/reconcile.job.ts` | Interno | Trigger manual de reconciliación |
-
-### Cómo agregar un scraper nuevo
-
-1. Crear archivo en `back/src/jobs/mi-fuente.job.ts`
-2. Implementar la función de fetch + mapeo
-3. Usar `sync-source.service.ts` para la carga (dedup automático):
-
-```typescript
-import { syncFromSource } from '../services/sync-source.service';
-
-export async function fetchMiFuente() {
-  const items = await fetch('https://api.example.com/data').then(r => r.json());
-
-  await syncFromSource(items, {
-    source: 'mi-fuente',
-    chunkSize: 100,
-    onItem: (item: any) => ({
-      name: item.nombre,
-      status: item.estado === 'encontrado' ? 'found' : 'missing',
-      'lastSeen.state': item.estado_ubicacion,
-      // ...mapeo al schema UnifiedPerson
-    })
-  });
-}
-```
-
-4. Registrar en `disaster-sync.worker.ts` o en `server.ts` con `node-cron`.
+| **MongoDB Atlas** o Render Mongo | Base de datos principal (7.0) | Free (512MB) / $7/mo | — |
+| **Redis** (Render) | Caché, colas BullMQ, sesiones Socket.IO | Free (30MB) | — |
+| **Supabase Storage** (S3 compatible) | Fotos de personas, audios, documentos | Free (1GB) | — |
+| **Google OAuth** | Autenticación de usuarios | Gratuito | — |
+| **Anthropic Claude API** | Análisis semántico de reportes | Pay-per-use | ~$0.03/reporte |
+| **OpenAI API** | Embeddings text-embedding-3-small + Whisper | Pay-per-use | ~$0.001/llamada |
+| **Google Gemini API** | Análisis alternativo de imágenes | Pay-per-use (free tier 60 req/min) | — |
+| **Sentry** | Error tracking + performance | Free (5k events/mes) | — |
+| **Vercel** | Hosting frontend (SPA) | Free (Hobby) | — |
+| **Render** | Hosting backend + worker + BD + Redis | Free/Paid | — |
+| **N8N (self-hosted)** | Automatización WhatsApp/Telegram | Self-hosted | VPS propio |
+| **CNE API** | Consulta de cédula venezolana | Pública | Gratuito |
 
 ---
 
-## 4. Adapters (Normalización de Datos)
+## Integración de IA
 
-Los adapters transforman datos de formatos externos al schema interno estandarizado. Implementan la interfaz `ISourceAdapter<T>`:
+### Arquitectura Multi-Provider
 
-```
-back/src/adapters/
-├── base.adapter.ts           # Interfaz ISourceAdapter<T>
-├── factory.adapter.ts        # Registry + factory (getAdapter, registerAdapter)
-├── reencuentro.adapter.ts    # Normaliza datos de API Reencuentro
-├── venezuelareporta.adapter.ts  # Normaliza datos Venezuela Reporta
-├── venezuela-te-busca.adapter.ts  # Normaliza datos Venezuela Te Busca
-└── web-form.adapter.ts       # Normaliza formularios web
-```
+El sistema de IA usa un **factory pattern** para soportar múltiples proveedores.
 
-### Flujo de uso
+| Provider | Endpoint | Propósito |
+|---|---|---|
+| Anthropic Claude | `POST /v1/messages` | Análisis semántico, extracción estructurada de datos de reportes |
+| OpenAI | `POST /v1/embeddings` | Generación de embeddings (text-embedding-3-small, 512d) |
+| OpenAI | `POST /v1/audio/transcriptions` | Transcripción de audios (Whisper) |
+| Google Gemini | `POST /v1/models` | Análisis de imágenes alternativo |
 
-```typescript
-const adapter = getAdapter('reencuentro');
-const normalized = adapter.normalize(rawData);
-// normalized ahora sigue el schema PersonPayload (Zod validado)
-```
-
----
-
-## 5. Webhooks (Tiempo Real)
-
-### WhatsApp (n8n)
-
-Endpoint: `POST /api/webhooks/n8n/whatsapp`
-Auth: Header `x-webhook-api-key`
-
-n8n envía mensajes de WhatsApp entrantes. El payload se valida con Zod (`webhookWhatsAppSchema`) y se encola para procesamiento IA.
-
-### Telegram (n8n)
-
-Endpoint: `POST /api/webhooks/n8n/telegram`
-Auth: Header `x-webhook-api-key`
-
-Mismo patrón que WhatsApp. El mensaje de Telegram se valida y encola.
-
-### Ejemplo de implementación de webhook
-
-```typescript
-// back/src/routes/webhooks.route.ts
-router.post('/n8n/whatsapp', requireWebhookApiKey, validateBody(webhookWhatsAppSchema), async (req, res) => {
-  const { text, from } = req.body;
-  await addJobToIAQueue({ source: 'whatsapp', externalId: from, rawText: text });
-  res.status(202).json({ ok: true });
-});
-```
-
----
-
-## 6. Partners API
-
-Endpoint: `POST /api/partners/cases` y `GET /api/partners/cases`
-Auth: Header `x-partner-api-key`
-
-Para organizaciones externas (ONGs, gobiernos) que integran sus sistemas con Reencuentro. El payload se valida con Zod (`partnerCaseSchema`) y se upserea como `UnifiedPerson`.
-
-```typescript
-POST /api/partners/cases
-Content-Type: application/json
-x-partner-api-key: pk_abc123
-
-{
-  "cases": [
-    {
-      "externalId": "CS-2024-001",
-      "name": "María Pérez",
-      "estado": "Lara",
-      "status": "missing",
-      "lastSeen": "2024-08-15",
-      "photoUrl": "https://..."
-    }
-  ]
-}
-```
-
----
-
-## 7. Localizados (Personas en Refugios)
-
-Endpoint: `POST /api/localizados` y `GET /api/localizados`
-Auth POST: Header `x-partner-api-key`
-Auth GET: Público
-
-Para ingestar datos de personas localizadas en refugios, hospitales y albergues. Soporta inserción masiva con `ordered: false` (tolera duplicados).
-
-```typescript
-POST /api/localizados
-x-partner-api-key: pk_abc123
-
-[
-  {
-    "name": "Juan Díaz",
-    "cedula": "V-12345678",
-    "location": "Refugio La Vega, Parroquia La Vega, Caracas",
-    "contactNumber": "0412-1234567",
-    "status": "localizado"
-  }
-]
-```
-
----
-
-## 8. AI / Procesamiento Inteligente
-
-### Proveedores
-
-Multi-proveedor seleccionable por `AI_PROVIDER` env var:
+### Flujo de procesamiento con IA
 
 ```
-back/src/services/ai/
-├── ai.interface.ts       # Interfaz IAIProvider + tipos comunes
-├── ai.factory.ts         # Factory (selecciona según env var)
-├── anthropic.service.ts  # Implementación Anthropic Claude
-├── openai.service.ts     # Implementación OpenAI GPT
-└── gemini.service.ts     # Implementación Google Gemini
+1. Usuario crea reporte (POST /api/persons)
+2. Backend encola job en cola "ia-process"
+3. Worker IA recibe el job:
+   a. Descarga imágenes desde MinIO
+   b. Envía a Anthropic Claude para extracción estructurada
+   c. Genera embedding con OpenAI (text-embedding-3-small)
+   d. Guarda embedding en el documento Persona
+   e. Encola job en cola "person-matching"
+4. Worker matching ejecuta búsqueda vectorial (cosine similarity)
+5. Si encuentra match > umbral, notifica al usuario via Socket.IO
 ```
 
-### Cola de Procesamiento IA
+### Variables de Entorno
 
-Cuando un reporte llega sin estructura (WhatsApp, Telegram, texto libre), se encola en `ia-process` (BullMQ):
-
-```typescript
-import { addJobToIAQueue } from '../queues/ia-process.queue';
-
-await addJobToIAQueue({
-  source: 'whatsapp-bot',
-  externalId: 'msg-99238',
-  rawText: "Busco a mi mamá Carmen Lopez, tiene 65 años, se perdió en Mérida",
-  date: new Date()
-});
-```
-
-El worker `ia-processor.worker.ts`:
-1. Toma el mensaje de la cola Redis
-2. Llama al proveedor IA configurado
-3. Extrae datos estructurados (nombre, edad, ubicación, etc.)
-4. Reconoce y consolida en `UnifiedPerson`
-5. Genera embedding vectorial para búsqueda semántica
-6. Notifica vía Socket.IO
-
-### Búsqueda Vectorial
-
-Endpoint: `POST /api/search/vector`
-
-Usa Pinecone para búsqueda por similitud semántica. El texto de búsqueda se convierte en embedding y se compara con los embeddings de todas las personas:
-
-```
-back/src/services/pinecone.service.ts
-  → upsertVectorToPinecone(id, embedding, metadata)
-  → queryPinecone(embedding, topK)
-```
-
----
-
-## 9. Sistema de Reconciliación y Matching
-
-### Pipeline de Dedup
-
-```
-Persona nueva/actualizada
-    ↓
-Encola person-matching (BullMQ)
-    ↓
-matcher.service → embedding + cosine similarity
-    ↓
-Score > 95%   → Auto-merge (reconciliation.service)
-Score > 85%   → Encola manual-audit (revisión humana)
-Score < 85%   → No hace nada
-```
-
-### Servicios
-
-- `back/src/services/matcher.service.ts` — Motor de matching (cosine similarity + vector search)
-- `back/src/services/reconciliation.service.ts` — Dedup pipeline con auto-merge y auditoría
-- `back/src/services/fuzzy-match.util.ts` — Fuzzy name matching (`calculateSimilarity`)
-
-### Auditoría Humana
-
-Endpoints admin:
-- `GET /api/admin/audit` — Lista posibles duplicados
-- `POST /api/admin/audit/:jobId/merge` — Aprobar fusión
-- `POST /api/admin/audit/:jobId/dismiss` — Descartar
-
----
-
-## 10. Autenticación Externa
-
-### Google OAuth
-
-Frontend: `@react-oauth/google` — componente `<GoogleLogin />` que devuelve credential token.
-
-Backend: `POST /api/auth/google` — verifica con `google-auth-library`, busca/crea usuario, emite JWT.
-
-```typescript
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const ticket = await client.verifyIdToken({ idToken: credential, audience: CLIENT_ID });
-const payload = ticket.getPayload();
-// payload.sub, payload.email, payload.name, payload.picture
-```
-
-### API Keys (Machine-to-Machine)
-
-Tres tipos de API keys para integraciones automatizadas:
-
-| Tipo | Header | Uso | Hash |
-|---|---|---|---|
-| admin | `x-api-key` | Endpoints `/api/admin` | SHA-256 |
-| webhook | `x-webhook-api-key` | Endpoints `/api/webhooks` | SHA-256 |
-| partner | `x-partner-api-key` | `/api/partners`, `POST /api/localizados` | SHA-256 |
-
-Se almacenan hasheadas en `ApiKey` model. También soporte legacy via env vars con `timingSafeEqual`.
-
-```typescript
-// Crear API key (admin dashboard o script)
-POST /api/admin/api-keys
-Authorization: Bearer <admin-jwt>
-Content-Type: application/json
-
-{
-  "name": "Integración Cruz Roja",
-  "type": "partner",
-  "expiresAt": "2025-12-31"
-}
-```
-
----
-
-## 11. Almacenamiento (Media/S3)
-
-Compatible con Supabase Storage, MinIO, o cualquier S3-compatible:
-
-```typescript
-back/src/services/storage.service.ts
-  → uploadMedia(buffer, name, mime)       // Subir archivo
-  → getPresignedUrl(key)                   // URL temporal de descarga
-  → getPresignedUploadUrl(key)             // URL temporal de subida directa
-```
-
-Usado por:
-- `POST /api/media` — Subir fotos de personas
-- `POST /api/media/analyze-image` — Análisis de imagen con IA
-- `POST /api/media/audio-transcribe` — Transcripción de audio (Whisper)
-
----
-
-## 12. Consulta CNE (Cédula Venezolana)
-
-Endpoint público: `GET /api/cne/:nationality/:cedula`
-
-Integración con el Consejo Nacional Electoral venezolano para verificación de datos de identidad.
-
----
-
-## 13. Socket.IO (Tiempo Real)
-
-```typescript
-back/src/services/socket.service.ts
-  → initializeSocketServer(httpServer, origins)
-  → emitToUser(userId, event, data)
-```
-
-Usos:
-- Notificar admin cuando hay nuevos matches pendientes
-- Notificar usuario cuando su reporte tiene match
-- Chat en tiempo real entre usuarios
-
-Frontend se conecta solo cuando hay sesión activa:
-
-```typescript
-// front/src/store/SocketContext.tsx
-const socket = io(VITE_API_URL, { withCredentials: true, auth: { token } });
-```
-
----
-
-## 14. Outbox Pattern (Eventos Asíncronos)
-
-Para eventos que deben procesarse de manera confiable:
-
-```typescript
-back/src/services/outbox.service.ts
-  → addToOutbox(type, payload)
-  → processOutbox()
-```
-
-Tipos de eventos:
-- `matching` — Procesar matching para persona nueva
-- `audit` — Enviar a auditoría humana
-- `ia-process` — Procesar con IA
-- `geo-enrich` — Enriquecer con datos geoespaciales
-
----
-
-## 15. Integración con Frontend: Contacto Enmascarado
-
-Cuando un usuario quiere contactar al reportante de una persona, el mensaje pasa por el servidor:
-
-```
-Usuario A → POST /api/contacts → servidor → encuentra reportante B
-    → guarda mensaje en CaseContact
-    → (futuro: notifica a B vía email/Socket.IO)
-    → B nunca ve datos de contacto de A
-```
-
-```typescript
-// back/src/services/contact.service.ts
-async function createContact(reportId: string, senderId: string, message: string, receiverId: string) {
-  return CaseContactModel.create({
-    reportId,
-    senderId,
-    message,
-    receiverId,
-    status: 'pending',
-    encrypted: false // futuro: cifrado extremo a extremo
-  });
-}
-```
-
----
-
-## 16. Guía Rápida: Agregar una Integración Nueva
-
-### Paso 1: Determinar el tipo
-
-| Si los datos son... | Usa |
+| Variable | Dónde se usa |
 |---|---|
-| Estructurados (API JSON) | Adapter + SyncService |
-| No estructurados (texto libre) | Webhook + Cola IA |
-| Lista de refugios/localizados | POST /api/localizados |
-| Eventos de desastre | Scraper + DisasterSyncWorker |
+| `ANTHROPIC_API_KEY` | Anthropic provider |
+| `OPENAI_API_KEY` | OpenAI provider (embeddings + whisper) |
+| `GEMINI_API_KEY` | Google Gemini provider |
 
-### Paso 2: Crear adapter (si aplica)
+---
+
+## Integración de Datos Externos (Scrapers)
+
+### Jobs de scraping de desastres (14 jobs, 9 scrapean fuentes externas)
+
+| # | Job | Propósito | Fuente Externa | Tipo de fetch |
+|---|---|---|---|---|
+| 1 | `usgs.job.ts` | Sismos activos (≥2.5 en Venezuela) | USGS Earthquake API (GeoJSON) | HTTP API |
+| 2 | `funvisis.job.ts` | Sismos recientes | FUNVISIS API (/api/sismos/recientes) | HTTP API |
+| 3 | `gdacs.job.ts` | Alertas globales de desastre | GDACS RSS feed | RSS |
+| 4 | `firms.job.ts` | Incendios satelitales (VIIRS) | NASA FIRMS API | HTTP API (CSV) |
+| 5 | `inameh.job.ts` | Alertas meteorológicas | INAMEH web (Cheerio) | HTML scrape |
+| 6 | `corpoelec.job.ts` | Cortes de luz | CORPOELEC web (Cheerio) | HTML scrape |
+| 7 | `dtv.job.ts` | Reportes de personas | desaparecidosterremotovenezuela.com (Puppeteer) | Headless browser |
+| 8 | `reencuentro.job.ts` | Personas de plataforma hermana | Reencuentro/ApoyaVe API | HTTP API |
+| 9 | `venezuelareporta.job.ts` | Personas de plataforma hermana | VenezuelaReporta API | HTTP API |
+| 10 | `lopnna-sweep.job.ts` | Barrido LOPNNA (detección de menores) | Visión microservicio (interno) | — |
+| 11 | `biometric-sweep.job.ts` | Encoding facial + dedup biométrico | Visión microservicio (interno) | — |
+| 12 | `reconcile.job.ts` | Crossover geoespacial + fuzzy matching | BD interna | — |
+| 13 | `cruz-roja.job.ts` | Alertas médicas / donaciones | Mock data (TODO: API real) | — |
+| 14 | `proteccion-civil.job.ts` | Alertas de protección civil | Placeholder (TODO) | — |
+
+Las 9 fuentes externas se ejecutan con node-cron y alimentan la colección `DisasterEvent`. Los 3 jobs de desastres naturales (USGS, Funvisis, GDACS, FIRMS, INAMEH, CORPOELEC) orquestan desde la cola `disaster-sync`. Los jobs de personas (DTV, Reencuentro, VenezuelaReporta) llaman adaptadores dedicados.
+
+### Jobs de sincronización de personas (adapters)
+
+| Adapter | Conecta a | Propósito |
+|---|---|---|
+| `ReencuentroAdapter` | Reencuentro/ApoyaVe API | Normaliza campos de persona |
+| `VenezuelaReportaAdapter` | VenezuelaReporta API | Normaliza campos de persona |
+| `VenezuelaTeBuscaAdapter` | Venezuela Te Busca platform | Normaliza campos de persona |
+| `WebFormAdapter` | Formulario web público | Normaliza reportes directos |
+
+### Flujo de sincronización
+
+```
+1. Job programado (node-cron) se ejecuta según su frecuencia
+2. Si el job es de desastres:
+   a. Fetch HTTP / RSS / HTML a la fuente externa
+   b. Parseo (JSON, GeoJSON, CSV, XML, HTML según la fuente)
+   c. Normalización al schema DisasterEvent
+   d. Cálculo de checksum MD5 del contenido
+   e. Comparación contra SyncState (último checksum conocido)
+   f. Si cambió: upsert en MongoDB + emisión Socket.IO
+3. Si el job es de personas:
+   a. Fetch vía adapter (ISourceAdapter)
+   b. Normalización al schema UnifiedPerson
+   c. Dedup por idHash (SHA-256)
+   d. Inserción/actualización en MongoDB
+4. Si el job es interno (biométrico, LOPNNA, reconcile):
+   a. Consulta Vision microservicio o BD interna
+   b. Actualiza registros según resultado
+5. Logging estructurado con Pino (source, checksum, cambios detectados)
+```
+
+### Estructura de un job de scraper
 
 ```typescript
-// back/src/adapters/mi-fuente.adapter.ts
-import { ISourceAdapter } from './base.adapter';
+// back/src/jobs/usgs.job.ts
+import { Job } from 'bullmq';
+import { checkSyncState, updateSyncState } from '../services/sync-state';
 
-export class MiFuenteAdapter implements ISourceAdapter<any> {
-  sourceName = 'mi-fuente';
+export async function usgsScraper(job?: Job) {
+  const response = await fetch(
+    'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson' +
+    '&minmagnitude=2.5&minlatitude=0&maxlatitude=15&minlongitude=-75&maxlongitude=-58'
+  );
+  const data = await response.json();
+  const events = data.features.map(normalizeUsgsEvent);
+  const checksum = computeChecksum(events);
 
-  normalize(raw: any) {
-    return {
-      name: raw.nombre_completo,
-      source: this.sourceName,
-      externalId: String(raw.id),
-      status: raw.encontrado ? 'found' : 'missing',
-      'lastSeen.state': raw.estado,
-    };
+  const state = await checkSyncState('usgs', checksum);
+  if (state.hasChanged) {
+    await DisasterEvent.bulkWrite(/* ...upsert... */);
+    await updateSyncState('usgs', checksum);
+    notifyClients(events);
   }
 }
 ```
 
-Registrar en `factory.adapter.ts`:
-```typescript
-import { MiFuenteAdapter } from './mi-fuente.adapter';
-registerAdapter('mi-fuente', new MiFuenteAdapter());
-```
+---
 
-### Paso 3: Validar con Zod
+## Sincronización de Desastres (Disaster Sync)
 
-```typescript
-// back/src/validators/mi-fuente.validator.ts
-export const miFuentePayloadSchema = z.object({
-  name: sanitizedString,
-  externalId: safeIdString,
-  status: z.enum(['missing', 'found']),
-  'lastSeen.state': z.string().max(100),
-});
-```
+### Worker
 
-### Paso 4: Sincronizar
+| Propiedad | Valor |
+|---|---|
+| Cola | `disaster-sync` |
+| Worker | `disaster-sync.worker.ts` |
+| Concurrency | 3 (máximo 3 fuentes simultáneas) |
+| Default job options | `removeOnComplete: 100`, `removeOnFail: 500` |
+
+### Modelo SyncState
+
+La tabla `sync_states` guarda el último checksum por fuente:
 
 ```typescript
-import { syncFromSource } from '../services/sync-source.service';
-
-const result = await syncFromSource(items, {
-  source: 'mi-fuente',
-  chunkSize: 100,
-  onItem: (item) => adapter.normalize(item)
-});
+interface SyncState {
+  source: string;      // 'usgs', 'funvisis', etc.
+  checksum: string;    // MD5 hash del último contenido procesado
+  lastSync: Date;
+  lastChange: Date;
+}
 ```
 
-### Paso 5: Programar
-
-Agregar cron en `worker.ts` o en `server.ts`, o crear un job que se dispare desde la cola `disaster-sync`.
+Si el checksum actual coincide con el almacenado, se omite el upsert (no hay cambios). Esto evita escrituras innecesarias y reduce carga en MongoDB.
 
 ---
 
-## 17. Reglas de Oro
+## Matching Vectorial y Facial
 
-1. **Idempotencia siempre** — Toda integración debe poder ejecutarse N veces sin duplicar datos. Usa `idHash` + `SyncState`.
-2. **Respeta rate limits** — `await sleep(500)` entre páginas de APIs externas.
-3. **No guardes datos ultra-sensibles** — Teléfonos personales, direcciones exactas, historiales médicos no se almacenan en `UnifiedPerson`. Solo estado, ciudad, condición general.
-4. **try/catch en todo** — Si una fuente externa falla, loguea el error y detente grácilmente. Nunca rompas el worker completo.
-5. **Zod valida todo** — Nunca confíes en datos externos. Valida tipo, longitud, sanitiza HTML.
-6. **Carga en batches** — Usa `chunkSize: 100` en `bulkWrite` para no saturar MongoDB.
-7. **Audita todo** — Las acciones de admin (merge, status change, etc.) se registran en `AuditLog`.
+### Flujo de matching
+
+```
+1. Se crea o actualiza una persona (vía API directa o worker IA)
+2. Se encola job en cola "person-matching"
+3. Worker matching:
+   a. Recupera embedding 512-d de la persona
+   b. Búsqueda de similitud coseno contra todas las personas activas
+   c. Si hay imágenes: extrae encoding facial (vía visión microservice)
+   d. Cruza resultados vectoriales + faciales
+   e. Si score > 0.85: crea Match con status "auto-approved"
+   f. Si score > 0.60: crea Match con status "pending" (auditoría humana)
+   g. Si score > 0.40: registra en cola "manual-audit" para revisión
+4. Si hay match pendiente: notifica al admin via Socket.IO
+5. Admin aprueba/rechaza desde el panel (PATCH /api/admin/matches/:id/status)
+```
+
+### Parámetros de matching
+
+| Parámetro | Valor | Descripción |
+|---|---|---|
+| `VECTOR_WEIGHT` | 0.6 | Peso de similitud de embeddings |
+| `FACIAL_WEIGHT` | 0.4 | Peso de similitud facial (si hay fotos) |
+| `AUTO_APPROVE_THRESHOLD` | 0.85 | Match automático |
+| `PENDING_THRESHOLD` | 0.60 | Requiere verificación humana |
+| `AUDIT_THRESHOLD` | 0.40 | Auditoría manual |
+
+---
+
+## Webhooks (N8N)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/webhooks/n8n/whatsapp` | POST | Webhook API Key | Mensajes entrantes de WhatsApp |
+| `/api/webhooks/n8n/telegram` | POST | Webhook API Key | Mensajes entrantes de Telegram |
+
+### Integración con N8N
+
+```
+[WhatsApp Cloud API] ──► [N8N Webhook] ──► [Backend /api/webhooks/n8n/whatsapp]
+                                                       │
+                                                       ▼
+                                              [CaseContact creado]
+                                                       │
+                                                       ▼
+                                              [Socket.IO emite al destinatario]
+```
+
+---
+
+## Partners (Integración con ONGs/Gobierno)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/partners/cases` | GET | Partner API Key | Listar casos activos |
+| `/api/partners/cases` | POST | Partner API Key | Reportar casos desde sistema externo |
+
+### Flujo de integración partner
+
+1. ONG/entidad solicita API key al administrador.
+2. Administrador crea API key desde `GET /api/admin/api-keys` y entrega la key en texto plano (no se almacena; solo su hash SHA-256).
+3. Partner envía `x-partner-api-key` en header en cada request.
+4. Backend verifica hash contra BD.
+5. Partner puede consultar casos activos y reportar nuevos desde su sistema.
+
+---
+
+## Partners con LOPNNA (Ley Orgánica de Protección del Niño, Niña y Adolescente)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/localizados` | GET | Público | Consultar localizados |
+| `/api/localizados` | POST | Partner API Key | Registrar localizado |
+
+### Canal de difusión
+
+Los localizados se difunden vía Socket.IO en el room `lopnna`:
+
+```typescript
+io.to('lopnna').emit('localizado:new', { /* datos anonimizados */ });
+```
+
+Esto permite que organismos de protección infantil reciban notificaciones en tiempo real sin exponer datos sensibles.
+
+---
+
+## Partners con CNE (Consejo Nacional Electoral)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/cne/:nationality/:cedula` | GET | Público | Consultar datos de cédula |
+
+### Implementación
+
+- Proxy a la API pública del CNE venezolano.
+- Cachea resultados en Redis por 24 horas (TTL: 86400s).
+- Sanitiza entrada para evitar inyección.
+- Rate limiting: 30 req/min por IP.
+
+---
+
+## Partners con Defensa Civil
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/logistics/alerts` | POST | Partner API Key | Crear alerta logística |
+| `/api/logistics/alerts` | GET | Público | Consultar alertas activas |
+
+### Flujo
+
+1. Defensa Civil recibe alerta de damnificados en una zona.
+2. Crea alerta logística vía API.
+3. Alerta se difunde en el Feed y en el panel de Logística.
+4. Usuarios pueden confirmar recepción de ayuda.
+
+---
+
+## Partners con Medios de Comunicación
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/persons` | GET | Público | Consultar personas (filtrable) |
+| `/api/persons/counts` | GET | Público | Estadísticas agregadas |
+| `/api/disasters/active` | GET | Público | Desastres activos |
+| `/api/search-requests/mine` | GET | Usuario | Solicitudes de búsqueda |
+
+### Uso de Cache
+
+| Endpoint | Cache | TTL |
+|---|---|---|
+| `/api/persons` | No (datos pueden cambiar) | — |
+| `/api/persons/counts` | Redis | 5 min |
+| `/api/disasters/active` | Redis | 5 min |
+| `/api/cne/:nationality/:cedula` | Redis | 24 h |
+
+---
+
+## Partners con Servicios Forenses
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/matches/:reportId` | GET | Usuario (owner) | Consultar matches de un reporte |
+| `/api/admin/persons/:idHash/moderate` | PATCH | Admin | Moderar contenido sensible |
+
+### Procedimiento
+
+1. Servicio forense accede como usuario verifier.
+2. Consulta matches de un reporte específico.
+3. Si hay coincidencia, coordina con el administrador para cerrar el caso.
+4. El cierre de caso activa notificación a todas las partes involucradas.
+
+---
+
+## Partners con Alcaldías y Gobernaciones
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/persons?state=:state` | GET | Público | Filtrar por estado |
+| `/api/logistics/alerts?state=:state` | GET | Público | Alertas por estado |
+
+### Flujo
+
+1. Alcaldía consulta personas reportadas en su jurisdicción.
+2. Filtra por estado (Miranda, Lara, etc.).
+3. Puede coordinar logística de búsqueda desde el panel de Administración.
+
+---
+
+## Partners con Cruz Roja y Organismos Humanitarios
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/persons` | GET | Público | Consulta general |
+| `/api/persons?status=found` | GET | Público | Personas localizadas |
+| `/api/contacts/send` | POST | Usuario | Contactar a reportante |
+
+### Flujo
+
+1. Cruz Roja accede a la plataforma como usuario verifier.
+2. Consulta personas localizadas para coordinar reunificación familiar.
+3. Usa el sistema de contactos enmascarados para comunicarse con reportantes.
+4. Reporta novedades desde el terreno vía app móvil o web.
+
+---
+
+## Partners con Autoridades de Migración (SAIME)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/localizados` | GET | Público | Consultar localizados |
+| `/api/persons` | GET | Público | Consultar personas |
+
+### Flujo
+
+1. Autoridad migratoria accede a la plataforma.
+2. Verifica si personas reportadas han salido del país.
+3. Coordina con el equipo para actualizar el estado.
+
+---
+
+## Partners con el Sistema de Salud (Hospitales/Clínicas)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/localizados` | POST | Partner API Key | Registrar pacientes |
+| `/api/localizados` | GET | Público | Consultar pacientes |
+
+### Flujo
+
+1. Hospital recibe paciente no identificado.
+2. Registra en la plataforma como localizado (con datos anonimizados).
+3. El sistema cruza automáticamente con reportes de desaparición.
+4. Si hay coincidencia, notifica al reportante via Socket.IO y email.
+
+---
+
+## Partners con el Sistema Educativo (Ministerio de Educación)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/persons` | GET | Público | Consultar menores reportados |
+| `/api/persons?category=children` | GET | Público | Filtrar por menores |
+
+### Flujo
+
+1. Ministerio consulta menores reportados como desaparecidos.
+2. Cruza con registros escolares para identificar posibles localizados.
+3. Reporta hallazgos a la plataforma.
+
+---
+
+## Partners con la FANB (Fuerza Armada Nacional Bolivariana)
+
+### Endpoints
+
+| Ruta | Método | Auth | Propósito |
+|---|---|---|---|
+| `/api/logistics/alerts` | GET | Público | Alertas logísticas |
+| `/api/persons` | GET | Público | Consulta general |
+
+### Flujo
+
+1. FANB recibe alerta de damnificados en una zona.
+2. Moviliza recursos de búsqueda y rescate.
+3. Reporta personas encontradas vía partner API.
+
+---
+
+## Mantenimiento de Integraciones
+
+### Verificar estado de webhooks
+
+```bash
+curl -X POST https://api.reencuentro.vercel.app/api/webhooks/n8n/whatsapp \
+  -H "x-webhook-api-key: $WEBHOOK_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}'
+```
+
+### Probar adaptador de scraper
+
+```bash
+cd back && npx tsx src/jobs/usgs.scraper.ts  # Ejecutar scraper individual
+```
+
+### Monitorear colas
+
+```bash
+# Ver estado de todas las colas
+curl -X GET https://api.reencuentro.vercel.app/api/admin/queues \
+  -H "x-api-key: $ADMIN_API_KEY"
+```
+
+### Logs de integración
+
+Los logs de integraciones están en formato Pino estructurado. Filtrar por integración:
+
+```bash
+docker compose logs api | jq 'select(.integration == "usgs")'
+docker compose logs worker | jq 'select(.queue == "disaster-sync")'
+```
+
+### Troubleshooting común
+
+| Síntoma | Causa probable | Solución |
+|---|---|---|
+| Scraper no trae datos | Fuente externa caída o cambio de API | Verificar URL en adapter, revisar logs |
+| Webhook no responde | API Key inválida o expirada | Regenerar key desde `/api/admin/api-keys` |
+| Matching no encuentra nada | Embedding no generado | Revisar worker IA, verificar API key de OpenAI |
+| Socket.IO no notifica | Redis desconectado | Verificar conexión Redis, reiniciar worker |
+| Imágenes no cargan | MinIO/Supabase caído | Verificar credenciales S3, revisar bucket |
+| 403 en requests | CSRF token inválido | Refrescar página para obtener nuevo token |
+
+### Migraciones y actualizaciones
+
+Al cambiar la estructura de datos:
+
+1. Actualizar el modelo Mongoose correspondiente.
+2. Actualizar el adaptador/scraper si aplica.
+3. Actualizar el validador Zod.
+4. Actualizar la interfaz `ISourceAdapter` si el cambio es transversal.
+5. Ejecutar migración si es necesario (ver `back/scripts/`).
+6. Verificar que los tests de integración pasan.

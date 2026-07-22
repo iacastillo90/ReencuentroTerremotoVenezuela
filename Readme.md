@@ -1,4 +1,4 @@
-# Reencuentro Terremoto Venezuela 🇻🇪
+# Reencuentro Terremoto Venezuela
 
 > **Misión:** Plataforma tecnológica robusta, segura y abierta para centralizar la búsqueda de personas desaparecidas, las alertas de emergencia y el reencuentro de familias venezolanas tras desastres naturales.
 
@@ -6,401 +6,381 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![Node](https://img.shields.io/badge/Node-22-5FA04E?logo=nodedotjs)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5-000000?logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-4.4-47A248?logo=mongodb)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Arquitectura de **microservicios** con Node.js + React, diseñada para resistir picos de tráfico durante emergencias. Ingestiona, limpia, deduplica y centraliza cientos de miles de reportes de múltiples fuentes en una **única fuente de verdad**, con asistencia de IA y **privacidad por diseño**.
 
-> 🔓 **Repositorio público.** Nunca se versionan secretos, claves ni datos personales (PII). `.env` está en `.gitignore`; solo se versiona `back/.env.example`.
+> Repositorio público. Nunca se versionan secretos, claves ni datos personales (PII). `.env` está en `.gitignore`.
 
 ---
 
 ## Tabla de Contenidos
 
-- [¿Qué hace?](#-qué-hace)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Arquitectura](#-arquitectura)
-- [Modelo de Datos](#-modelo-de-datos)
-- [Desarrollo Local](#-desarrollo-local)
-- [Comandos Útiles](#-comandos-útiles)
-- [Variables de Entorno](#-variables-de-entorno)
-- [Despliegue](#-despliegue)
-- [API](#-api)
-- [Seguridad](#-seguridad)
-- [Decisiones Técnicas](#-decisiones-técnicas)
-- [Documentación](#-documentación)
-- [Contribuir](#-contribuir)
-- [Licencia](#-licencia)
+- [¿Qué hace?](#qué-hace)
+- [Stack Tecnológico](#stack-tecnológico)
+- [Arquitectura](#arquitectura)
+- [Modelo de Datos](#modelo-de-datos)
+- [Desarrollo Local](#desarrollo-local)
+- [Variables de Entorno](#variables-de-entorno)
+- [API](#api)
+- [Seguridad](#seguridad)
+- [Documentación](#documentación)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
 
 ---
 
-## 🧩 ¿Qué hace?
+## ¿Qué hace?
 
-- **Centraliza** reportes de personas (y mascotas) desaparecidas/encontradas desde múltiples fuentes (USGS, GDACS, VenezuelaReporta, WhatsApp, Telegram, partners).
-- **Deduplica** automáticamente con huella criptográfica (`idHash` SHA-256): ~53.000 registros sucios → ~42.000 personas únicas.
-- **Estructura** texto libre con IA (Anthropic/OpenAI/Gemini intercambiables): un reporte caótico → datos limpios.
-- **Empareja** búsquedas con registros mediante matching vectorial (Pinecone/Atlas/Levenshtein), siempre con confirmación humana.
-- **Protege** la privacidad: datos de contacto fuera de APIs públicas, protección especial de menores (LOPNNA), ubicación aproximada en mapas.
-- **Offline-first**: service worker + IndexedDB (Dexie) para operación en emergencias con conectividad intermitente.
+- **Centraliza** reportes de personas desaparecidas y encontradas desde 9 fuentes externas (USGS, NASA FIRMS, GDACS, FUNVISIS, INAMEH, CORPOELEC, DTV, Reencuentro API, VenezuelaReporta) más webhooks de WhatsApp/Telegram, formulario web, y jobs internos de reconciliación biométrica y LOPNNA.
+- **Deduplica** automáticamente con huella criptográfica (`idHash` SHA-256): múltiples reportes de la misma persona se fusionan en un solo registro.
+- **Estructura** texto libre con IA (Anthropic/OpenAI/Gemini intercambiables): un mensaje caótico de WhatsApp se convierte en datos limpios y estructurados.
+- **Empareja** búsquedas de familias con registros mediante matching vectorial (Pinecone/Atlas) y facial (face_recognition), siempre con confirmación humana.
+- **Protege la privacidad**: datos de contacto nunca se exponen en APIs públicas, los mensajes entre usuarios usan un sistema de relé enmascarado, los menores tienen protección especial (LOPNNA), y las ubicaciones en mapas son aproximadas.
+- **Offline-first**: service worker personalizado + IndexedDB (Dexie) permiten reportar personas incluso sin conexión a internet.
+- **Procesa en segundo plano**: colas BullMQ para IA, matching y sincronización de desastres sin bloquear la experiencia del usuario.
+- **Monitorea todo**: Sentry para errores, Pino para logs estructurados con redacción de PII, Bull Board para colas.
 
 ---
 
-## 🛠 Stack Tecnológico
+## Stack Tecnológico
 
 ### Frontend (`front/`)
 
 | Capa | Tecnología |
 |---|---|
-| UI | React 19, TypeScript 6, Vite |
-| Mapas | Leaflet + React-Leaflet |
+| UI | React 19, TypeScript 6, Vite 8 (SWC) |
+| Mapas | Leaflet + React-Leaflet 5 + react-leaflet-cluster |
 | Íconos | Lucide React |
-| Estilos | CSS Modules + CSS Custom Properties (tema oscuro) |
-| PWA | Service Worker + Dexie (IndexedDB) |
-| HTTP | Axios con interceptors |
-| Despliegue | Vercel (CDN global) |
+| Estilos | CSS plano con Custom Properties (tema oscuro obligatorio) |
+| Ruteo | Por estado (`useState<View>`), sin URLs |
+| PWA | Service Worker personalizado (injectManifest) + Dexie 4 (IndexedDB) |
+| HTTP | Axios con interceptor CSRF automático |
+| Auth | Google OAuth + JWT (doble canal: cookie + Bearer) |
+| Tiempo real | Socket.IO (notificaciones, chat) |
+| Monitoreo | Sentry (frontend + backend) |
+| Linter | Oxlint (sin ESLint, sin Prettier) |
+| Tests | Vitest 4 + jsdom + @testing-library/react |
+| Despliegue | Vercel (CDN global, SPA fallback) |
 
 ### Backend (`back/`)
 
 | Capa | Tecnología |
 |---|---|
-| Runtime | Node.js 22, TypeScript 6, Express 5 |
-| BD | MongoDB 4.4, Mongoose 9, índices 2dsphere |
-| Cache/Colas | Redis 7, ioredis, BullMQ 5 |
-| Validación | Zod 4 (end-to-end) |
-| IA | Provider pattern (Anthropic, OpenAI, Google Gemini) |
-| Storage | S3-compatible (MinIO local / Supabase producción) |
-| Auth | JWT + Google OAuth + API keys + CSRF double-submit |
-| Workers | BullMQ (matching, IA, disaster-sync) |
-| Vector search | Pinecone (opt-in) |
-| Logs | Pino structured logging |
+| Runtime | Node.js 22, TypeScript 6, Express 5, CommonJS |
+| Base de datos | MongoDB 7, Mongoose 9, índices 2dsphere |
+| Caché y colas | Redis 7 (ioredis), BullMQ 5 (4 colas) |
+| Validación | Zod 4 (9 esquemas, toda entrada validada) |
+| IA | Provider pattern: Anthropic Claude, OpenAI GPT, Google Gemini |
+| Almacenamiento | S3-compatible (MinIO local / Supabase producción) |
+| Auth | JWT (HS256) + Google OAuth + API keys (SHA-256) + CSRF double-submit |
+| Workers | 3 workers BullMQ: IA processor, disaster sync, person matching |
+| Vector search | Pinecone (opt-in) o Atlas Vector Search |
+| Logs | Pino estructurado con redacción automática de PII |
+| Monitoreo | Sentry + Bull Board UI |
+| Tiempo real | Socket.IO con Redis adapter |
+| Tests | Jest 30 + ts-jest + mongodb-memory-server + supertest |
 | Despliegue | Render (Web Service + Background Worker) |
 
-### Infraestructura
+### Visión (`vision/`)
 
-```mermaid
-graph LR
-    A[Vercel<br/>Frontend SPA] --> B[Render<br/>API Express]
-    B --> C[MongoDB Atlas]
-    B --> D[Upstash Redis]
-    B --> E[Supabase S3]
-    F[Render<br/>Worker BullMQ] --> C
-    F --> D
-    F --> G[Pinecone]
-    H[n8n] --> B
-```
+| Capa | Tecnología |
+|---|---|
+| Runtime | Python 3.11, FastAPI |
+| Face Recognition | dlib + face_recognition (face encoding 128-d) |
+| Age Estimation | Caffe DNN modelo preentrenado (age_net) |
+| Despliegue | Docker (contenedor independiente) |
 
 ---
 
-## 🏗 Arquitectura
+## Arquitectura
 
-### Microservicios desacoplados
+### Microservicios distribuidos
 
 ```
-ReencuentroTerremotoVenezuela/
-├── front/                     # SPA React 19 (Vercel)
-│   ├── src/
-│   │   ├── components/        # UI reutilizables (Button, FeedCard, Modal)
-│   │   ├── pages/             # Feed, Mapa, Admin, Perfil, Login
-│   │   ├── store/             # React Context (Toast, Auth, Notifications)
-│   │   ├── hooks/             # Custom hooks (useDebounce, useGeolocation)
-│   │   ├── db/                # Dexie IndexedDB (offline)
-│   │   └── services/          # Axios client (api.ts)
-│   └── package.json
-│
-├── back/                      # API REST + Workers (Render)
-│   ├── src/
-│   │   ├── controllers/       # 14 controladores (auth, person, admin...)
-│   │   ├── services/          # Lógica de negocio (person, matcher, storage...)
-│   │   ├── models/            # 11 modelos Mongoose
-│   │   ├── middlewares/       # auth, csrf, error, validate, audit
-│   │   ├── routes/            # 13 routers Express
-│   │   ├── validators/        # 8 esquemas Zod
-│   │   ├── workers/           # 3 workers BullMQ
-│   │   ├── queues/            # 4 colas BullMQ
-│   │   ├── jobs/              # 12 scrapers cron
-│   │   └── adapters/          # 6 adaptadores de fuentes externas
-│   └── package.json
-│
-├── vision/                    # Microservicio Python (análisis facial)
-├── Doc/                       # Documentación completa (HTML)
-├── docker-compose.yml         # Infraestructura local
-├── AGENTS.md                  # Instrucciones para IA agentes
-├── DEVELOPERS.md              # Guía técnica para desarrolladores
-├── Integraciones.md           # Manual de integración de fuentes
-└── TDD.md                     # Documento de diseño técnico
+Usuario → Vercel (Frontend SPA)
+              ↓ API proxy
+         Render (API Express + Socket.IO)
+              ↓
+         ┌─────┼─────┐
+         │     │     │
+      MongoDB Redis  S3
+      (Atlas) (Upstash) (Supabase)
+         │     │
+         │     └── BullMQ → Workers (IA, Matching, Disaster Sync)
+         │
+         └── Vision Service (Python/FastAPI)
 ```
 
 ### Flujo de ingesta de datos
 
 ```
-Fuente externa → Adaptador → Zod validation → sync-source.service → upsertPerson
-                                                                         ↓
-                                                                idHash dedup
-                                                                         ↓
-                                                            PersonModel.bulkWrite
-                                                                         ↓
-                                                          outbox → matching + IA
+Fuente externa → Adapter (normaliza) → Zod (valida) → sync-source.service
+    → upsertPerson (idHash dedup) → PersonModel.bulkWrite
+    → Outbox → person-matching (BullMQ) → matcher.service
+            → ia-processing (BullMQ) → ia-processor.worker
+            → geo-enrich (desastres cercanos)
+```
+
+### Flujo de reporte ciudadano
+
+```
+Usuario → ReportModal (7 pasos) → POST /api/persons → 202 Accepted
+    → IA analiza texto (Anthropic/OpenAI/Gemini)
+    → Vision extrae face encoding (si hay foto)
+    → Reconciliation: busca duplicados
+    → Matching: busca coincidencias con otras personas
+    → Notifica vía Socket.IO
 ```
 
 ---
 
-## 💾 Modelo de Datos
+## Modelo de Datos
 
-El núcleo es `UnifiedPerson`, un esquema único que normaliza todas las fuentes:
+13 modelos Mongoose. El núcleo es `UnifiedPerson`:
 
-| Campo | Tipo | Propósito |
+| Modelo | Colección | Propósito |
 |---|---|---|
-| `idHash` | `string` (unique) | SHA-256 determinístico para dedup |
-| `name` / `normalizedName` | `string` | Nombre original / lowercase sin acentos |
-| `status` | `enum` | `missing`, `found`, `deceased`, `unknown` |
-| `lastSeen` | `object` | Estado, municipio, coordenadas (2dsphere), fecha |
-| `embedding` | `[number]` (select:false) | Vector semántico para matching IA |
-| `metadata` | `object` | source, urgencyScore, auditStatus, reportedBy |
-| `data` | `Mixed` | Datos variables por fuente (origen, ficha_url) |
-
-**Otros modelos clave:** `User`, `Match`, `DisasterEvent`, `Outbox`, `SearchRequest`, `ApiKey`, `AuditLog`, `Localizado`, `SyncState`.
+| **UnifiedPerson** | `persons` | Personas desaparecidas/encontradas. Dedup por `idHash` SHA-256. |
+| **User** | `users` | Usuarios con dual auth (Google + email/password), roles y tokenVersion. |
+| **Match** | `matches` | Coincidencias entre reportes con score y workflow de revisión. |
+| **DisasterEvent** | `disaster_events` | Desastres naturales con GeoJSON para cruce geoespacial. |
+| **Localizado** | `localizados` | Personas en refugios y hospitales. |
+| **SearchRequest** | `search_requests` | Solicitudes de búsqueda de familias con embedding vectorial. |
+| **CaseContact** | `case_contacts` | Mensajes enmascarados entre usuarios (relé, sin exponer datos). |
+| **ApiKey** | `api_keys` | Claves para integraciones machine-to-machine (SHA-256). |
+| **Outbox** | `outboxes` | Transactional Outbox para eventos asíncronos (4 tipos). |
+| **AuditLog** | `audit_logs` | Colección capped (1GB/1M docs) para auditoría admin. |
+| **SyncState** | `sync_states` | Checksums MD5 para sincronización de fuentes. |
+| **StateHistory** | `state_histories` | Historial inmutable de cambios de estado. |
+| **VerificationRequest** | `verification_requests` | Solicitudes de rol verifier. |
 
 ---
 
-## 🚀 Desarrollo Local
+## Desarrollo Local
 
 ### Requisitos
 
 - Node.js 22+, npm
 - Docker + Docker Compose
 
-### 1. Clonar e instalar
+### Pasos
 
 ```bash
+# 1. Clonar
 git clone https://github.com/iacastillo90/ReencuentroTerremotoVenezuela.git
 cd ReencuentroTerremotoVenezuela
+cp back/.env.example back/.env
 
-cp back/.env.example back/.env    # crear .env local
-```
+# 2. Infraestructura (MongoDB + Redis + MinIO + Vision)
+docker compose up -d
 
-### 2. Infraestructura (Docker)
-
-```bash
-docker compose up -d    # MongoDB, Redis, MinIO
-```
-
-### 3. Backend
-
-```bash
+# 3. Backend
 cd back && npm install && npm run dev
 # → http://localhost:4000
-```
 
-### 4. Frontend
-
-```bash
+# 4. Frontend
 cd front && npm install && npm run dev
 # → http://localhost:5173
 ```
 
-> **Forma más rápida de probar:** crear cuenta con correo/contraseña desde la pantalla de Registro (no requiere Google OAuth).
-
----
-
-## 📋 Comandos Útiles
+### Comandos útiles
 
 ```bash
 # Backend
-npm run dev              # Desarrollo con hot-reload (ts-node)
-npm run build            # Compilar TypeScript → dist/
-npm start                # Producción (node dist/src/server.js)
-npm test                 # Tests (Jest + ts-jest + mongodb-memory-server)
+npm run dev              # Desarrollo (hot-reload)
+npm run build            # Compilar TypeScript
+npm start                # Producción (servidor)
+npm run worker           # Worker standalone
+npm test                 # Tests (Jest)
 npm run reconcile        # Reconciliación manual
 
 # Frontend
-npm run dev              # Vite dev server
+npm run dev              # Desarrollo (HMR)
 npm run build            # Build producción
-npm run preview          # Preview build
+npm test                 # Tests (Vitest)
+npm run lint             # Oxlint
 
 # Docker
 docker compose up -d              # Iniciar infraestructura
 docker compose logs -f            # Logs en vivo
 docker compose down               # Detener todo
-
-# Calidad
-npm run lint             # ESLint
-npx tsc --noEmit         # TypeScript check (sin output = 0 errores)
 ```
 
 ---
 
-## 🔑 Variables de Entorno
+## Variables de Entorno
 
-Configurar en `back/.env` (basado en `back/.env.example`). **Nunca subir al repositorio.**
+Configurar en `back/.env`. Nunca subir al repositorio.
 
 | Variable | Requerido | Descripción |
 |---|---|---|
-| `MONGO_URI` | ✅ | Conexión a MongoDB |
-| `REDIS_URL` | ✅ | Conexión a Redis (colas + caché) |
-| `JWT_SECRET` | ✅* | Secreto JWT (obligatorio en producción) |
-| `CORS_ORIGINS` | ✅ | Orígenes CORS permitidos (coincidencia exacta) |
-| `MINIO_*` | ⚠️ | Almacenamiento S3 (5 variables) |
-| `AI_PROVIDER` | ⚠️ | `anthropic`, `openai` o `gemini` |
-| `ANTHROPIC_API_KEY` | ⚠️ | API key de Anthropic |
-| `OPENAI_API_KEY` | ⚠️ | API key de OpenAI |
-| `GEMINI_API_KEY` | ⚠️ | API key de Google Gemini |
-| `ADMIN_API_KEY` | ⚠️ | API key de administrador |
-| `PARTNER_API_KEY` | ⚠️ | API key para partners |
-| `WEBHOOK_API_KEY` | ⚠️ | Secreto para webhooks n8n |
-| `ALLOW_DEV_LOGIN` | — | Login sin Google (solo dev) |
-| `ALLOW_MOCK_DATA` | — | Datos mock (solo dev) |
+| `MONGO_URI` | Sí | Conexión a MongoDB |
+| `REDIS_URL` | Sí | Conexión a Redis (colas + caché + Socket.IO) |
+| `JWT_SECRET` | Sí* | Secreto JWT (obligatorio en producción) |
+| `CORS_ORIGINS` | Sí | Orígenes CORS permitidos |
+| `MINIO_ENDPOINT` | Depende | Endpoint de almacenamiento S3 |
+| `MINIO_PORT` | Depende | Puerto S3 |
+| `MINIO_ACCESS_KEY` | Depende | Access key S3 |
+| `MINIO_SECRET_KEY` | Depende | Secret key S3 |
+| `MINIO_BUCKET` | Depende | Bucket S3 |
+| `AI_PROVIDER` | Depende | anthropic \| openai \| gemini |
+| `ANTHROPIC_API_KEY` | Depende | API key Anthropic |
+| `OPENAI_API_KEY` | Depende | API key OpenAI |
+| `GEMINI_API_KEY` | Depende | API key Google Gemini |
+| `ADMIN_API_KEY` | Depende | API key de administrador |
+| `PARTNER_API_KEY` | Depende | API key para partners |
+| `WEBHOOK_API_KEY` | Depende | Secreto para webhooks |
+| `VISION_SERVICE_URL` | Depende | URL del microservicio Vision |
+| `CSP_ENFORCE` | No | Activar modo enforce de CSP |
+| `USE_PINECONE_VECTOR_SEARCH` | No | Activar búsqueda vectorial Pinecone |
+| `USE_ATLAS_VECTOR_SEARCH` | No | Activar búsqueda vectorial Atlas |
 
 > \* Generar JWT_SECRET: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
 
 ---
 
-## 🚢 Despliegue
+## API
 
-| Componente | Servicio |
-|---|---|
-| Frontend (SPA) | **Vercel** (CDN, deploy automático desde GitHub) |
-| API + Worker | **Render** (Web Service + Background Worker) |
-| Base de datos | **MongoDB Atlas** |
-| Caché y colas | **Upstash Redis** |
-| Medios | **Supabase Storage** |
-| Vector search | **Pinecone** (opt-in) |
-
-Las variables de entorno se configuran en el panel de cada servicio.
-
----
-
-## 🌐 API
-
-### Endpoints públicos
+### Públicas
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/health` | Health check |
-| GET | `/api/persons` | Listar personas (paginado, ?q=, ?status=) |
-| GET | `/api/persons/counts` | Estadísticas cacheadas (TTL 5min) |
-| POST | `/api/persons` | Reportar persona |
+| GET | `/health` | Health check (MongoDB + Redis) |
+| GET | `/api/persons` | Listar personas (paginado, ?q=, ?status=, ?category=, ?state=) |
+| GET | `/api/persons/counts` | Estadísticas cacheadas (Redis TTL 5min) |
+| POST | `/api/persons` | Reportar persona (con dedup por idHash) |
+| GET | `/api/disasters` | Todos los desastres |
 | GET | `/api/disasters/active` | Desastres activos |
-| POST | `/api/search/vector` | Búsqueda semántica (embeddings) |
+| POST | `/api/search/vector` | Búsqueda semántica vectorial |
+| GET | `/api/cne/:nationality/:cedula` | Consulta de cédula venezolana |
+| GET | `/api/localizados` | Personas en refugios |
+| GET | `/api/auth/csrf-token` | Siembra cookie CSRF |
 
-### Endpoints autenticados
+### Autenticadas (JWT)
 
-| Método | Ruta | Auth |
+| Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/persons/mine` | JWT |
-| POST | `/api/contact/send` | JWT |
-| POST | `/api/media` | JWT |
-| POST | `/api/search-requests` | JWT |
+| GET | `/api/persons/mine` | Mis reportes |
+| POST | `/api/persons/:idHash/close` | Cerrar caso |
+| POST | `/api/contact/send` | Enviar mensaje enmascarado |
+| GET | `/api/contacts/sent` | Mensajes enviados |
+| GET | `/api/contacts/received` | Mensajes recibidos |
+| POST | `/api/search-requests` | Crear solicitud de búsqueda |
+| GET | `/api/search-requests/mine` | Mis solicitudes |
+| PATCH | `/api/search-requests/:id/status` | Actualizar estado |
+| POST | `/api/media` | Subir archivo multimedia |
+| POST | `/api/media/analyze-image` | Análisis de imagen con IA |
+| POST | `/api/media/audio-transcribe` | Transcripción de audio (Whisper) |
+| GET | `/api/matches/:reportId` | Matches de un reporte |
 
-### Endpoints de integración
+### Auth
+
+| Método | Ruta | Rate Limit |
+|---|---|---|
+| POST | `/api/auth/google` | 5/15min |
+| POST | `/api/auth/register` | 10/15min |
+| POST | `/api/auth/login` | 5/15min |
+| GET | `/api/auth/me` | — |
+| POST | `/api/auth/profile` | — |
+| POST | `/api/auth/logout` | — |
+
+### Integración (API Key)
 
 | Método | Ruta | Auth |
 |---|---|---|
 | GET/POST | `/api/partner/cases` | `x-partner-api-key` |
 | POST | `/api/localizados` | `x-partner-api-key` |
-| POST | `/api/webhooks/n8n/*` | `x-webhook-api-key` |
-| GET/POST | `/api/admin/*` | `x-api-key` o JWT admin |
+| POST | `/api/webhooks/n8n/whatsapp` | `x-webhook-api-key` |
+| POST | `/api/webhooks/n8n/telegram` | `x-webhook-api-key` |
 
----
+### Admin (API Key)
 
-## 🛡️ Seguridad
-
-### Principios
-
-- **Privacy by Design**: PII nunca se expone en APIs públicas
-- **Zero Trust**: Validación Zod en cada input, sanitización estricta
-- **Defense in Depth**: Magic bytes + rate limit + CSP + CORS exacto + CSRF
-
-### Controles implementados
-
-| Control | Implementación |
-|---|---|
-| Rate limiting | Express-rate-limit (6 niveles: 5/min a 100/15min) |
-| CORS | Allowlist exacta (no sufijos, no comodines) |
-| CSRF | Double-submit cookie + header |
-| CSP | Helmet (report-only en producción) |
-| XSS | SanitizedString (Zod) + DOMPurify (frontend) |
-| NoSQL injection | Zod schemas en todos los endpoints |
-| ReDoS | safeRegexQuery (max 200 chars, escape) |
-| MIME forgery | file-type library + magic bytes verification |
-| SSRF | DNS resolution restrictiva (microservicio vision) |
-| Session hijacking | tokenVersion rotación atómica |
-| Contraseñas | scrypt + timingSafeEqual |
-| Cache stampede | Retry loop + Redis lock |
-| PII hashing | SHA-256 para cédula y teléfono |
-| Protección menores | LOPNNA: enmascaramiento público (name='Caso protegido') |
-
-### Modelo de amenazas
-
-```mermaid
-graph TD
-    A[Usuario público] -->|GET /api/persons| B[Rate limit 100/15min]
-    A -->|POST /api/persons| C[Rate limit 10/min + Zod + Sanitize]
-    D[Partner] -->|POST /api/partner/cases| E[API key + Zod + Audit]
-    F[n8n] -->|POST webhooks| G[API key + Rate limit 30/min]
-    H[Admin] -->|GET /api/admin| I[JWT + API key + Audit log]
-```
-
-### Auditoría
-
-- Colección capped `audit_logs` (1GB / 1M documentos)
-- 8 tipos de eventos + 4 niveles de severidad
-- Correlation IDs distribuidos (headers + Pino child logger)
-
----
-
-## ⚙️ Decisiones Técnicas
-
-| Decisión | Alternativa | Por qué |
+| Método | Ruta | Descripción |
 |---|---|---|
-| **idHash SHA-256** para dedup | MongoDB ObjectId | Determinístico: misma persona desde distintas fuentes produce mismo hash |
-| **Transactional Outbox** | Evento directo | Garantiza consistencia: si la BD persiste, el evento eventualmente se procesa |
-| **BullMQ** sobre Redis | RabbitMQ, SQS | Redis ya está en la infra para caché; BullMQ es liviano y no requiere infra separada |
-| **Provider pattern IA** | SDK fijo | Intercambiable sin cambiar código (Anthropic ↔ OpenAI ↔ Gemini) |
-| **Mongoose select:false** en embeddings | Excluir en query | Previene leaks por defecto: embedding no se serializa nunca sin query explícita |
-| **Magic bytes + file-type** | Solo MIME header | Previene MIME forgery: archivo renombrado .exe → .jpg no pasa |
-| **CSS Modules** | CSS-in-JS, Tailwind | Performance: cero runtime, bundle pequeño, tipado con TypeScript |
-| **Offline-first** con Dexie | Solo online | Emergencias sin internet: IndexedDB permite operación básica |
-| **Render como Worker separado** | API + worker mismo proceso | BullMQ bloquea event loop; worker separado escala independientemente |
+| GET/POST | `/api/admin/persons` | CRUD personas |
+| PATCH | `/api/admin/persons/:idHash/status` | Cambiar estado |
+| POST | `/api/admin/merge/:id1/:id2` | Fusionar perfiles |
+| POST | `/api/admin/audit/:jobId/merge` | Aprobar merge |
+| POST | `/api/admin/audit/:jobId/dismiss` | Descartar merge |
+| GET | `/api/admin/users` | Gestión usuarios |
+| PATCH | `/api/admin/users/:id/role` | Cambiar rol |
+| GET | `/api/admin/searches` | Historial búsquedas |
+| POST | `/api/admin/api-keys` | Crear API key |
+| GET | `/api/admin/queues` | Bull Board UI |
 
 ---
 
-## 📚 Documentación
+## Seguridad
+
+### Capas de defensa
+
+| Capa | Implementación |
+|---|---|
+| Helmet | HTTP security headers, CSP, HSTS |
+| CORS | Allowlist exacta, coincidencia subdominio a subdominio |
+| Rate limiting | 500 req/15min global, 5-10 req/15min en auth |
+| CSRF | Double-submit cookie + header, timingSafeEqual |
+| Zod | Toda entrada validada (tipos, longitudes, sanitización) |
+| sanitize-html | Stripea etiquetas HTML (`allowedTags: []`) |
+| Magic bytes | file-type library verifica tipo real de archivos subidos |
+| PII redaction | Pino redacta passwords, tokens, cédulas, teléfonos |
+| Mongoose select:false | Embeddings y face encodings nunca expuestos por defecto |
+| idHash | SHA-256 determinístico, no expone IDs externos |
+| Contact relay | Mensajes entre usuarios sin revelar datos de contacto |
+| LOPNNA | Protección de menores: nombres enmascarados, moderación especial |
+| tokenVersion | Revocación de sesión: incrementa versión, invalida JWT |
+| safeRegexQuery | Previene ReDoS en búsquedas $regex |
+
+### Roles de usuario
+
+| Rol | Acceso |
+|---|---|
+| `user` | Reportar, buscar, ver feed/mapa |
+| `verifier` | Puede verificar reportes (periodistas, ONGs) |
+| `admin` | Panel completo: cambios de estado, merge, gestión de usuarios |
+
+---
+
+## Documentación
 
 | Documento | Contenido |
 |---|---|
-| [`Doc/index.html`](Doc/index.html) | Arquitectura completa, modelo de datos, seguridad, UX/UI |
-| [`DEVELOPERS.md`](DEVELOPERS.md) | Guía técnica rápida para integración |
+| [`DOCUMENTACION_BACK.md`](DOCUMENTACION_BACK.md) | Documentación completa del backend (español, narrativa técnica) |
+| [`DOCUMENTACION_FRONT.md`](DOCUMENTACION_FRONT.md) | Documentación completa del frontend (español, narrativa técnica) |
+| [`DEVELOPERS.md`](DEVELOPERS.md) | Guía técnica para desarrolladores |
 | [`TDD.md`](TDD.md) | Documento de diseño técnico detallado |
 | [`Integraciones.md`](Integraciones.md) | Manual de integración de fuentes externas |
 | [`AGENTS.md`](AGENTS.md) | Instrucciones para asistentes IA |
-| `back/AGENTS.md` | Instrucciones específicas del backend |
-| `front/AGENTS.md` | Instrucciones específicas del frontend |
+| `back/AGENTS.md` | Instrucciones del backend |
+| `front/AGENTS.md` | Instrucciones del frontend |
 | `vision/AGENTS.md` | Instrucciones del microservicio de visión |
 
 ---
 
-## 🤝 Contribuir
+## Contribuir
 
 1. Fork del repositorio
-2. Crear rama: `git checkout -b feature/mi-cambio`
-3. Seguir convenciones de código (TypeScript strict, Zod validation, tests)
-4. Cargar skills de SDD para cambios grandes: `sdd-propose` → `sdd-design` → `sdd-tasks` → `sdd-apply` → `sdd-verify`
-5. Asegurar 0 errores TypeScript: `cd back && npx tsc --noEmit`
-6. Asegurar tests pasan: `npm test`
+2. Rama: `git checkout -b feature/mi-cambio`
+3. Seguir convenciones: TypeScript strict, Zod validation, tests
+4. Para cambios grandes, seguir flujo SDD: `sdd-propose` → `sdd-design` → `sdd-tasks` → `sdd-apply` → `sdd-verify`
+5. Verificar 0 errores TypeScript: `cd back && npx tsc --noEmit`
+6. Verificar tests: `npm test`
 7. PR con conventional commits
 
 ### Convenciones
 
 - **Commits**: `tipo(scope): mensaje` — ej. `feat(back): add rate limiting to person routes`
-- **Branch naming**: `feature/`, `fix/`, `security/`, `refactor/`
-- **Idioma**: Código y documentación en español (código fuente: español, commits: inglés)
+- **Branches**: `feature/`, `fix/`, `security/`, `refactor/`
+- **Código**: español. **Commits**: inglés.
 
 ---
 
-## 📄 Licencia
+## Licencia
 
-MIT. Ver archivo `LICENSE` para detalles.
+MIT. Ver archivo `LICENSE`.
 
 ---
 
-*Reencuentro Terremoto Venezuela — Hecho con profundo compromiso técnico y humano.* 🇻🇪
+*Reencuentro Terremoto Venezuela — hecho con profundo compromiso técnico y humano.*
