@@ -17,7 +17,7 @@ services:
 
   # ── 1. Base de Datos Central ─────────────────────────────────
   mongodb:
-    image: mongo:7
+    image: mongo:4.4
     container_name: reencuentros_mongo
     restart: always
     ports:
@@ -28,10 +28,25 @@ services:
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGO_USER:-reencuentro}", "-p", "${MONGO_PASSWORD:-changeme_in_production}", "--authenticationDatabase", "admin"]
-      interval: 15s
+      test:
+        - CMD
+        - mongo
+        - --eval
+        - db.adminCommand('ping')
+        - -u
+        - reencuentro
+        - -p
+        - changeme_in_production
+        - --authenticationDatabase
+        - admin
       timeout: 5s
+      interval: 15s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
 
   # ── 2. Redis (Colas BullMQ + Caché) ──────────────────────────
   redis:
@@ -48,10 +63,15 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 128M
 
   # ── 3. MinIO (Fotos y Videos Seguros, Locales) ────────────────
   minio:
-    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    image: minio/minio:latest
     container_name: reencuentros_minio
     restart: always
     ports:
@@ -64,10 +84,15 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 20s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 256M
 
   # ── 4. API Principal (Tráfico de usuarios) ───────────────────
   api:
@@ -102,6 +127,11 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
 
   # ── 5. Worker de IA (BullMQ, segundo plano) ──────────────────
   # Usa la misma imagen que la API pero con un CMD diferente.
@@ -126,6 +156,11 @@ services:
         condition: service_healthy
     healthcheck:
       disable: true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
     # El worker puede escalar horizontalmente si hay alta demanda:
     # docker compose up -d --scale worker=3
 
@@ -152,6 +187,11 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
 
 # ── Volúmenes Persistentes ────────────────────────────────────
 # Los datos de personas sobreviven a reinicios y actualizaciones
