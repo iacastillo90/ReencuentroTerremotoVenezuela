@@ -57,7 +57,7 @@ export async function getAdminMatches(limit: number, offset: number) {
 }
 
 export async function updateMatchStatus(id: string, status: string, actor: string, req: Request) {
-  const match = await MatchModel.findByIdAndUpdate(id, { status }, { new: true });
+  const match = await MatchModel.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
   if (!match) return { status: 404, error: 'Coincidencia no encontrada' };
 
   auditLog({

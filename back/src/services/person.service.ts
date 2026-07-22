@@ -64,7 +64,7 @@ export async function upsertPerson(
         externalIds: { source, id: externalId, addedAt: new Date() }
       }
     },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, returnDocument: 'after', runValidators: true }
   );
 
   await addToOutbox('person-matching', { idHash, source: 'person-service' });

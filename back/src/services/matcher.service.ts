@@ -152,7 +152,7 @@ export async function runMatchingForSearchRequest(searchRequestId: string) {
         await MatchModel.findOneAndUpdate(
           { reportId: candidate.idHash, searchRequestId: request._id },
           { score, status: score > 0.85 ? 'probable' : 'posible' },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
     }
@@ -257,7 +257,7 @@ export async function runMatchingForNewPerson(personIdHash: string) {
           await MatchModel.findOneAndUpdate(
             { reportId: person.idHash, matchedPersonId: otherPerson.idHash },
             { score: faceScore, status: faceScore > 0.85 ? 'probable' : 'posible' },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: 'after' }
           );
         }
       }
@@ -269,7 +269,7 @@ export async function runMatchingForNewPerson(personIdHash: string) {
         await MatchModel.findOneAndUpdate(
           { reportId: person.idHash, searchRequestId: request._id },
           { score, status: score > 0.85 ? 'probable' : 'posible' },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
       }
     }

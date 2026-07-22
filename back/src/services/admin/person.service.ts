@@ -118,7 +118,7 @@ export async function updatePersonStatus(idHash: string, status: string, actor: 
   const updated = await PersonModel.findOneAndUpdate(
     { idHash },
     { status, 'metadata.updatedAt': new Date() },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!updated) return { status: 404, error: 'Persona no encontrada' };
@@ -146,7 +146,7 @@ export async function moderatePerson(idHash: string, action: string) {
   const updated = await PersonModel.findOneAndUpdate(
     { idHash },
     { 'metadata.auditStatus': 'clean', 'metadata.updatedAt': new Date() },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!updated) return { status: 404, error: 'Persona no encontrada' };
   return { status: 200, data: updated };

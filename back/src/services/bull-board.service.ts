@@ -24,19 +24,25 @@ import { personMatchingQueue } from '../queues/person-matching.queue';
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/api/admin/queues');
 
-createBullBoard({
-  queues: [
-    new BullMQAdapter(iaProcessQueue),
-    new BullMQAdapter(disasterSyncQueue),
-    new BullMQAdapter(manualAuditQueue),
-    new BullMQAdapter(personMatchingQueue.underlyingQueue),
-  ],
-  serverAdapter,
-    options: {
-    uiConfig: {
-      boardTitle: 'Reencuentros — Colas',
-    },
-  },
-});
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    createBullBoard({
+      queues: [
+        new BullMQAdapter(iaProcessQueue),
+        new BullMQAdapter(disasterSyncQueue),
+        new BullMQAdapter(manualAuditQueue),
+        new BullMQAdapter(personMatchingQueue.underlyingQueue),
+      ],
+      serverAdapter,
+      options: {
+        uiConfig: {
+          boardTitle: 'Reencuentros — Colas',
+        },
+      },
+    });
+  } catch (err) {
+    // Graceful fallback for test or uninitialized Redis environments
+  }
+}
 
 export const bullBoardRouter = serverAdapter.getRouter();

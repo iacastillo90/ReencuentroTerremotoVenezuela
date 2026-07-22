@@ -38,7 +38,7 @@ export async function updateUserRole(id: string, role: string, actor: string, re
     return { status: 403, error: 'No puedes cambiar tu propio rol' };
   }
 
-  const user = await UserModel.findByIdAndUpdate(id, { role }, { new: true });
+  const user = await UserModel.findByIdAndUpdate(id, { role }, { returnDocument: 'after' });
   if (!user) return { status: 404, error: 'Usuario no encontrado' };
 
   auditLog({
@@ -63,7 +63,7 @@ export async function updateUserStatus(id: string, status: string, actor: string
     return { status: 403, error: 'No puedes cambiar tu propio estado' };
   }
 
-  const user = await UserModel.findByIdAndUpdate(id, { status }, { new: true });
+  const user = await UserModel.findByIdAndUpdate(id, { status }, { returnDocument: 'after' });
   if (!user) return { status: 404, error: 'Usuario no encontrado' };
 
   auditLog({

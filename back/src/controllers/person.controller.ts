@@ -61,11 +61,15 @@ export async function getCounts(_req: Request, res: Response, next: NextFunction
   }
 }
 
+const getMyReportsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 export async function getMyReports(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId as string;
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
+    const { limit, offset } = getMyReportsQuerySchema.parse(req.query);
 
     const result = await personReadService.getMyReports(userId, limit, offset);
     return res.status(200).json(result);

@@ -42,7 +42,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
     const user = await UserModel.findByIdAndUpdate(
       req.user!.userId,
       { sector, contactNumber, isProfileComplete: true, $inc: { tokenVersion: 1 } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });

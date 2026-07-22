@@ -51,7 +51,7 @@ export async function updateSearchRequestStatus(id: string, userId: string, stat
   const request = await SearchRequestModel.findOneAndUpdate(
     { _id: id, user: userId },
     { status },
-    { new: true }
+    { returnDocument: 'after' }
   );
   return request;
 }
