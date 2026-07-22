@@ -137,3 +137,18 @@ export async function closeCase(req: Request, res: Response, next: NextFunction)
     next(error);
   }
 }
+
+export async function deleteMyReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const idHash = req.params.idHash as string;
+    const userId = req.user!.userId as string;
+    const userRole = req.user!.role || 'user';
+    const ip = (typeof req.ip === 'string' ? req.ip : req.socket.remoteAddress) || 'unknown';
+    const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : 'unknown';
+
+    const result = await personService.deleteMyReport(idHash, userId, userRole, ip, userAgent);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}

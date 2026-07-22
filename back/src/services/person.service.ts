@@ -140,3 +140,30 @@ export async function closeCase(idHash: string, userId: string, userRole: string
 
   return { message: 'Caso cerrado exitosamente.', status: person.status };
 }
+
+export async function deleteMyReport(idHash: string, userId: string, userRole: string, ip?: string, userAgent?: string) {
+  const person = await PersonModel.findOne({ idHash });
+  if (!person) throw new NotFoundError('Reporte no encontrado.');
+
+  const isOwner = person.metadata?.reportedBy?.toString() === userId;
+  if (!isOwner && userRole !== 'admin') {
+    throw new ForbiddenError('No tienes permiso para borrar este reporte.');
+  }
+
+  await PersonModel.deleteOne({ idHash });
+
+  await AuditLogModel.create({
+    eventType: 'admin_action' as const,
+    severity: 'critical' as const,
+    actor: userId,
+    action: `Deleted person ${idHash}`,
+    detail: { name: person.name, externalIds: person.externalIds },
+    ip: ip || 'unknown',
+    userAgent: userAgent || 'unknown',
+    timestamp: new Date(),
+  });
+
+  await redis.del('persons:counts');
+
+  return { message: 'Reporte eliminado exitosamente.' };
+}

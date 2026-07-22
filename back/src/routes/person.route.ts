@@ -43,7 +43,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 import { requireProfileComplete, requireUser } from '../middlewares/auth.middleware';
-import { getCounts, getMyReports, getPersons, createPerson, closeCase } from '../controllers/person.controller';
+import { getCounts, getMyReports, getPersons, createPerson, closeCase, deleteMyReport } from '../controllers/person.controller';
 import { validateQuery } from '../middlewares/validate.middleware';
 import { sanitizedQueryParam } from '../utils/sanitize.util';
 
@@ -101,5 +101,6 @@ const createPersonLimiter = rateLimit({
 
 router.post('/', createPersonLimiter, requireProfileComplete, createPerson);
 router.post('/:idHash/close', closeCaseLimiter, requireUser, closeCase);
+router.delete('/:idHash', requireUser, deleteMyReport);
 
 export const personRouter = router;

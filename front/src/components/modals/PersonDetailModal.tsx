@@ -33,7 +33,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Person } from '../../types';
 import {
   X, MapPin, User, CheckCircle, Heart,
-  MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck, Fingerprint
+  MessageCircle, AlertCircle, Share2, Info, Lock, ShieldCheck, Fingerprint, Trash2
 } from 'lucide-react';
 import { useAuth } from '../../store/AuthContext';
 import { api } from '../../services/api';
@@ -166,6 +166,19 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
     }
   };
 
+  const handleDeleteReport = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas borrar este reporte? Esta acción no se puede deshacer.')) return;
+    try {
+      await api.delete(`/persons/${person.idHash}`);
+      setToastMessage('Reporte borrado exitosamente.');
+      if (onCaseClosed) onCaseClosed();
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      setToastMessage(axiosErr.response?.data?.error || 'Error al borrar el reporte');
+    }
+  };
+
   // ─── Verificar cédula para acceder a datos protegidos ───
   const handleCedulaMatch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +288,12 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
               <button className="btn-main-action btn-main-action-success" onClick={() => setShowCloseCase(!showCloseCase)}>
                 <ShieldCheck size={18} />
                 Cerrar Caso (Auditoría Legal)
+              </button>
+            )}
+            {isOwner && (
+              <button className="btn-main-action" style={{ backgroundColor: 'var(--clr-red)', color: 'white', borderColor: 'var(--clr-red)' }} onClick={handleDeleteReport}>
+                <Trash2 size={18} />
+                Borrar Reporte
               </button>
             )}
           </div>
