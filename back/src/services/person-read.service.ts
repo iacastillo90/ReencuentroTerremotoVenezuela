@@ -104,14 +104,21 @@ export async function getCounts() {
 }
 
 export async function getMyReports(userId: string, limit: number, offset: number) {
+  const query = {
+    $or: [
+      { 'metadata.reportedBy': new Types.ObjectId(userId) },
+      { 'metadata.reportedBy': userId }
+    ]
+  };
+
   const [persons, total] = await Promise.all([
-    PersonModel.find({ 'metadata.reportedBy': new Types.ObjectId(userId) })
+    PersonModel.find(query)
       .select(safeProjection)
       .sort({ 'metadata.createdAt': -1 })
       .skip(offset)
       .limit(limit)
       .lean(),
-    PersonModel.countDocuments({ 'metadata.reportedBy': new Types.ObjectId(userId) }),
+    PersonModel.countDocuments(query),
   ]);
 
   return { data: persons, total, limit, offset };
