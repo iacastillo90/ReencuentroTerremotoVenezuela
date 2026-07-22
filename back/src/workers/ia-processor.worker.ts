@@ -336,4 +336,4 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
     }
     throw error;
   }
-}, { connection: connection as any, concurrency: 1 });
+}, { connection: connection as any, concurrency: 1, stalledInterval: 300000 });

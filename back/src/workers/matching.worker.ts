@@ -48,4 +48,4 @@ export const personMatchingWorker = new Worker('person-matching', async (job) =>
   } catch (error) {
     logger.error({ err: error, idHash, source }, '[matching-worker] Failed to process match');
   }
-}, { connection: connection as any });
+}, { connection: connection as any, stalledInterval: 300000 });

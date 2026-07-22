@@ -144,16 +144,34 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     }
   }
 
+  const dynamicConditions: any[] = [];
+
   if (vestimenta) {
     const sanitizedVestimenta = safeRegexQuery(String(vestimenta));
     if (sanitizedVestimenta) {
-      filter['lastSeen.description'] = { $regex: sanitizedVestimenta, $options: 'i' };
+      dynamicConditions.push({
+        $or: [
+          { 'lastSeen.description': { $regex: sanitizedVestimenta, $options: 'i' } },
+          { 'lastSeen.description': { $in: [null, ''] } },
+          { 'lastSeen.description': { $exists: false } }
+        ]
+      });
     }
   }
 
   if (age !== undefined) {
-    // Permitir un margen de error de +/- 2 años para mayor flexibilidad
-    filter.age = { $gte: age - 2, $lte: age + 2 };
+    // Permitir un margen de error de +/- 2 años e incluir registros sin edad definida
+    dynamicConditions.push({
+      $or: [
+        { age: { $gte: age - 2, $lte: age + 2 } },
+        { age: null },
+        { age: { $exists: false } }
+      ]
+    });
+  }
+
+  if (dynamicConditions.length > 0) {
+    filter.$and = dynamicConditions;
   }
 
   if (dateFrom || dateTo) {
@@ -175,15 +193,38 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
       filter['type'] = 'animal';
     } else if (cat === 'nino') {
       filter['type'] = 'person';
-      if (age === undefined) filter['age'] = { $lt: 18 };
+      if (age === undefined) {
+        dynamicConditions.push({
+          $or: [
+            { age: { $lt: 18 } },
+            { 'metadata.isMinor': true },
+            { age: { $in: [null] }, 'metadata.isMinor': { $ne: false } }
+          ]
+        });
+      }
     } else if (cat === 'adulto') {
       filter['type'] = 'person';
-      if (age === undefined) filter['age'] = { $gte: 18, $lt: 65 };
+      if (age === undefined) {
+        dynamicConditions.push({
+          $or: [
+            { age: { $gte: 18, $lt: 65 } },
+            { age: { $in: [null] }, 'metadata.isMinor': { $ne: true } }
+          ]
+        });
+      }
     } else if (cat === 'adulto_mayor') {
       filter['type'] = 'person';
-      if (age === undefined) filter['age'] = { $gte: 65 };
+      if (age === undefined) {
+        dynamicConditions.push({
+          $or: [
+            { age: { $gte: 65 } },
+            { age: { $in: [null] }, 'metadata.isMinor': { $ne: true } }
+          ]
+        });
+      }
     }
   }
+
 
   if (state) {
     filter['lastSeen.state'] = String(state);

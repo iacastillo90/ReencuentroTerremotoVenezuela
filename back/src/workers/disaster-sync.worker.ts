@@ -94,4 +94,5 @@ export const disasterSyncWorker = new Worker('disaster-sync', async (job: Job) =
 }, {
   connection: connection as any,
   concurrency: getConcurrency(),
+  stalledInterval: 300000,
 });
