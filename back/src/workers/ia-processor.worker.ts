@@ -73,9 +73,11 @@ interface FaceExtractResult {
 async function extractFaceEncoding(imageUrl: string): Promise<FaceExtractResult> {
   const defaultResult: FaceExtractResult = { encoding: null, containsMinor: false, containsMinorAges: [] };
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (process.env.VISION_API_KEY) headers['x-vision-api-key'] = process.env.VISION_API_KEY;
     const response = await fetch(`${VISION_SERVICE_URL}/extract-face`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ image_url: imageUrl, timeout: 30 }),
       signal: AbortSignal.timeout(35000),
     });
@@ -121,6 +123,8 @@ async function extractFaceEncoding(imageUrl: string): Promise<FaceExtractResult>
 
 export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
   const rawData = job.data;
+
+  await new Promise(resolve => setTimeout(resolve, 200));
   
   try {
     const isMinor = rawData.isMinor === true;
@@ -332,4 +336,4 @@ export const iaProcessorWorker = new Worker('ia-process', async (job: Job) => {
     }
     throw error;
   }
-}, { connection: connection as any });
+}, { connection: connection as any, concurrency: 1 });

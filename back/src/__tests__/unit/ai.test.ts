@@ -39,8 +39,13 @@ jest.mock('@google/genai', () => ({
 describe('AI Services', () => {
   const dummyText = 'Test input data';
 
+  beforeEach(() => {
+    process.env.ANTHROPIC_MODEL = 'claude-3-5-sonnet-20241022';
+  });
+
   afterEach(() => {
     delete process.env.AI_PROVIDER;
+    delete process.env.ANTHROPIC_MODEL;
   });
 
   describe('AnthropicProvider', () => {

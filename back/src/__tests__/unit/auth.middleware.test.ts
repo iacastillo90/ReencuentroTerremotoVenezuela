@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { requireUser, requireProfileComplete, requireWebhookApiKey } from '../../middlewares/auth.middleware';
 import { UserModel } from '../../models/user.model';
+import { ApiKeyModel } from '../../models/api-key.model';
 
 jest.mock('jsonwebtoken');
 jest.mock('../../models/user.model');
+jest.mock('../../models/api-key.model');
 
 describe('Auth Middleware', () => {
   let mockReq: Partial<Request>;
@@ -12,6 +14,7 @@ describe('Auth Middleware', () => {
   let mockNext: NextFunction;
 
   beforeEach(() => {
+    (ApiKeyModel.findOne as jest.Mock) = jest.fn().mockResolvedValue(null);
     mockReq = {
       headers: {},
       cookies: {},
@@ -31,7 +34,7 @@ describe('Auth Middleware', () => {
     it('debería retornar 401 si no se provee el header de autorización', async () => {
       await requireUser(mockReq as Request, mockRes as Response, mockNext);
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized: Missing or invalid token' });
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No autorizado: Token faltante o inválido' });
     });
 
     it('debería retornar 401 si el formato del token es inválido', async () => {
@@ -48,12 +51,12 @@ describe('Auth Middleware', () => {
 
       await requireUser(mockReq as Request, mockRes as Response, mockNext);
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized: Invalid token' });
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No autorizado: Token inválido' });
     });
 
     it('debería inyectar el usuario en request y llamar a next si el token es válido', async () => {
       mockReq.headers = { authorization: 'Bearer valid_token' };
-      const mockDecoded = { userId: '123', email: 'test@test.com', isProfileComplete: true, tokenVersion: 1 };
+      const mockDecoded = { userId: '123', email: 'test@test.com', role: 'user', status: 'approved', isProfileComplete: true, tokenVersion: 1 };
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (UserModel.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({ tokenVersion: 1 }),
@@ -68,7 +71,7 @@ describe('Auth Middleware', () => {
 
     it('debería retornar 401 si el tokenVersion no coincide', async () => {
       mockReq.headers = { authorization: 'Bearer old_token' };
-      const mockDecoded = { userId: '123', email: 'test@test.com', tokenVersion: 1 };
+      const mockDecoded = { userId: '123', email: 'test@test.com', role: 'user', status: 'approved', tokenVersion: 1 };
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (UserModel.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({ tokenVersion: 2 }),
@@ -77,14 +80,14 @@ describe('Auth Middleware', () => {
       await requireUser(mockReq as Request, mockRes as Response, mockNext);
       
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Token revoked. Please login again.' });
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Token revocado. Inicie sesión nuevamente.' });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('debería aceptar token desde cookie cuando no hay header de autorización', async () => {
       mockReq.headers = {};
       mockReq.cookies = { token: 'cookie-jwt-token' };
-      const mockDecoded = { userId: '123', email: 'test@test.com', isProfileComplete: true, tokenVersion: 1 };
+      const mockDecoded = { userId: '123', email: 'test@test.com', role: 'user', status: 'approved', isProfileComplete: true, tokenVersion: 1 };
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (UserModel.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({ tokenVersion: 1 }),
@@ -101,7 +104,7 @@ describe('Auth Middleware', () => {
   describe('requireProfileComplete', () => {
     it('debería retornar 403 si el perfil del usuario está incompleto', async () => {
       mockReq.headers = { authorization: 'Bearer valid_token' };
-      const mockDecoded = { userId: '123', email: 'test@test.com', isProfileComplete: false, tokenVersion: 1 };
+      const mockDecoded = { userId: '123', email: 'test@test.com', role: 'user', status: 'approved', isProfileComplete: false, tokenVersion: 1 };
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (UserModel.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({ tokenVersion: 1 }),
@@ -110,13 +113,13 @@ describe('Auth Middleware', () => {
       await requireProfileComplete(mockReq as Request, mockRes as Response, mockNext);
       
       expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Forbidden: Profile incomplete' });
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Prohibido: Perfil incompleto' });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('debería llamar a next si el perfil está completo', async () => {
       mockReq.headers = { authorization: 'Bearer valid_token' };
-      const mockDecoded = { userId: '123', email: 'test@test.com', isProfileComplete: true, tokenVersion: 1 };
+      const mockDecoded = { userId: '123', email: 'test@test.com', role: 'user', status: 'approved', isProfileComplete: true, tokenVersion: 1 };
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (UserModel.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockResolvedValue({ tokenVersion: 1 }),
@@ -129,25 +132,24 @@ describe('Auth Middleware', () => {
   });
 
   describe('requireWebhookApiKey', () => {
-    it('debería retornar 500 si WEBHOOK_API_KEY no está configurado', () => {
-      delete process.env.WEBHOOK_API_KEY;
-      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Server configuration error' });
+    it('debería retornar 401 si no se provee x-webhook-api-key', async () => {
+      await requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
+      expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No autorizado: Clave de webhook requerida' });
     });
 
-    it('debería retornar 401 si la API key es incorrecta', () => {
+    it('debería retornar 401 si la API key es incorrecta', async () => {
       process.env.WEBHOOK_API_KEY = 'correct-key';
       mockReq.headers = { 'x-webhook-api-key': 'wrong-key' };
-      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
+      await requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
       expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'Unauthorized: Invalid webhook API key' });
+      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No autorizado: Clave de webhook inválida o revocada' });
     });
 
-    it('debería llamar a next si la API key es correcta', () => {
+    it('debería llamar a next si la API key es correcta', async () => {
       process.env.WEBHOOK_API_KEY = 'correct-key';
       mockReq.headers = { 'x-webhook-api-key': 'correct-key' };
-      requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
+      await requireWebhookApiKey(mockReq as Request, mockRes as Response, mockNext);
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
   });

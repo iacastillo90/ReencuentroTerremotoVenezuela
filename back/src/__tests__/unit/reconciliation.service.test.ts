@@ -43,7 +43,11 @@ describe('reconciliation.service', () => {
   });
 
   it('should insert as new if no candidates found', async () => {
-    (PersonModel.find as jest.Mock).mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+    (PersonModel.find as jest.Mock).mockReturnValue({
+      limit: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue([])
+      })
+    });
     (upsertPerson as jest.Mock).mockResolvedValue({ idHash: 'new-hash' });
 
     const result = await processAndReconcilePerson('web', '123', {
@@ -59,9 +63,11 @@ describe('reconciliation.service', () => {
 
   it('should send to manual audit if similarity is between 85% and 94%', async () => {
     (PersonModel.find as jest.Mock).mockReturnValue({
-      lean: jest.fn().mockResolvedValue([
-        { normalizedName: 'anna maria', name: 'Anna Maria', idHash: 'hash-1' }
-      ])
+      limit: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue([
+          { normalizedName: 'anna maria', name: 'Anna Maria', idHash: 'hash-1' }
+        ])
+      })
     });
 
     // "anna maria" (10 chars) vs "ana maria" (9 chars) -> dist 1 -> score 9/10 = 0.90
@@ -76,9 +82,11 @@ describe('reconciliation.service', () => {
 
   it('should auto-merge if similarity is >= 95%', async () => {
     (PersonModel.find as jest.Mock).mockReturnValue({
-      lean: jest.fn().mockResolvedValue([
-        { normalizedName: 'maria rojas', name: 'Maria Rojas', idHash: 'hash-mr', age: 30 }
-      ])
+      limit: jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue([
+          { normalizedName: 'maria rojas', name: 'Maria Rojas', idHash: 'hash-mr', age: 30 }
+        ])
+      })
     });
     
     (upsertPerson as jest.Mock).mockResolvedValue({ idHash: 'hash-mr' });
