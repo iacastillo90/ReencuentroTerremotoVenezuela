@@ -70,7 +70,7 @@ async function bootstrap() {
 
     let workers: any[] = [];
 
-    if (process.env.NODE_ENV !== 'production' || process.env.RUN_WORKERS_IN_API === 'true') {
+    if (process.env.RUN_WORKERS_IN_API !== 'false') {
       logger.info('Starting internal workers (monolith mode)');
       const { iaProcessorWorker } = require('./workers/ia-processor.worker');
       const { disasterSyncWorker } = require('./workers/disaster-sync.worker');
