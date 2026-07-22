@@ -56,6 +56,9 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
       onStatusChange(idHash, newStatus);
     } catch (e: unknown) {
       const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error actualizando estado', 'error');
+    }
+  };
 
   const deleteRecord = async (idHash: string) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este registro? Esta acción es irreversible.')) {
@@ -68,10 +71,6 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
     } catch (e: unknown) {
       const axiosErr = e as { response?: { data?: { error?: string } } };
       addToast(axiosErr.response?.data?.error || 'Error eliminando registro', 'error');
-    }
-  };
-
-      addToast(axiosErr.response?.data?.error || 'Error actualizando estado', 'error');
     }
   };
 
