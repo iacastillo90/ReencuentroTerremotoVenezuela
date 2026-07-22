@@ -30,7 +30,7 @@ export class PersonMatchingQueue {
           delay: 2000,
         },
         removeOnComplete: true,
-        removeOnFail: { age: 24 * 3600, count: 100 },
+        removeOnFail: true,
       },
     });
   }

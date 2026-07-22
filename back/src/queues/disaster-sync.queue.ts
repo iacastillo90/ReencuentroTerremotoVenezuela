@@ -29,7 +29,7 @@ export const disasterSyncQueue = new Queue(DISASTER_SYNC_QUEUE_NAME, {
       delay: 5000,
     },
     removeOnComplete: true,
-    removeOnFail: { age: 24 * 3600, count: 100 },
+    removeOnFail: true,
   }
 });
 
