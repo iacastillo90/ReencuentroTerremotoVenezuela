@@ -40,7 +40,7 @@ INSTRUCCIÓN DE SISTEMA:
 Analiza el reporte de persona desaparecida.
 Extrae el nombre completo de la persona buscada ("name") y la última ubicación/estado ("estado").
 Si se menciona una edad aproximada, extráela ("age").
-Extrae la descripción física y características de la persona ("safeDescription").
+Extrae la descripción física, características de la persona y detalles de vestimenta o ropa ("safeDescription").
 Elimina, ignora y censura de forma absoluta cualquier número de teléfono, dirección exacta domiciliaria y descripciones de diagnósticos médicos o historia clínica. 
 Resume el estado médico SÓLO utilizando estas tres etiquetas permitidas: "estable", "herido", "crisis".
 Bajo ninguna circunstancia expongas información de contacto.

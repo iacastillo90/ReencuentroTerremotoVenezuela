@@ -110,7 +110,7 @@ export async function getCounts() {
 export async function getMyReports(userId: string, limit: number, offset: number) {
   const query = {
     $or: [
-      { 'metadata.reportedBy': new Types.ObjectId(userId) },
+      { 'metadata.reportedBy': Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : null },
       { 'metadata.reportedBy': userId }
     ]
   };
@@ -175,13 +175,13 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
       filter['type'] = 'animal';
     } else if (cat === 'nino') {
       filter['type'] = 'person';
-      filter['age'] = { $lt: 18 };
+      if (age === undefined) filter['age'] = { $lt: 18 };
     } else if (cat === 'adulto') {
       filter['type'] = 'person';
-      filter['age'] = { $gte: 18, $lt: 65 };
+      if (age === undefined) filter['age'] = { $gte: 18, $lt: 65 };
     } else if (cat === 'adulto_mayor') {
       filter['type'] = 'person';
-      filter['age'] = { $gte: 65 };
+      if (age === undefined) filter['age'] = { $gte: 65 };
     }
   }
 
