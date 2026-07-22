@@ -137,19 +137,29 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
     filter.status = status;
   }
 
+  const dynamicConditions: any[] = [];
+
   if (q) {
     const sanitizedQuery = safeRegexQuery(String(q));
     if (sanitizedQuery) {
-      // Búsqueda de palabra exacta para evitar que "Juan" devuelva "Juana"
-      filter['normalizedName'] = { $regex: '\\b' + sanitizedQuery + '\\b', $options: 'i' };
+      const words = sanitizedQuery.split(/\s+/).filter(w => w.length > 0);
+      words.forEach(w => {
+        dynamicConditions.push({
+          'normalizedName': { $regex: '\\b' + w + '\\b', $options: 'i' }
+        });
+      });
     }
   }
 
   if (vestimenta) {
     const sanitizedVestimenta = safeRegexQuery(String(vestimenta));
     if (sanitizedVestimenta) {
-      // Coincidencia estricta en la descripción
-      filter['lastSeen.description'] = { $regex: sanitizedVestimenta, $options: 'i' };
+      const words = sanitizedVestimenta.split(/\s+/).filter(w => w.length > 0);
+      words.forEach(w => {
+        dynamicConditions.push({
+          'lastSeen.description': { $regex: w, $options: 'i' }
+        });
+      });
     }
   }
 
@@ -191,6 +201,9 @@ export async function getPersons(params: GetPersonsParams, viewerRole?: string) 
         filter['age'] = { $gte: 65 };
       }
     }
+  }
+  if (dynamicConditions.length > 0) {
+    filter.$and = dynamicConditions;
   }
 
 
