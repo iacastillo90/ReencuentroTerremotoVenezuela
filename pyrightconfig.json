@@ -1,0 +1,9 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "vision",
+      "venvPath": "vision",
+      "venv": ".venv"
+    }
+  ]
+}
