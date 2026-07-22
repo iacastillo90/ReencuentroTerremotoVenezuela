@@ -24,7 +24,7 @@
  *   un sistema de páginas más adelante.
  */
 import { useState } from 'react';
-import { Search, ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ShieldCheck, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { useToast } from '../../../store/ToastContext';
 import { NameCell } from '../../../components/common/NameCell';
@@ -56,6 +56,21 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
       onStatusChange(idHash, newStatus);
     } catch (e: unknown) {
       const axiosErr = e as { response?: { data?: { error?: string } } };
+
+  const deleteRecord = async (idHash: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este registro? Esta acción es irreversible.')) {
+      return;
+    }
+    try {
+      await api.delete('/admin/persons/' + idHash);
+      onStatusChange(idHash, 'deleted'); // We can reuse onStatusChange to trigger a filter in the parent, or just refresh
+      window.location.reload(); // Simple way to refresh the list for now
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: string } } };
+      addToast(axiosErr.response?.data?.error || 'Error eliminando registro', 'error');
+    }
+  };
+
       addToast(axiosErr.response?.data?.error || 'Error actualizando estado', 'error');
     }
   };
@@ -163,7 +178,12 @@ export function SectionRegistros({ persons, loading, onStatusChange }: Props) {
                             Reabrir
                           </button>
                         )}
-                      </div>
+                      
+                        <button className="btn-dismiss" title="Borrar"
+                          onClick={() => deleteRecord(p.idHash)}>
+                          <Trash2 size={14} className="admin-icon-inline" />
+                        </button>
+</div>
                     </td>
                   </tr>
                 );

@@ -1583,3 +1583,24 @@
   display: flex;
   gap: 0.5rem;
 }
+
+/* AdminDashboard Responsive Tweaks */
+@media (max-width: 768px) {
+  .admin-stats-row {
+    grid-template-columns: 1fr;
+  }
+  .admin-search-bar {
+    width: 100%;
+    max-width: 100%;
+  }
+  .admin-topbar-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .table-responsive-wrapper {
+    /* Ensures smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+  }
+}

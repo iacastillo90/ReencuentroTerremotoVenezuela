@@ -65,7 +65,7 @@ import { Router } from 'express';
 import {
   mergeProfilesHandler, getAuditJobsHandler, mergeAuditJobHandler, dismissAuditJobHandler,
   updatePersonStatusHandler, moderatePersonHandler, putPersonHandler, getPersonContactsHandler,
-  getAdminPersonsHandler, getAdminMatchesHandler, updateMatchStatusHandler,
+  getAdminPersonsHandler, getAdminMatchesHandler, deletePersonHandler, updateMatchStatusHandler,
   getAdminUsersHandler, updateUserRoleHandler, updateUserStatusHandler,
   getVerificationsHandler, getAdminSearchesHandler,
   postApiKeyHandler, getApiKeysHandler, deleteApiKeyHandler,
@@ -93,6 +93,7 @@ router.get('/audit-logs', getAuditLogsHandler);
 router.patch('/persons/:idHash/status', updatePersonStatusHandler);
 router.patch('/persons/:idHash/moderate', moderatePersonHandler);
 router.put('/persons/:idHash', putPersonHandler);
+router.delete('/persons/:idHash', deletePersonHandler);
 router.get('/persons/:idHash/contacts', getPersonContactsHandler);
 router.get('/persons', getAdminPersonsHandler);
 router.get('/matches', getAdminMatchesHandler);

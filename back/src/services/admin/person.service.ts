@@ -19,6 +19,7 @@
 
 import mongoose from 'mongoose';
 import { PersonModel } from '../../models/unified-person.model';
+import { AuditLogModel } from '../../models/audit-log.model';
 import { MatchModel } from '../../models/match.model';
 import { auditLog } from '../../middlewares/audit.middleware';
 import type { Request } from 'express';
@@ -157,4 +158,23 @@ export async function getPersonContacts(idHash: string) {
   const ContactModel = mongoose.model('CaseContact');
   const messages = await ContactModel.find({ reportId: idHash }).sort({ createdAt: 1 }).lean();
   return messages;
+}
+
+export async function deleteAdminPerson(idHash: string, adminId: string, req: any) {
+  const person = await PersonModel.findOne({ idHash });
+  if (!person) return { status: 404, error: 'Persona no encontrada' };
+
+  await PersonModel.deleteOne({ idHash });
+
+  await AuditLogModel.create({
+    eventType: 'admin_action',
+    severity: 'critical',
+    actor: adminId,
+    action: `Deleted person ${idHash}`,
+    detail: { name: person.name, externalIds: person.externalIds },
+    ip: req?.ip,
+    userAgent: req?.headers?.['user-agent']
+  });
+
+  return { status: 200, data: { status: 'success', message: 'Registro eliminado exitosamente' } };
 }

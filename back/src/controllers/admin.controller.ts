@@ -47,7 +47,7 @@ function asString(v: string | string[] | undefined): string {
 import { z } from 'zod';
 import { sanitizedString } from '../utils/sanitize.util';
 import { adminStatusUpdateSchema, adminMergeSchema, adminModerateSchema, adminUpdateMatchStatusSchema, adminUpdateUserRoleSchema, adminUpdateUserStatusSchema, adminAuditStatusQuerySchema } from '../validators/admin.validator';
-import { mergeProfiles, getAdminPersons, putPerson, updatePersonStatus, moderatePerson, getPersonContacts } from '../services/admin/person.service';
+import { mergeProfiles, getAdminPersons, putPerson, updatePersonStatus, moderatePerson, getPersonContacts, deleteAdminPerson } from '../services/admin/person.service';
 import { getAuditJobs, mergeAuditJob, dismissAuditJob, getAuditLogs } from '../services/admin/audit.service';
 import { getAdminMatches, updateMatchStatus } from '../services/admin/match.service';
 import { getAdminUsers, updateUserRole, updateUserStatus, getVerifications } from '../services/admin/user.service';
@@ -335,6 +335,15 @@ export async function lopnnaDeletePhotoHandler(req: Request, res: Response, next
 export async function lopnnaFalsePositiveHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await resolveFalsePositive(asString(req.params.idHash), req.user?.userId || 'admin', req);
+    return res.status(result.status).json(result.error ? { error: result.error } : result.data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deletePersonHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await deleteAdminPerson(asString(req.params.idHash), req.user?.userId || 'admin', req);
     return res.status(result.status).json(result.error ? { error: result.error } : result.data);
   } catch (error) {
     next(error);
